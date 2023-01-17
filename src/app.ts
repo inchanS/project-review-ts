@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { morganCustomFormat } from '../src/utils/util';
+import { morganCustomFormat } from './utils/util';
 import router from './routes';
 
 let corsOptions = {

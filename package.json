@@ -2,13 +2,13 @@
   "name": "project-review-ts",
   "version": "1.0.0",
   "description": "230118 project start / with front-end : Oh DaWon ",
-  "main": "dist/server.js",
+  "main": "dist/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npx tsc",
-    "start": "node dist/server.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/server.js\"",
-    "distribute": "npm i && pm2 start dist/server.js --name fastfive -i max"
+    "start": "node dist/main.js",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
+    "distribute": "npm i && pm2 start dist/main.js --name fastfive -i max"
   },
   "repository": {
     "type": "git",
