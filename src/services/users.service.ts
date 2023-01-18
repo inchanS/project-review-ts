@@ -4,8 +4,9 @@ import { userRepository } from '../models/repositories';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const signup = async (userInfo: User): Promise<void> => {
+const signUp = async (userInfo: User): Promise<void> => {
   userInfo = plainToClass(User, userInfo);
 
   await validateOrReject(userInfo).catch(errors => {
@@ -16,14 +17,14 @@ const signup = async (userInfo: User): Promise<void> => {
     email: userInfo.email,
   });
   if (uniqueCheckEmail) {
-    throw new Error(`${userInfo.email} IS_MAIL_THAT_ALREADY_EXSITS`);
+    throw new Error(`${userInfo.email}_IS_MAIL_THAT_ALREADY_EXSITS`);
   }
 
   const uniqueCheckNickname = await userRepository.findOneBy({
     nickname: userInfo.nickname,
   });
   if (uniqueCheckNickname) {
-    throw new Error(`${userInfo.nickname} IS_NICKNAME_THAT_ALREADY_EXSITS`);
+    throw new Error(`${userInfo.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`);
   }
 
   const salt = await bcrypt.genSalt();
@@ -33,4 +34,26 @@ const signup = async (userInfo: User): Promise<void> => {
   return await usersDao.signUp(userInfo);
 };
 
-export default { signup };
+const signIn = async (email: string, password: string): Promise<object> => {
+  const checkUserbyEmail = await userRepository.findOneBy({
+    email: email,
+  });
+  if (!checkUserbyEmail) {
+    throw new Error(`${email}_NOT_FOUND`);
+  }
+
+  const isSame = bcrypt.compareSync(password, checkUserbyEmail.password);
+  if (!isSame) {
+    console.log(isSame);
+    const error = new Error('PASSWORD_IS_INCORRECT');
+    error.status = 404;
+    throw error;
+  }
+
+  const jwtSecret = process.env.SECRET_KEY;
+  const token = jwt.sign({ id: checkUserbyEmail.id }, jwtSecret);
+
+  return { token };
+};
+
+export default { signUp, signIn };
