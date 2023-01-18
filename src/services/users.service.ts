@@ -3,6 +3,7 @@ import { User } from '../entities/users.entity';
 import { userRepository } from '../models/repositories';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
+import bcrypt from 'bcryptjs';
 
 const signup = async (userInfo: User): Promise<void> => {
   userInfo = plainToClass(User, userInfo);
@@ -24,6 +25,10 @@ const signup = async (userInfo: User): Promise<void> => {
   if (uniqueCheckNickname) {
     throw new Error(`${userInfo.nickname} IS_NICKNAME_THAT_ALREADY_EXSITS`);
   }
+
+  const salt = await bcrypt.genSalt();
+  const hashedPassword = await bcrypt.hash(userInfo.password, salt);
+  userInfo.password = hashedPassword;
 
   return await usersDao.signUp(userInfo);
 };
