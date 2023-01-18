@@ -5,6 +5,7 @@ declare global {
       TYPEORM_PORT: number;
       SECRET_KEY: string;
       TYPEORM_LOGGING: boolean;
+      TYPEORM_SYNCHRONIZE: boolean;
     }
   }
 

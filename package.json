@@ -8,7 +8,7 @@
     "build": "npx tsc",
     "start": "node dist/main.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
-    "distribute": "npm i && pm2 start dist/main.js --name fastfive -i max"
+    "distribute": "npm i && pm2 start dist/main.js --name review -i max"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
     "@types/mysql": "^2.15.21",
     "@types/node": "^18.11.12",
     "@typescript-eslint/parser": "^5.46.1",
+    "class-validator": "^0.14.0",
     "cli-color": "^2.0.3",
     "concurrently": "^7.5.0",
     "eslint": "^8.28.0",
@@ -42,6 +43,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
