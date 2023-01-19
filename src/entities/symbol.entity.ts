@@ -6,13 +6,15 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export type symbolType = 'like' | 'I have this too';
+
 @Entity('symbol')
 export class Symbol {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 50 })
-  symbol: string;
+  @Column({ type: 'enum', enum: ['like', 'I have this too'] })
+  symbol: symbolType;
 
   @CreateDateColumn({
     type: 'datetime',

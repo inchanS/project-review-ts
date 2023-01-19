@@ -6,13 +6,19 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export type feedStatusType = 'published' | 'temporary' | 'deleted';
+
 @Entity('feed_status')
 export class FeedStatus {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 100 })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: ['published', 'temporary', 'deleted'],
+    default: 'temporary',
+  })
+  status: feedStatusType;
 
   @CreateDateColumn({
     type: 'datetime',

@@ -6,13 +6,15 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export type estimationType = 'double Like' | 'like';
+
 @Entity('estimation')
 export class Estimation {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 50 })
-  estimation: string;
+  @Column({ type: 'enum', enum: ['double like', 'like'] })
+  estimation: estimationType;
 
   @CreateDateColumn({
     type: 'datetime',
