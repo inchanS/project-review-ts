@@ -15,6 +15,7 @@ const createApp = () => {
 
   app.use(morgan(morganCustomFormat));
   app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
   app.use(router);
 
   app.use((err: any, req: Request, res: Response) => {

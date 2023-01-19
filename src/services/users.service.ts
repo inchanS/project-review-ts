@@ -28,10 +28,26 @@ const signUp = async (userInfo: User): Promise<void> => {
   }
 
   const salt = await bcrypt.genSalt();
-  const hashedPassword = await bcrypt.hash(userInfo.password, salt);
-  userInfo.password = hashedPassword;
+  userInfo.password = await bcrypt.hash(userInfo.password, salt);
 
-  return await usersDao.signUp(userInfo);
+  await usersDao.signUp(userInfo);
+};
+
+const checkDuplicateNickname = async (nickname: string): Promise<object> => {
+  if (!nickname) {
+    throw new Error(`NICKNAME_IS_UNDEFINED`);
+  }
+  const checkData = await userRepository.findOneBy({ nickname: nickname });
+
+  if (!checkData) {
+    return { message: 'available nickname' };
+  } else if (checkData.nickname === nickname) {
+    const err = new Error(
+      `${checkData.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`
+    );
+    err.status = 409;
+    throw err;
+  }
 };
 
 const signIn = async (email: string, password: string): Promise<object> => {
@@ -39,12 +55,11 @@ const signIn = async (email: string, password: string): Promise<object> => {
     email: email,
   });
   if (!checkUserbyEmail) {
-    throw new Error(`${email}_NOT_FOUND`);
+    throw new Error(`${email}_IS_NOT_FOUND`);
   }
 
   const isSame = bcrypt.compareSync(password, checkUserbyEmail.password);
   if (!isSame) {
-    console.log(isSame);
     const error = new Error('PASSWORD_IS_INCORRECT');
     error.status = 404;
     throw error;
@@ -56,4 +71,10 @@ const signIn = async (email: string, password: string): Promise<object> => {
   return { token };
 };
 
-export default { signUp, signIn };
+const getMe = async (id: number): Promise<User> => {
+  let result = await userRepository.findOneBy({ id: id });
+  delete result.password;
+  return result;
+};
+
+export default { signUp, signIn, getMe, checkDuplicateNickname };

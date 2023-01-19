@@ -19,35 +19,32 @@ export class User {
   @PrimaryGeneratedColumn()
   id?: number;
 
-  @Column()
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(2)
-  @MaxLength(20)
-  name: string;
-
   @Column({ unique: true })
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(20)
-  nickname: string;
+  nickname?: string;
 
   @Column()
   @IsString()
   @IsNotEmpty()
   @MinLength(4)
   @MaxLength(20)
-  @Matches(/^[a-zA-Z0-9]*$/, {
-    message: 'password only accepts english and number',
+  // @Matches(/^[a-zA-Z0-9]*$/, {
+  //   message: 'password only accepts english and number',
+  // })
+  // TODO 정규식 살펴보기
+  @Matches(/^.*(?=^.{8,}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=]).*$/, {
+    message: 'password only accepts english and number 그리고 특수기호',
   })
-  password: string;
+  password?: string;
 
   @Column({ unique: true })
   @IsNotEmpty()
   @IsEmail()
   @MaxLength(20)
-  email: string;
+  email?: string;
 
   @CreateDateColumn({
     type: 'datetime',

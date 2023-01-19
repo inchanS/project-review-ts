@@ -1,6 +1,5 @@
 table users as u {
   id int [pk, increment, not null]
-  name varchar(20) [not null]
   nickname varchar(20) [not null, unique]
   password varchar(100) [not null]
   email varchar(20) [not null, unique]

@@ -9,9 +9,16 @@ declare global {
     }
   }
 
+  namespace Express {
+    interface Request {
+      id?: number;
+    }
+  }
+
   interface Error {
     status: number;
   }
+
   export class MissingDriverError extends Error {
     name = 'MissingDriverError';
 
@@ -22,5 +29,4 @@ declare global {
     }
   }
 }
-
 export {};
