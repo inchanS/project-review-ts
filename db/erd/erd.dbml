@@ -29,7 +29,7 @@ table feed_status as fst  {
 
 table estimation as e {
   id tinyint [pk, increment, not null]
-  estimation varchar [not null]
+  estimation varchar(50) [not null]
   // double like, like
   created_at datetime [not null, default: `now()`]
   updated_at "datetime default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" [not null,note:'update time']

@@ -4,7 +4,7 @@ import { User } from '../entities/users.entity';
 
 const signUp = async (req: Request, res: Response): Promise<void> => {
   const { nickname, password, email }: User = req.body;
-  const userInfo = { nickname, password, email };
+  const userInfo: User = { nickname, password, email };
 
   await usersService.signUp(userInfo);
 
