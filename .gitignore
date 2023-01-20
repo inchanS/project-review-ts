@@ -84,7 +84,7 @@ lib-cov
 coverage
 *.lcov
 
-# nyc test coverage
+# nyc tests coverage
 .nyc_output
 
 # Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
@@ -134,10 +134,12 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
+.env.dev
 .env.development.local
 .env.test.local
+.env.test
 .env.production.local
+.env.production
 .env.local
 
 # parcel-bundler cache (https://parceljs.org/)
