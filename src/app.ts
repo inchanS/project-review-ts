@@ -13,7 +13,12 @@ const createApp = () => {
   const app: Express = express();
   app.use(cors(corsOptions));
 
-  app.use(morgan(morganCustomFormat));
+  if (process.env.NODE_ENV === 'develop') {
+    app.use(morgan(morganCustomFormat));
+  } else {
+    app.use(morgan('combined'));
+  }
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
   app.use(router);

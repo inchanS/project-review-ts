@@ -6,7 +6,6 @@ const dataSource = new DataSource({
   port: process.env.TYPEORM_PORT,
   username: process.env.TYPEORM_USERNAME,
   password: process.env.TYPEORM_PASSWORD,
-  // database: process.env.TYPEORM_TEST_DATABASE,
   database: process.env.TYPEORM_DATABASE,
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
   logging: process.env.TYPEORM_LOGGING,
@@ -15,7 +14,9 @@ const dataSource = new DataSource({
 dataSource
   .initialize()
   .then(() => {
-    // console.log('Data Source has been initialized!');
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Data Source has been initialized!');
+    }
   })
   .catch((err: Error) => {
     console.error('Error during Data Source initialization:', err);
