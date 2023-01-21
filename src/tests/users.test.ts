@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { createApp } from '../app';
 import { DataSource } from 'typeorm';
+import jwt from 'jsonwebtoken';
 
 const dataSource = new DataSource({
   type: process.env.TYPEORM_CONNECTION,
@@ -14,7 +15,7 @@ const dataSource = new DataSource({
   synchronize: process.env.TYPEORM_SYNCHRONIZE,
 });
 
-describe('회원가입', () => {
+describe('USERS API test', () => {
   let app: any = createApp();
 
   beforeAll(async () => {
@@ -33,27 +34,61 @@ describe('회원가입', () => {
       .post('/users/signup')
       .send({
         email: 'test112@test.com',
+        password: 'testPassword112!',
+      })
+      .expect(500)
+      .expect({
+        message: {
+          maxLength: 'nickname must be shorter than or equal to 20 characters',
+          minLength: 'nickname must be longer than or equal to 2 characters',
+          isNotEmpty: 'nickname should not be empty',
+          isString: 'nickname must be a string',
+        },
+      });
+
+    await request(app)
+      .post('/users/signup')
+      .send({
+        email: 'test112@test.com',
         nickname: 'nickname112',
         password: 'testPassword112!',
       })
       .expect(201)
       .expect({ message: 'signup success' });
+
+    await request(app)
+      .post('/users/signup')
+      .send({
+        email: 'test113@test.com',
+        nickname: 'nickname112',
+        password: 'testPassword112!',
+      })
+      .expect({ message: 'nickname112_IS_NICKNAME_THAT_ALREADY_EXSITS' });
+
+    await request(app)
+      .post('/users/signup')
+      .send({
+        email: 'test112@test.com',
+        nickname: 'nickname113',
+        password: 'testPassword112!',
+      })
+      .expect({ message: 'test112@test.com_IS_MAIL_THAT_ALREADY_EXSITS' });
   });
 
   test('check duplicate nickname', async () => {
-    await request(app).post('users/signup').send({
-      email: 'test113@test.com',
-      nickname: 'nickname113',
-      password: 'testPassword113!',
-    });
+    await request(app)
+      .get('/users/signup?nickname=nickname113')
+      .expect(200)
+      .expect({ message: 'available nickname' });
 
     await request(app)
-      .get('users/signup')
-      .send({
-        nickname: 'nickname112',
-      })
+      .get('/users/signup?nickname=nickname112')
       .expect(409)
-      .expect('nickname112_IS_NICKNAME_THAT_ALREADY_EXSITS');
+      .expect({ message: `nickname112_IS_NICKNAME_THAT_ALREADY_EXSITS` });
+
+    await request(app)
+      .get('/users/signup')
+      .expect({ message: `NICKNAME_IS_UNDEFINED` });
   });
 
   test('log in', async () => {
@@ -61,11 +96,30 @@ describe('회원가입', () => {
       .post('/users/signin')
       .send({ email: 'test112@test.com', password: 'testPassword112!' })
       .expect(200);
-  });
-});
 
-describe('test jest', () => {
-  test('1 is 1', () => {
-    expect(1).toBe(1);
+    await request(app)
+      .post('/users/signin')
+      .send({ email: 'test112@test.com', password: 'Password112!' })
+      .expect(404)
+      .expect({ message: 'PASSWORD_IS_INCORRECT' });
+
+    await request(app)
+      .post('/users/signin')
+      .send({ email: 'test114@test.com', password: 'Password112!' })
+      .expect(500)
+      .expect({ message: 'test114@test.com_IS_NOT_FOUND' });
+  });
+
+  test('get me test', async () => {
+    const token = jwt.sign({ id: 1 }, process.env.SECRET_KEY);
+    const expected = { id: 1 };
+    await request(app)
+      .get('/users/getme')
+      .set({ Authorization: token })
+      .expect(200)
+      .then(res => {
+        expect.objectContaining(expected);
+        expect(res.body).not.toHaveProperty('password');
+      });
   });
 });

@@ -8,7 +8,7 @@ if (process.env.NODE_ENV === 'production') {
 } else if (process.env.NODE_ENV === 'test') {
   dotenv.config({ path: path.join(__dirname, '/../env/.env.test') });
 } else {
-  throw new Error('process.env.NODE_ENV를 설정하지 않았습니다!');
+  throw new Error('process.env.NODE_ENV IS_NOT_SET!!');
 }
 
 import { createApp } from './app';

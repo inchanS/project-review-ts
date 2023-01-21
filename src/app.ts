@@ -15,6 +15,7 @@ const createApp = () => {
 
   if (process.env.NODE_ENV === 'develop') {
     app.use(morgan(morganCustomFormat));
+    // app.use(morgan('dev'));
   } else {
     app.use(morgan('combined'));
   }
