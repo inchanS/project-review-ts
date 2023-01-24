@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 
 const signUp = async (userInfo: User): Promise<void> => {
   userInfo = plainToClass(User, userInfo);
+
   await validateOrReject(userInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
   });
