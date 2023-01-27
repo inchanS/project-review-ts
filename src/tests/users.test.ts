@@ -2,6 +2,8 @@ import request from 'supertest';
 import { createApp } from '../app';
 import { DataSource } from 'typeorm';
 import jwt from 'jsonwebtoken';
+import usersService from '../services/users.service';
+import { userRepository } from '../models/repositories';
 
 const dataSource = new DataSource({
   type: process.env.TYPEORM_CONNECTION,
@@ -13,6 +15,56 @@ const dataSource = new DataSource({
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
   logging: process.env.TYPEORM_LOGGING,
   synchronize: process.env.TYPEORM_SYNCHRONIZE,
+});
+
+describe('users.service UNIT test', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('checkDuplicateNickname - !nickname', async () => {
+    let nickname: string;
+    await expect(async () => {
+      await usersService.checkDuplicateNickname(nickname);
+    }).rejects.toThrowError(new Error(`NICKNAME_IS_UNDEFINED`));
+  });
+
+  test('checkDuplicateNickname - !checkData', async () => {
+    const nickname = 'abc';
+    const userRepositoryResult = {
+      nickname: nickname,
+    };
+
+    jest
+      .spyOn(await userRepository, 'findOneBy')
+      .mockResolvedValue(userRepositoryResult);
+
+    await expect(async () => {
+      await usersService.checkDuplicateNickname(nickname);
+    }).rejects.toThrowError(
+      new Error(`${nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`)
+    );
+  });
+
+  test('checkDuplicateNickname - success', async () => {
+    const nickname = '123';
+
+    const userRepositoryResult = {
+      nickname: nickname,
+    };
+
+    jest
+      .spyOn(await userRepository, 'findOneBy')
+      .mockResolvedValue(userRepositoryResult);
+
+    const nickname2 = '1234';
+
+    await expect(
+      usersService.checkDuplicateNickname(nickname2)
+    ).resolves.toEqual({
+      message: 'available nickname',
+    });
+  });
 });
 
 describe('USERS API test', () => {

@@ -37,11 +37,15 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   if (!nickname) {
     throw new Error(`NICKNAME_IS_UNDEFINED`);
   }
+  console.log('nickname = ', nickname);
   const checkData = await userRepository.findOneBy({ nickname: nickname });
+  console.log('checkData = ', checkData);
 
-  if (!checkData) {
+  if (!checkData || checkData.nickname !== nickname) {
     return { message: 'available nickname' };
-  } else if (checkData.nickname === nickname) {
+  }
+
+  if (checkData.nickname === nickname) {
     const err = new Error(
       `${checkData.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`
     );
