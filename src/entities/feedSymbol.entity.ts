@@ -1,22 +1,13 @@
-import {
-  CreateDateColumn,
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Index, ManyToOne } from 'typeorm';
 import { User } from './users.entity';
 import { Feed } from './feed.entity';
 import { Symbol } from './symbol.entity';
 import { IsNotEmpty, IsNumber } from 'class-validator';
+import { Base } from './index.entity';
 
 @Entity('feed_symbol')
 @Index(['feed', 'user'], { unique: true })
-export class FeedSymbol {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class FeedSymbol extends Base {
   @ManyToOne(type => User, users => users.id, { nullable: false })
   @IsNotEmpty()
   @IsNumber()
@@ -31,14 +22,4 @@ export class FeedSymbol {
   @IsNotEmpty()
   @IsNumber()
   symbol: number;
-
-  @CreateDateColumn({
-    type: 'datetime',
-  })
-  public created_at?: Date;
-
-  @UpdateDateColumn({
-    type: 'datetime',
-  })
-  public updated_at?: Date;
 }

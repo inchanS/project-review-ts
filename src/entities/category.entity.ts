@@ -1,26 +1,8 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity } from 'typeorm';
+import { Base } from './index.entity';
 
 @Entity('categories')
-export class Category {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class Category extends Base {
   @Column({ length: 100 })
   category: string;
-
-  @CreateDateColumn({
-    type: 'datetime',
-  })
-  public created_at?: Date;
-
-  @UpdateDateColumn({
-    type: 'datetime',
-  })
-  public updated_at?: Date;
 }

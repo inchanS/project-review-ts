@@ -1,10 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import {
   IsEmail,
   IsNotEmpty,
@@ -13,12 +7,10 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Base } from './index.entity';
 
 @Entity('users')
-export class User {
-  @PrimaryGeneratedColumn()
-  id?: number;
-
+export class User extends Base {
   @Column({ unique: true })
   @IsString()
   @IsNotEmpty()
@@ -45,14 +37,4 @@ export class User {
   @IsEmail()
   @MaxLength(20)
   email?: string;
-
-  @CreateDateColumn({
-    type: 'datetime',
-  })
-  public created_at?: Date;
-
-  @UpdateDateColumn({
-    type: 'datetime',
-  })
-  public updated_at?: Date;
 }

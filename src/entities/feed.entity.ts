@@ -1,11 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 import { User } from './users.entity';
 import {
   IsNotEmpty,
@@ -17,12 +10,10 @@ import {
 import { Estimation } from './estimation.entity';
 import { Category } from './category.entity';
 import { FeedStatus } from './feedStatus.entity';
+import { Base } from './index.entity';
 
 @Entity('feeds')
-export class Feed {
-  @PrimaryGeneratedColumn('increment')
-  id?: number;
-
+export class Feed extends Base {
   @ManyToOne(type => User, users => users.id, { nullable: false })
   user?: User;
 
@@ -61,14 +52,4 @@ export class Feed {
 
   @Column({ nullable: true })
   posted_at?: Date;
-
-  @CreateDateColumn({
-    type: 'datetime',
-  })
-  public created_at?: Date;
-
-  @UpdateDateColumn({
-    type: 'datetime',
-  })
-  public updated_at?: Date;
 }
