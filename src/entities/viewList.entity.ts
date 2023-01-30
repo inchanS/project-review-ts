@@ -1,4 +1,4 @@
-import { DataSource, ViewEntity } from 'typeorm';
+import { DataSource, ViewColumn, ViewEntity } from 'typeorm';
 import { Feed } from './feed.entity';
 import { User } from './users.entity';
 
@@ -6,12 +6,23 @@ import { User } from './users.entity';
   expression: (dataSource: DataSource) =>
     dataSource
       .createQueryBuilder()
-      .select('feed.id', 'id')
-      .select('feed.title', 'title')
-      .select('feed.content', 'content')
-      .select('feed.userId', 'userId')
-      .select('user.nickname', 'nickname')
-      .from(Feed, 'feed')
-      .leftJoin(User, 'user', 'user.id = feed.userId'),
+      .select('f.id', 'id')
+      .addSelect('f.title', 'title')
+      .addSelect('f.content', 'content')
+      .addSelect('u.nickname', 'nickname')
+      .from(Feed, 'f')
+      .leftJoin(User, 'u', 'userId = u.id'),
 })
-export class FeedList {}
+export class FeedList {
+  @ViewColumn()
+  id: number;
+
+  @ViewColumn()
+  title: string;
+
+  @ViewColumn()
+  content: string;
+
+  @ViewColumn()
+  nickname: string;
+}

@@ -1,7 +1,7 @@
 import { Feed } from '../entities/feed.entity';
 import { validateOrReject } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import { feedRepository } from '../db/index.repository';
+import { feedListRepository, feedRepository } from '../db/index.repository';
 
 const createFeed = async (feedInfo: Feed): Promise<void> => {
   feedInfo = plainToClass(Feed, feedInfo);
@@ -21,7 +21,7 @@ const getFeedList = async (page: number) => {
 
   const pageOffset: number = (page - 1) * limit;
 
-  await feedRepository.find({
+  return await feedListRepository.find({
     order: {
       id: 'DESC',
     },
