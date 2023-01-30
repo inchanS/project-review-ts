@@ -48,7 +48,7 @@ export class Feed extends Base {
     nullable: false,
   })
   @IsNumber()
-  status_id: number;
+  status: number;
 
   @Column({ nullable: true })
   posted_at?: Date;

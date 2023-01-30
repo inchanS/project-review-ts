@@ -11,5 +11,5 @@ export class FeedUploadFiles extends Base {
   @ManyToOne(type => UploadFiles, upload_files => upload_files.id, {
     nullable: false,
   })
-  upload_files: number;
+  uploadFiles: number;
 }

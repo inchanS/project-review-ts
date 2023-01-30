@@ -10,5 +10,5 @@ export class FeedStatus extends Base {
     enum: ['published', 'temporary', 'deleted'],
     default: 'temporary',
   })
-  status: feedStatusType;
+  is_status: feedStatusType;
 }
