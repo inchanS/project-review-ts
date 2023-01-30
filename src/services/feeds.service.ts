@@ -1,7 +1,7 @@
 import { Feed } from '../entities/feed.entity';
-import feedsDao from '../models/feeds.dao';
 import { validateOrReject } from 'class-validator';
 import { plainToClass } from 'class-transformer';
+import { feedRepository } from '../db/index.repository';
 
 const createFeed = async (feedInfo: Feed): Promise<void> => {
   feedInfo = plainToClass(Feed, feedInfo);
@@ -9,7 +9,8 @@ const createFeed = async (feedInfo: Feed): Promise<void> => {
     throw { status: 500, message: errors[0].constraints };
   });
 
-  await feedsDao.createFeed(feedInfo);
+  const feed = await feedRepository.create(feedInfo);
+  await feedRepository.save(feed);
 };
 
 const getFeedList = async (page: number) => {
@@ -20,7 +21,13 @@ const getFeedList = async (page: number) => {
 
   const pageOffset: number = (page - 1) * limit;
 
-  return await feedsDao.getFeedList(limit, pageOffset);
+  await feedRepository.find({
+    order: {
+      id: 'DESC',
+    },
+    skip: pageOffset,
+    take: limit,
+  });
 };
 
 export default { createFeed, getFeedList };

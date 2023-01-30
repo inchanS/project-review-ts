@@ -1,4 +1,4 @@
-import dataSource from './index.dao';
+import dataSource from './index.db';
 import { User } from '../entities/users.entity';
 import { Feed } from '../entities/feed.entity';
 

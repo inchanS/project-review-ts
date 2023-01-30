@@ -1,6 +1,5 @@
-import usersDao from '../models/users.dao';
 import { User } from '../entities/users.entity';
-import { userRepository } from '../models/repositories';
+import { userRepository } from '../db/index.repository';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';
@@ -30,7 +29,8 @@ const signUp = async (userInfo: User): Promise<void> => {
   const salt = await bcrypt.genSalt();
   userInfo.password = await bcrypt.hash(userInfo.password, salt);
 
-  await usersDao.signUp(userInfo);
+  const user = await userRepository.create(userInfo);
+  await userRepository.save(user);
 };
 
 const checkDuplicateNickname = async (nickname: string): Promise<object> => {

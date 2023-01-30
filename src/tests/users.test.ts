@@ -3,7 +3,7 @@ import { createApp } from '../app';
 import { DataSource } from 'typeorm';
 import jwt from 'jsonwebtoken';
 import usersService from '../services/users.service';
-import { userRepository } from '../models/repositories';
+import { userRepository } from '../db/index.repository';
 
 const dataSource = new DataSource({
   type: process.env.TYPEORM_CONNECTION,
