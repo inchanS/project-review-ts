@@ -6,4 +6,15 @@ const createFeed = async (feedInfo: Feed): Promise<void> => {
   await feedRepository.save(feed);
 };
 
-export default { createFeed };
+const getFeedList = async (limit: number, pageOffset: number) => {
+  console.log('dao pageOffset =', pageOffset);
+  return await feedRepository.find({
+    order: {
+      id: 'DESC',
+    },
+    skip: pageOffset,
+    take: limit,
+  });
+};
+
+export default { createFeed, getFeedList };

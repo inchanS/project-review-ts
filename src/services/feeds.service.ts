@@ -12,4 +12,15 @@ const createFeed = async (feedInfo: Feed): Promise<void> => {
   await feedsDao.createFeed(feedInfo);
 };
 
-export default { createFeed };
+const getFeedList = async (page: number) => {
+  const limit: number = 10;
+  if (!page) {
+    page = 1;
+  }
+
+  const pageOffset: number = (page - 1) * limit;
+
+  return await feedsDao.getFeedList(limit, pageOffset);
+};
+
+export default { createFeed, getFeedList };

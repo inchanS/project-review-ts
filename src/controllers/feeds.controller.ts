@@ -11,4 +11,11 @@ const createFeed = async (req: Request, res: Response) => {
   res.status(200).json({ message: `create feed success` });
 };
 
-export default { createFeed };
+const getFeedList = async (req: Request, res: Response) => {
+  const page: number = Number(req.query.page);
+  const result = await feedsService.getFeedList(page);
+
+  res.status(200).json(result);
+};
+
+export default { createFeed, getFeedList };
