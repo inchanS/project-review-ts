@@ -2,6 +2,7 @@ import { Feed } from '../entities/feed.entity';
 import { validateOrReject } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { feedListRepository, feedRepository } from '../models/index.repository';
+import { FeedList } from '../entities/viewFeedList.entity';
 
 const createFeed = async (feedInfo: Feed): Promise<void> => {
   feedInfo = plainToClass(Feed, feedInfo);
@@ -13,7 +14,7 @@ const createFeed = async (feedInfo: Feed): Promise<void> => {
   await feedRepository.save(feed);
 };
 
-const getFeedList = async (page: number) => {
+const getFeedList = async (page: number): Promise<FeedList[]> => {
   const limit: number = 10;
   if (!page) {
     page = 1;

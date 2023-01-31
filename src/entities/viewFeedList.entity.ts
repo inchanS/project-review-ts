@@ -70,5 +70,5 @@ export class FeedList {
   filesCnt: number;
 
   @ViewColumn()
-  createdAt: string;
+  createdAt: Date;
 }
