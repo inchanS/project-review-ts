@@ -5,7 +5,7 @@ INSERT INTO feed_status (id, is_status) VALUES (3, 'deleted');
 
 INSERT INTO estimation (id, estimation) VALUES (1, 'double like');
 INSERT INTO estimation (id, estimation) VALUES (2, 'like');
-INSERT INTO estimation (id, estimation) VALUES (3, 'nothing');
+INSERT INTO estimation (id, estimation) VALUES (3, 'dislike');
 
 INSERT INTO symbol (id, symbol) VALUES (1, 'like');
 INSERT INTO symbol (id, symbol) VALUES (2, 'I have this too');

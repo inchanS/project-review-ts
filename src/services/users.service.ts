@@ -1,5 +1,5 @@
 import { User } from '../entities/users.entity';
-import { userRepository } from '../db/index.repository';
+import { userRepository } from '../models/index.repository';
 import { plainToClass } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';

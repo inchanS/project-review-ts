@@ -1,7 +1,7 @@
 import { Feed } from '../entities/feed.entity';
 import { validateOrReject } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import { feedListRepository, feedRepository } from '../db/index.repository';
+import { feedListRepository, feedRepository } from '../models/index.repository';
 
 const createFeed = async (feedInfo: Feed): Promise<void> => {
   feedInfo = plainToClass(Feed, feedInfo);

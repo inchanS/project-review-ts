@@ -99,6 +99,10 @@ insert into upload_files (id, is_img, file_link) values (97, true, 'http://dummy
 insert into upload_files (id, is_img, file_link) values (98, true, 'http://dummyimage.com/1920x1080.png/cc0000/ffffff');
 insert into upload_files (id, is_img, file_link) values (99, true, 'http://dummyimage.com/1920x1080.png/ff4444/ffffff');
 insert into upload_files (id, is_img, file_link) values (100, true, 'http://dummyimage.com/1920x1080.png/dddddd/000000');
+insert into upload_files (id, is_img, file_link) values (101, FALSE, 'http://dummyimage.com/1920x1080.pdf');
+insert into upload_files (id, is_img, file_link) values (102, FALSE, 'http://dummyimage.com/1920x1080.pdf');
+insert into upload_files (id, is_img, file_link) values (103, FALSE, 'http://dummyimage.com/1920x1080.pdf');
+insert into upload_files (id, is_img, file_link) values (104, true, 'http://dummyimage.com/1920x1080.png/dddddd/000000');
 
 
 insert into users (id, nickname, password, email) values ( 1, 101, '5UIwSY8i', 'msatchel0@guardian.co.uk');
@@ -315,6 +319,10 @@ insert into feed_uploadFiles (id, feedId, uploadFilesId) values (97, 97, 97);
 insert into feed_uploadFiles (id, feedId, uploadFilesId) values (98, 98, 98);
 insert into feed_uploadFiles (id, feedId, uploadFilesId) values (99, 99, 99);
 insert into feed_uploadFiles (id, feedId, uploadFilesId) values (100, 100, 100);
+insert into feed_uploadFiles (id, feedId, uploadFilesId) values (101, 1, 101);
+insert into feed_uploadFiles (id, feedId, uploadFilesId) values (102, 2, 102);
+insert into feed_uploadFiles (id, feedId, uploadFilesId) values (103, 100, 103);
+insert into feed_uploadFiles (id, feedId, uploadFilesId) values (104, 1, 104);
 
 insert into comments (id, comment, is_private, userId, feedId) values (1, 'metus vitae', 0, 2, 56);
 insert into comments (id, comment, is_private, userId, feedId) values (2, 'nibh fusce lacus', 1, 9, 24);
