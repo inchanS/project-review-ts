@@ -47,7 +47,7 @@ describe('users.service UNIT test', () => {
   });
 
   test('checkDuplicateNickname - success', async () => {
-    const nickname = '123';
+    const nickname = 'nickname123';
 
     const userRepositoryResult = {
       nickname: nickname,
@@ -57,7 +57,7 @@ describe('users.service UNIT test', () => {
       .spyOn(await userRepository, 'findOneBy')
       .mockResolvedValue(userRepositoryResult);
 
-    const nickname2 = '1234';
+    const nickname2 = 'nickname1234';
 
     await expect(
       usersService.checkDuplicateNickname(nickname2)
