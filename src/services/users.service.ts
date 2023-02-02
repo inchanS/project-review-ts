@@ -1,12 +1,12 @@
 import { User } from '../entities/users.entity';
 import { userRepository } from '../models/index.repository';
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const signUp = async (userInfo: User): Promise<void> => {
-  userInfo = plainToClass(User, userInfo);
+  userInfo = plainToInstance(User, userInfo);
 
   await validateOrReject(userInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };

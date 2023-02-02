@@ -1,11 +1,11 @@
 import { Feed } from '../entities/feed.entity';
 import { validateOrReject } from 'class-validator';
-import { plainToClass } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { feedListRepository, feedRepository } from '../models/index.repository';
 import { FeedList } from '../entities/viewFeedList.entity';
 
 const createFeed = async (feedInfo: Feed): Promise<void> => {
-  feedInfo = plainToClass(Feed, feedInfo);
+  feedInfo = plainToInstance(Feed, feedInfo);
   await validateOrReject(feedInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
   });
