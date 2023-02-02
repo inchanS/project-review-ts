@@ -13,8 +13,9 @@ const createComment = async (req: Request, res: Response) => {
   const commentInfo: Comment = { user, feed, comment, is_private };
 
   await commentsService.createComment(commentInfo);
+
   res
     .status(201)
-    .json({ message: 'YOUR_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED' });
+    .json({ message: 'THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED' });
 };
 export default { getCommentList, createComment };

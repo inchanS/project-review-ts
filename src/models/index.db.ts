@@ -8,13 +8,13 @@ const dataSource = new DataSource({
   password: process.env.TYPEORM_PASSWORD,
   database: process.env.TYPEORM_DATABASE,
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-  logging: process.env.TYPEORM_LOGGING,
-  synchronize: process.env.TYPEORM_SYNCHRONIZE,
+  logging: Boolean(process.env.TYPEORM_LOGGING),
+  synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
 });
 dataSource
   .initialize()
   .then(() => {
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'develop') {
       console.log('Data Source has been initialized!');
     }
   })

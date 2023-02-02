@@ -13,8 +13,8 @@ const dataSource = new DataSource({
   password: process.env.TYPEORM_PASSWORD,
   database: process.env.TYPEORM_DATABASE,
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-  logging: process.env.TYPEORM_LOGGING,
-  synchronize: process.env.TYPEORM_SYNCHRONIZE,
+  logging: Boolean(process.env.TYPEORM_LOGGING),
+  synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
 });
 
 describe('users.service UNIT test', () => {
@@ -62,7 +62,7 @@ describe('users.service UNIT test', () => {
     await expect(
       usersService.checkDuplicateNickname(nickname2)
     ).resolves.toEqual({
-      message: 'available nickname',
+      message: 'AVAILABLE_NICKNAME',
     });
   });
 });
@@ -71,7 +71,11 @@ describe('USERS API test', () => {
   let app: any = createApp();
 
   beforeAll(async () => {
-    await dataSource.initialize();
+    await dataSource.initialize().then(() => {
+      if (process.env.NODE_ENV === 'test') {
+        console.log('💥TEST Data Source has been initialized!💥');
+      }
+    });
   });
 
   afterAll(async () => {
@@ -106,7 +110,7 @@ describe('USERS API test', () => {
         password: 'testPassword112!',
       })
       .expect(201)
-      .expect({ message: 'signup success' });
+      .expect({ message: 'SIGNUP_SUCCESS' });
 
     await request(app)
       .post('/users/signup')
@@ -131,7 +135,7 @@ describe('USERS API test', () => {
     await request(app)
       .get('/users/signup?nickname=nickname113')
       .expect(200)
-      .expect({ message: 'available nickname' });
+      .expect({ message: 'AVAILABLE_NICKNAME' });
 
     await request(app)
       .get('/users/signup?nickname=nickname112')

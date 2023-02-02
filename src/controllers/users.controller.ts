@@ -8,7 +8,7 @@ const signUp = async (req: Request, res: Response): Promise<void> => {
 
   await usersService.signUp(userInfo);
 
-  res.status(201).json({ message: `signup success` });
+  res.status(201).json({ message: `SIGNUP_SUCCESS` });
 };
 
 const checkDuplicateNickname = async (
@@ -24,7 +24,7 @@ const signIn = async (req: Request, res: Response): Promise<void> => {
   const { email, password }: User = req.body;
 
   const result = await usersService.signIn(email, password);
-  res.status(200).json({ message: `signin success`, result });
+  res.status(200).json({ message: `SIGNIN_SUCCESS`, result });
 };
 
 const getMe = async (req: Request, res: Response): Promise<void> => {

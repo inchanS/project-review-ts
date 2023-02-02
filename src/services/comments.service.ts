@@ -32,4 +32,8 @@ const createComment = async (commentInfo: Comment) => {
   await commentReposiroty.save(comment);
 };
 
-export default { getCommentList, createComment };
+const updateComment = async (commentInfo: Comment) => {
+  // await commentReposiroty.update();
+};
+
+export default { getCommentList, createComment, updateComment };
