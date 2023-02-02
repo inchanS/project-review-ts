@@ -32,14 +32,14 @@ export class Comment extends Base {
 
   // typeORM Tree 형
   @ManyToOne(type => Comment, comment => comment.children)
-  parent: Comment;
+  parent?: Comment;
 
   @OneToMany(type => Comment, comment => comment.parent)
-  children: Comment[];
+  children?: Comment[];
 
   @Column('boolean', { default: false })
-  is_private: boolean;
+  is_private?: boolean;
 
   @Column('boolean', { default: false })
-  is_deleted: boolean;
+  is_deleted?: boolean;
 }
