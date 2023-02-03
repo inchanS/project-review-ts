@@ -38,7 +38,7 @@ export class User extends Base {
   @Column({ unique: true })
   @IsNotEmpty()
   @IsEmail()
-  @MaxLength(20)
+  @MaxLength(50)
   email?: string;
 
   @OneToMany(type => Comment, comment => comment.user)

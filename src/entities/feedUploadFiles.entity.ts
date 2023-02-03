@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, ManyToOne, RelationId } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { Feed } from './feed.entity';
 import { UploadFiles } from './uploadFiles.entity';
 import { Base } from './index.entity';

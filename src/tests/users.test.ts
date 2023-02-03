@@ -47,20 +47,12 @@ describe('users.service UNIT test', () => {
   });
 
   test('checkDuplicateNickname - success', async () => {
-    const nickname = 'nickname123';
+    jest.spyOn(await userRepository, 'findOneBy').mockResolvedValue(null);
 
-    const userRepositoryResult = {
-      nickname: nickname,
-    };
-
-    jest
-      .spyOn(await userRepository, 'findOneBy')
-      .mockResolvedValue(userRepositoryResult);
-
-    const nickname2 = 'nickname1234';
+    const nickname = 'nickname1234';
 
     await expect(
-      usersService.checkDuplicateNickname(nickname2)
+      usersService.checkDuplicateNickname(nickname)
     ).resolves.toEqual({
       message: 'AVAILABLE_NICKNAME',
     });

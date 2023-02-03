@@ -39,7 +39,7 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   }
   const checkData = await userRepository.findOneBy({ nickname: nickname });
 
-  if (!checkData || checkData.nickname !== nickname) {
+  if (!checkData) {
     return { message: 'AVAILABLE_NICKNAME' };
   }
 

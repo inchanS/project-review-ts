@@ -4,15 +4,14 @@ import feedsService from '../services/feeds.service';
 
 // TODO createdFeed => S3 연결해서 다시 작성하기
 const createFeed = async (req: Request, res: Response) => {
-  const { userId, title, content, estimationId, categoryId, statusId }: Feed =
-    req.body;
+  const { user, title, content, estimation, category, status }: Feed = req.body;
   const feedInfo: Feed = {
-    userId,
+    user,
     title,
     content,
-    estimationId,
-    categoryId,
-    statusId,
+    estimation,
+    category,
+    status,
   };
 
   await feedsService.createFeed(feedInfo);
