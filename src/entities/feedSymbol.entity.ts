@@ -1,4 +1,4 @@
-import { Entity, Index, ManyToOne } from 'typeorm';
+import { Entity, Index, ManyToOne, RelationId } from 'typeorm';
 import { User } from './users.entity';
 import { Feed } from './feed.entity';
 import { Symbol } from './symbol.entity';
@@ -8,18 +8,27 @@ import { Base } from './index.entity';
 @Entity('feed_symbol')
 @Index(['feed', 'user'], { unique: true })
 export class FeedSymbol extends Base {
-  @ManyToOne(type => User, users => users.id, { nullable: false })
-  @IsNotEmpty()
-  @IsNumber()
-  user: number;
+  @ManyToOne(type => User, users => users.feedsymbol, { nullable: false })
+  user: User;
 
-  @ManyToOne(type => Feed, feeds => feeds.id, { nullable: false })
+  @RelationId((feedSymbol: FeedSymbol) => feedSymbol.user)
   @IsNotEmpty()
   @IsNumber()
-  feed: number;
+  userId: number;
 
-  @ManyToOne(type => Symbol, symbol => symbol.id, { nullable: false })
+  @ManyToOne(type => Feed, feeds => feeds.feedSymbol, { nullable: false })
+  feed: Feed;
+
+  @RelationId((feedSymbol: FeedSymbol) => feedSymbol.feed)
   @IsNotEmpty()
   @IsNumber()
-  symbol: number;
+  feedId: number;
+
+  @ManyToOne(type => Symbol, symbol => symbol.feedSymbol, { nullable: false })
+  symbol: Symbol;
+
+  @RelationId((feedSymbol: FeedSymbol) => feedSymbol.symbol)
+  @IsNotEmpty()
+  @IsNumber()
+  symbolId: number;
 }

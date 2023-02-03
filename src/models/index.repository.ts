@@ -1,8 +1,8 @@
 import dataSource from './index.db';
 import { User } from '../entities/users.entity';
 import { Feed } from '../entities/feed.entity';
-import { FeedList } from '../entities/viewFeedList.entity';
-import { CommentList } from '../entities/viewCommentList.entity';
+import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
+import { CommentList } from '../entities/viewEntities/viewCommentList.entity';
 import { Comment } from '../entities/comment.entity';
 
 const userRepository = dataSource.getRepository(User);

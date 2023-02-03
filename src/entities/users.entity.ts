@@ -1,4 +1,4 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import {
   IsEmail,
   IsNotEmpty,
@@ -8,6 +8,9 @@ import {
   MinLength,
 } from 'class-validator';
 import { Base } from './index.entity';
+import { Comment } from './comment.entity';
+import { Feed } from './feed.entity';
+import { FeedSymbol } from './feedSymbol.entity';
 
 @Entity('users')
 export class User extends Base {
@@ -37,4 +40,13 @@ export class User extends Base {
   @IsEmail()
   @MaxLength(20)
   email?: string;
+
+  @OneToMany(type => Comment, comment => comment.user)
+  comment: Comment[];
+
+  @OneToMany(type => Feed, feed => feed.user)
+  feed: Feed[];
+
+  @OneToMany(type => FeedSymbol, feedSymbol => feedSymbol.user)
+  feedsymbol: [];
 }

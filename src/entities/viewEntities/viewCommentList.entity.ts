@@ -1,6 +1,6 @@
 import { DataSource, ViewColumn, ViewEntity } from 'typeorm';
-import { User } from './users.entity';
-import { Comment } from './comment.entity';
+import { User } from '../users.entity';
+import { Comment } from '../comment.entity';
 
 @ViewEntity({
   expression: (dataSource: DataSource) =>
