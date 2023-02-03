@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './users.entity';
 import {
   IsNotEmpty,
@@ -20,12 +20,10 @@ export class Feed extends Base {
   @ManyToOne(type => User, users => users.feed, {
     nullable: false,
   })
-  user?: User;
-
-  @RelationId((feed: Feed) => feed.user)
+  @JoinColumn({ name: 'userId' })
   @IsNotEmpty()
   @IsNumber()
-  userId: Number;
+  user?: User;
 
   @Column({ length: 250 })
   @IsNotEmpty()
@@ -43,32 +41,26 @@ export class Feed extends Base {
   @ManyToOne(type => Estimation, estimation => estimation.feed, {
     nullable: false,
   })
-  estimation?: Estimation;
-
-  @RelationId((feed: Feed) => feed.estimation)
+  @JoinColumn({ name: 'estimationId' })
   @IsNotEmpty()
   @IsNumber()
-  estimationId: number;
+  estimation?: Estimation;
 
   @ManyToOne(type => Category, categories => categories.feed, {
     nullable: false,
   })
-  category?: Category;
-
-  @RelationId((feed: Feed) => feed.category)
+  @JoinColumn({ name: 'categoryId' })
   @IsNotEmpty()
   @IsNumber()
-  categoryId: number;
+  category?: Category;
 
   @ManyToOne(type => FeedStatus, feed_status => feed_status.feed, {
     nullable: false,
   })
-  status?: FeedStatus;
-
-  @RelationId((feed: Feed) => feed.status)
+  @JoinColumn({ name: 'statusId' })
   @IsNotEmpty()
   @IsNumber()
-  statusId: number;
+  status?: FeedStatus;
 
   @Column({ nullable: true })
   posted_at?: Date;

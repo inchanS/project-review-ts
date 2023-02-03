@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './users.entity';
 import { Feed } from './feed.entity';
 import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
@@ -7,20 +7,16 @@ import { Base } from './index.entity';
 @Entity('comments')
 export class Comment extends Base {
   @ManyToOne(type => User, users => users.comment, { nullable: false })
+  @JoinColumn({ name: 'userId' })
+  @IsNotEmpty()
+  @IsNumber()
   user?: User;
 
-  @RelationId((comment: Comment) => comment.user)
-  @IsNotEmpty()
-  @IsNumber()
-  userId: number;
-
   @ManyToOne(type => Feed, feeds => feeds.comment, { nullable: false })
-  feed?: Feed;
-
-  @RelationId((comment: Comment) => comment.feed)
+  @JoinColumn({ name: 'feedId' })
   @IsNotEmpty()
   @IsNumber()
-  feedId: number;
+  feed?: Feed;
 
   @Column({ length: 1000 })
   @IsNotEmpty()
@@ -28,11 +24,9 @@ export class Comment extends Base {
   comment: string;
 
   @ManyToOne(type => Comment, comment => comment.children)
-  parent?: Comment;
-
-  @RelationId((comment: Comment) => comment.parent)
+  @JoinColumn({ name: 'parentId' })
   @IsNumber()
-  parentId?: number;
+  parent?: Comment;
 
   @OneToMany(type => Comment, comment => comment.parent)
   children?: Comment[];

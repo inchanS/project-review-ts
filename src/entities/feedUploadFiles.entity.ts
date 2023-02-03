@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, RelationId } from 'typeorm';
+import { Entity, JoinColumn, ManyToOne, RelationId } from 'typeorm';
 import { Feed } from './feed.entity';
 import { UploadFiles } from './uploadFiles.entity';
 import { Base } from './index.entity';
@@ -7,12 +7,10 @@ import { IsNotEmpty, IsNumber } from 'class-validator';
 @Entity('feed_uploadFiles')
 export class FeedUploadFiles extends Base {
   @ManyToOne(type => Feed, feeds => feeds.feedUploadFiles, { nullable: false })
-  feed: Feed;
-
-  @RelationId((feedUploadFiles: FeedUploadFiles) => feedUploadFiles.feed)
+  @JoinColumn({ name: 'feedId' })
   @IsNotEmpty()
   @IsNumber()
-  feedId: number;
+  feed: Feed;
 
   @ManyToOne(
     type => UploadFiles,
@@ -21,10 +19,8 @@ export class FeedUploadFiles extends Base {
       nullable: false,
     }
   )
-  uploadFiles: UploadFiles;
-
-  @RelationId((feedUploadFiles: FeedUploadFiles) => feedUploadFiles.uploadFiles)
+  @JoinColumn({ name: 'uploadFilesId' })
   @IsNotEmpty()
   @IsNumber()
-  uploadFilesId: number;
+  uploadFiles: UploadFiles;
 }

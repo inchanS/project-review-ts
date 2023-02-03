@@ -42,11 +42,11 @@ export class User extends Base {
   email?: string;
 
   @OneToMany(type => Comment, comment => comment.user)
-  comment: Comment[];
+  comment?: Comment[];
 
   @OneToMany(type => Feed, feed => feed.user)
-  feed: Feed[];
+  feed?: Feed[];
 
   @OneToMany(type => FeedSymbol, feedSymbol => feedSymbol.user)
-  feedsymbol: [];
+  feedsymbol?: [];
 }
