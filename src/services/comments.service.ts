@@ -1,24 +1,39 @@
-import {
-  commentListRepository,
-  commentRepository,
-} from '../models/index.repository';
+import { commentRepository } from '../models/index.repository';
 import { Comment } from '../entities/comment.entity';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 
 const getCommentList = async (id: number) => {
-  return await commentListRepository
-    .find({ where: { feedId: id } })
-    .then(value => {
-      value = [...value].map((item: any) => {
-        return {
-          ...item,
-          isPrivate: item.isPrivate === 1,
-          isDeleted: item.isDeleted === 1,
-        };
-      });
-      return value;
-    });
+  const comments = await commentRepository
+    .createQueryBuilder('comment')
+    .leftJoinAndSelect('comment.children', 'children')
+    .leftJoinAndSelect('comment.user', 'user')
+    .orderBy('children.id', 'ASC')
+    .getMany();
+
+  return comments;
+
+  // const comment = await dataSource
+  //   .createQueryBuilder(Comment, 'comment')
+  //   .leftJoinAndSelect('comment.children', 'children')
+  //   .leftJoinAndSelect('comment.user', 'user')
+  //   .leftJoinAndSelect('children.user', 'user')
+  //   .getMany();
+  //
+  // return comment;
+
+  // return await commentListRepository
+  //   .find({ where: { feedId: id } })
+  //   .then(value => {
+  //     value = [...value].map((item: any) => {
+  //       return {
+  //         ...item,
+  //         isPrivate: item.isPrivate === 1,
+  //         isDeleted: item.isDeleted === 1,
+  //       };
+  //     });
+  //     return value;
+  //   });
 };
 
 const createComment = async (commentInfo: Comment) => {

@@ -23,6 +23,12 @@ export class Comment extends Base {
   @IsString()
   comment: string;
 
+  @Column('boolean', { default: false })
+  is_private?: boolean;
+
+  @Column('boolean', { default: false })
+  is_deleted?: boolean;
+
   @ManyToOne(type => Comment, comment => comment.children)
   @JoinColumn({ name: 'parentId' })
   @IsNumber()
@@ -30,10 +36,4 @@ export class Comment extends Base {
 
   @OneToMany(type => Comment, comment => comment.parent)
   children?: Comment[];
-
-  @Column('boolean', { default: false })
-  is_private?: boolean;
-
-  @Column('boolean', { default: false })
-  is_deleted?: boolean;
 }

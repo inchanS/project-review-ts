@@ -37,7 +37,12 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   if (!nickname) {
     throw new Error(`NICKNAME_IS_UNDEFINED`);
   }
-  const checkData = await userRepository.findOneBy({ nickname: nickname });
+  // const checkData = await userRepository.findOneBy({ nickname: nickname });
+  const checkData = await User.findByNickname(nickname);
+  console.log(
+    '🔥users.service/checkDuplicateNickname:42- checkData = ',
+    checkData
+  );
 
   if (!checkData) {
     return { message: 'AVAILABLE_NICKNAME' };
@@ -53,9 +58,22 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
 };
 
 const signIn = async (email: string, password: string): Promise<object> => {
-  const checkUserbyEmail = await userRepository.findOneBy({
-    email: email,
-  });
+  // // <version 1>
+  // // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
+  // const checkUserbyEmail = await dataSource
+  //   .createQueryBuilder(User, 'user')
+  //   .addSelect('user.password')
+  //   .where('user.email = :email', { email: email })
+  //   .getOne();
+
+  // <version 2> User entity에서 static 메소드 리턴시,
+  const checkUserbyEmail = await User.findByEmail(email);
+
+  console.log(
+    '🔥users.service/signIn:67- checkUserbyEmail = ',
+    checkUserbyEmail
+  );
+
   if (!checkUserbyEmail) {
     throw new Error(`${email}_IS_NOT_FOUND`);
   }
@@ -75,7 +93,6 @@ const signIn = async (email: string, password: string): Promise<object> => {
 
 const getMe = async (id: number): Promise<User> => {
   let result = await userRepository.findOneBy({ id: id });
-  delete result.password;
   return result;
 };
 

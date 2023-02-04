@@ -11,10 +11,13 @@ const feedListRepository = dataSource.getRepository(FeedList);
 const commentListRepository = dataSource.getRepository(CommentList);
 const commentRepository = dataSource.getRepository(Comment);
 
+const commentTreeRepository = dataSource.getTreeRepository(Comment);
+
 export {
   userRepository,
   feedRepository,
   feedListRepository,
   commentListRepository,
   commentRepository,
+  commentTreeRepository,
 };

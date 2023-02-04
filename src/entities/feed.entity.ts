@@ -10,10 +10,10 @@ import {
 import { Estimation } from './estimation.entity';
 import { Category } from './category.entity';
 import { FeedStatus } from './feedStatus.entity';
-import { Base } from './index.entity';
 import { Comment } from './comment.entity';
 import { FeedSymbol } from './feedSymbol.entity';
 import { FeedUploadFiles } from './feedUploadFiles.entity';
+import { Base } from './index.entity';
 
 @Entity('feeds')
 export class Feed extends Base {

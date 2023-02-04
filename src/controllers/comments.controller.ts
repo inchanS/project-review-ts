@@ -9,8 +9,8 @@ const getCommentList = async (req: Request, res: Response) => {
 };
 
 const createComment = async (req: Request, res: Response) => {
-  const { user, feed, comment, is_private }: Comment = req.body;
-  const commentInfo: Comment = { user, feed, comment, is_private };
+  const { user, feed, comment, is_private, parent }: Comment = req.body;
+  const commentInfo: Comment = { user, feed, comment, is_private, parent };
 
   await commentsService.createComment(commentInfo);
 
