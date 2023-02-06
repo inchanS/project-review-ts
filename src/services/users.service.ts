@@ -36,10 +36,6 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   }
   // const checkData = await userRepository.findOneBy({ nickname: nickname });
   const checkData = await User.findByNickname(nickname);
-  console.log(
-    '🔥users.service/checkDuplicateNickname:42- checkData = ',
-    checkData
-  );
 
   if (!checkData) {
     return { message: 'AVAILABLE_NICKNAME' };

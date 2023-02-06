@@ -30,28 +30,21 @@ describe('users.service UNIT test', () => {
     }).rejects.toThrowError(new Error(`NICKNAME_IS_UNDEFINED`));
   });
 
-  // test('checkDuplicateNickname - !checkData', async () => {
-  //   const nickname = 'abc';
-  //   let userRepositoryResult = {
-  //     nickname: nickname,
-  //   };
-  //   userRepositoryResult = plainToInstance(User, userRepositoryResult);
-  //
-  //   console.log(
-  //     '🔥users.test/:42- userRepositoryResult = ',
-  //     userRepositoryResult
-  //   );
-  //
-  //   jest
-  //     .spyOn(await User, 'findByNickname')
-  //     .mockResolvedValue(userRepositoryResult);
-  //
-  //   await expect(async () => {
-  //     await usersService.checkDuplicateNickname(nickname);
-  //   }).rejects.toThrowError(
-  //     new Error(`${nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`)
-  //   );
-  // });
+  test('checkDuplicateNickname - !checkData', async () => {
+    const nickname: string = 'abc';
+    const userRepositoryResult = new User();
+    userRepositoryResult.nickname = nickname;
+
+    jest
+      .spyOn(await User, 'findByNickname')
+      .mockResolvedValue(userRepositoryResult);
+
+    await expect(async () => {
+      await usersService.checkDuplicateNickname(nickname);
+    }).rejects.toThrowError(
+      new Error(`${nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`)
+    );
+  });
 
   test('checkDuplicateNickname - success', async () => {
     jest.spyOn(await User, 'findByNickname').mockResolvedValue(null);
