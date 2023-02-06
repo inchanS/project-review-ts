@@ -11,6 +11,7 @@ const dataSource = new DataSource({
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
   logging: Boolean(process.env.TYPEORM_LOGGING),
   synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
+  charset: 'utf8mb4',
 });
 dataSource
   .initialize()

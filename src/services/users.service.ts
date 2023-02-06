@@ -1,10 +1,10 @@
 import { User } from '../entities/users.entity';
-import { userRepository } from '../models/index.repository';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserDto } from '../entities/dto/user.dto';
+import { UserRepository } from '../repositories/user.repository';
 
 const signUp = async (userInfo: UserDto): Promise<void> => {
   userInfo = plainToInstance(UserDto, userInfo);
@@ -23,11 +23,13 @@ const signUp = async (userInfo: UserDto): Promise<void> => {
     throw new Error(`${userInfo.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`);
   }
 
-  const salt = await bcrypt.genSalt();
-  userInfo.password = await bcrypt.hash(userInfo.password, salt);
+  await UserRepository.createUser(userInfo);
 
-  const user = await userRepository.create(userInfo);
-  await userRepository.save(user);
+  // const salt = await bcrypt.genSalt();
+  // userInfo.password = await bcrypt.hash(userInfo.password, salt);
+  //
+  // const user = await userRepository.create(userInfo);
+  // await userRepository.save(user);
 };
 
 const checkDuplicateNickname = async (nickname: string): Promise<object> => {
@@ -62,11 +64,6 @@ const signIn = async (email: string, password: string): Promise<object> => {
   // <version 2> User entity에서 static 메소드 리턴시,
   const checkUserbyEmail = await User.findByEmail(email);
 
-  console.log(
-    '🔥users.service/signIn:67- checkUserbyEmail = ',
-    checkUserbyEmail
-  );
-
   if (!checkUserbyEmail) {
     throw new Error(`${email}_IS_NOT_FOUND`);
   }
@@ -85,8 +82,7 @@ const signIn = async (email: string, password: string): Promise<object> => {
 };
 
 const getMe = async (id: number): Promise<User> => {
-  let result = await userRepository.findOneBy({ id: id });
-  return result;
+  return await UserRepository.findOneBy({ id: id });
 };
 
 export default { signUp, signIn, getMe, checkDuplicateNickname };

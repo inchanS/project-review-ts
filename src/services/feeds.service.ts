@@ -1,8 +1,11 @@
 import { Feed } from '../entities/feed.entity';
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { feedListRepository, feedRepository } from '../models/index.repository';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
+import {
+  FeedListRepository,
+  FeedRepository,
+} from '../repositories/feed.repository';
 
 const createFeed = async (feedInfo: Feed): Promise<void> => {
   feedInfo = plainToInstance(Feed, feedInfo);
@@ -10,8 +13,7 @@ const createFeed = async (feedInfo: Feed): Promise<void> => {
     throw { status: 500, message: errors[0].constraints };
   });
 
-  const feed = await feedRepository.create(feedInfo);
-  await feedRepository.save(feed);
+  await FeedRepository.createFeed(feedInfo);
 };
 
 const getFeedList = async (page: number): Promise<FeedList[]> => {
@@ -22,13 +24,7 @@ const getFeedList = async (page: number): Promise<FeedList[]> => {
 
   const pageOffset: number = (page - 1) * limit;
 
-  return await feedListRepository.find({
-    order: {
-      id: 'DESC',
-    },
-    skip: pageOffset,
-    take: limit,
-  });
+  return await FeedListRepository.getFeedList(pageOffset, limit);
 };
 
 export default { createFeed, getFeedList };

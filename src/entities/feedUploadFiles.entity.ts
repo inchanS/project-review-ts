@@ -2,14 +2,11 @@ import { Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { Feed } from './feed.entity';
 import { UploadFiles } from './uploadFiles.entity';
 import { Base } from './index.entity';
-import { IsNotEmpty, IsNumber } from 'class-validator';
 
 @Entity('feed_uploadFiles')
 export class FeedUploadFiles extends Base {
   @ManyToOne(type => Feed, feeds => feeds.feedUploadFiles, { nullable: false })
   @JoinColumn({ name: 'feedId' })
-  @IsNotEmpty()
-  @IsNumber()
   feed: Feed;
 
   @ManyToOne(
@@ -20,7 +17,5 @@ export class FeedUploadFiles extends Base {
     }
   )
   @JoinColumn({ name: 'uploadFilesId' })
-  @IsNotEmpty()
-  @IsNumber()
   uploadFiles: UploadFiles;
 }

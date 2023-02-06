@@ -1,27 +1,11 @@
-import { commentRepository } from '../models/index.repository';
 import { Comment } from '../entities/comment.entity';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import { CommentDto } from '../entities/dto/comment.dto';
+import { CommentRepository } from '../repositories/comment.repository';
 
 const getCommentList = async (id: number) => {
-  const comments = await commentRepository
-    .createQueryBuilder('comment')
-    .leftJoinAndSelect('comment.children', 'children')
-    .leftJoinAndSelect('comment.user', 'user')
-    .orderBy('children.id', 'ASC')
-    .getMany();
-
-  return comments;
-
-  // const comment = await dataSource
-  //   .createQueryBuilder(Comment, 'comment')
-  //   .leftJoinAndSelect('comment.children', 'children')
-  //   .leftJoinAndSelect('comment.user', 'user')
-  //   .leftJoinAndSelect('children.user', 'user')
-  //   .getMany();
-  //
-  // return comment;
+  return await CommentRepository.getCommentList(id);
 
   // return await commentListRepository
   //   .find({ where: { feedId: id } })
@@ -44,12 +28,9 @@ const createComment = async (commentInfo: CommentDto) => {
     throw { status: 500, message: errors[0].constraints };
   });
 
-  const comment = await commentRepository.create(commentInfo);
-  await commentRepository.save(comment);
+  await CommentRepository.createComment(commentInfo);
 };
 
-const updateComment = async (commentInfo: Comment) => {
-  // await commentReposiroty.update();
-};
+const updateComment = async (commentInfo: Comment) => {};
 
 export default { getCommentList, createComment, updateComment };
