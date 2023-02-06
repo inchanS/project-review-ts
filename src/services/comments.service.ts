@@ -2,6 +2,7 @@ import { commentRepository } from '../models/index.repository';
 import { Comment } from '../entities/comment.entity';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
+import { CommentDto } from '../entities/dto/comment.dto';
 
 const getCommentList = async (id: number) => {
   const comments = await commentRepository
@@ -36,8 +37,8 @@ const getCommentList = async (id: number) => {
   //   });
 };
 
-const createComment = async (commentInfo: Comment) => {
-  commentInfo = plainToInstance(Comment, commentInfo);
+const createComment = async (commentInfo: CommentDto) => {
+  commentInfo = plainToInstance(CommentDto, commentInfo);
 
   await validateOrReject(commentInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };

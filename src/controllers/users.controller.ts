@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import usersService from '../services/users.service';
-import { User } from '../entities/users.entity';
+import { UserDto } from '../entities/dto/user.dto';
 
 const signUp = async (req: Request, res: Response): Promise<void> => {
-  const { nickname, password, email }: User = req.body;
-  const userInfo: User = { nickname, password, email };
+  const { nickname, password, email }: UserDto = req.body;
+  // type을 Entity에서 가져오지 말고, DTO로 처리하여 가져오는게 더 편하다.
+  const userInfo: UserDto = { nickname, password, email };
 
   await usersService.signUp(userInfo);
 
@@ -15,13 +16,13 @@ const checkDuplicateNickname = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { nickname }: User = req.query;
+  const { nickname }: UserDto = req.query;
   const result = await usersService.checkDuplicateNickname(nickname);
-  res.status(200).json(result);
+  res.status(200).json(result /**/);
 };
 
 const signIn = async (req: Request, res: Response): Promise<void> => {
-  const { email, password }: User = req.body;
+  const { email, password }: UserDto = req.body;
 
   const result = await usersService.signIn(email, password);
   res.status(200).json({ message: `SIGNIN_SUCCESS`, result });

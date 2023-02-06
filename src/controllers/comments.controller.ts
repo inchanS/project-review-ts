@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import commentsService from '../services/comments.service';
-import { Comment } from '../entities/comment.entity';
+import { CommentDto } from '../entities/dto/comment.dto';
 
 const getCommentList = async (req: Request, res: Response) => {
   const id: number = Number(req.params.id);
@@ -9,8 +9,14 @@ const getCommentList = async (req: Request, res: Response) => {
 };
 
 const createComment = async (req: Request, res: Response) => {
-  const { user, feed, comment, is_private, parent }: Comment = req.body;
-  const commentInfo: Comment = { user, feed, comment, is_private, parent };
+  const { user, feed, comment, is_private, parent }: CommentDto = req.body;
+  const commentInfo: CommentDto = {
+    user,
+    feed,
+    comment,
+    is_private,
+    parent,
+  };
 
   await commentsService.createComment(commentInfo);
 

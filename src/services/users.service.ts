@@ -4,24 +4,21 @@ import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { UserDto } from '../entities/dto/user.dto';
 
-const signUp = async (userInfo: User): Promise<void> => {
-  userInfo = plainToInstance(User, userInfo);
+const signUp = async (userInfo: UserDto): Promise<void> => {
+  userInfo = plainToInstance(UserDto, userInfo);
 
   await validateOrReject(userInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
   });
 
-  const uniqueCheckEmail = await userRepository.findOneBy({
-    email: userInfo.email,
-  });
+  const uniqueCheckEmail = await User.findByEmail(userInfo.email);
   if (uniqueCheckEmail) {
     throw new Error(`${userInfo.email}_IS_MAIL_THAT_ALREADY_EXSITS`);
   }
 
-  const uniqueCheckNickname = await userRepository.findOneBy({
-    nickname: userInfo.nickname,
-  });
+  const uniqueCheckNickname = await User.findByNickname(userInfo.nickname);
   if (uniqueCheckNickname) {
     throw new Error(`${userInfo.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`);
   }

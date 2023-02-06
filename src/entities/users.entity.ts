@@ -7,14 +7,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  Matches,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
 import { Comment } from './comment.entity';
 import { Feed } from './feed.entity';
 import { FeedSymbol } from './feedSymbol.entity';
@@ -35,31 +27,13 @@ export class User extends BaseEntity {
   public updated_at?: Date;
 
   @Column({ unique: true })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(2)
-  @MaxLength(20)
-  nickname?: string;
+  nickname: string;
 
   @Column({ select: false })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(4)
-  @MaxLength(20)
-  // @Matches(/^[a-zA-Z0-9]*$/, {
-  //   message: 'password only accepts english and number',
-  // })
-  // TODO 정규식 살펴보기
-  @Matches(/^.*(?=^.{8,}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=]).*$/, {
-    message: 'password only accepts english and number 그리고 특수기호',
-  })
-  password?: string;
+  password: string;
 
   @Column({ unique: true })
-  @IsNotEmpty()
-  @IsEmail()
-  @MaxLength(50)
-  email?: string;
+  email: string;
 
   static findByEmail(email: string) {
     return (
@@ -80,11 +54,11 @@ export class User extends BaseEntity {
   }
 
   @OneToMany(type => Comment, comment => comment.user)
-  comment?: Comment[];
+  comment: Comment[];
 
   @OneToMany(type => Feed, feed => feed.user)
-  feed?: Feed[];
+  feed: Feed[];
 
   @OneToMany(type => FeedSymbol, feedSymbol => feedSymbol.user)
-  feedsymbol?: [];
+  feedsymbol: [];
 }

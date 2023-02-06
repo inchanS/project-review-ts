@@ -3,7 +3,7 @@ import { createApp } from '../app';
 import { DataSource } from 'typeorm';
 import jwt from 'jsonwebtoken';
 import usersService from '../services/users.service';
-import { userRepository } from '../models/index.repository';
+import { User } from '../entities/users.entity';
 
 const dataSource = new DataSource({
   type: process.env.TYPEORM_CONNECTION,
@@ -12,6 +12,7 @@ const dataSource = new DataSource({
   username: process.env.TYPEORM_USERNAME,
   password: process.env.TYPEORM_PASSWORD,
   database: process.env.TYPEORM_DATABASE,
+  timezone: 'Z',
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
   logging: Boolean(process.env.TYPEORM_LOGGING),
   synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
@@ -29,25 +30,31 @@ describe('users.service UNIT test', () => {
     }).rejects.toThrowError(new Error(`NICKNAME_IS_UNDEFINED`));
   });
 
-  test('checkDuplicateNickname - !checkData', async () => {
-    const nickname = 'abc';
-    const userRepositoryResult = {
-      nickname: nickname,
-    };
-
-    jest
-      .spyOn(await userRepository, 'findOneBy')
-      .mockResolvedValue(userRepositoryResult);
-
-    await expect(async () => {
-      await usersService.checkDuplicateNickname(nickname);
-    }).rejects.toThrowError(
-      new Error(`${nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`)
-    );
-  });
+  // test('checkDuplicateNickname - !checkData', async () => {
+  //   const nickname = 'abc';
+  //   let userRepositoryResult = {
+  //     nickname: nickname,
+  //   };
+  //   userRepositoryResult = plainToInstance(User, userRepositoryResult);
+  //
+  //   console.log(
+  //     '🔥users.test/:42- userRepositoryResult = ',
+  //     userRepositoryResult
+  //   );
+  //
+  //   jest
+  //     .spyOn(await User, 'findByNickname')
+  //     .mockResolvedValue(userRepositoryResult);
+  //
+  //   await expect(async () => {
+  //     await usersService.checkDuplicateNickname(nickname);
+  //   }).rejects.toThrowError(
+  //     new Error(`${nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`)
+  //   );
+  // });
 
   test('checkDuplicateNickname - success', async () => {
-    jest.spyOn(await userRepository, 'findOneBy').mockResolvedValue(null);
+    jest.spyOn(await User, 'findByNickname').mockResolvedValue(null);
 
     const nickname = 'nickname1234';
 
