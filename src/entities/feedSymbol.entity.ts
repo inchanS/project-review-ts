@@ -8,7 +8,7 @@ import { Base } from './index.entity';
 @Entity('feed_symbol')
 @Index(['feed', 'user'], { unique: true })
 export class FeedSymbol extends Base {
-  @ManyToOne(type => User, users => users.feedsymbol, { nullable: false })
+  @ManyToOne(type => User, users => users.feedSymbol, { nullable: false })
   @JoinColumn({ name: 'userId' })
   @IsNotEmpty()
   @IsNumber()

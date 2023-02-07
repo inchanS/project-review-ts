@@ -18,6 +18,13 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     await this.save(newComment);
   },
 
+  async updateComment(commentId: number, commentInfo: CommentDto) {
+    await dataSource.manager.update(Comment, commentId, {
+      comment: commentInfo.comment,
+      is_private: commentInfo.is_private,
+    });
+  },
+
   async getCommentListByUserId(userId: number) {
     return await this.find({
       loadRelationIds: true,
@@ -25,17 +32,3 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     });
   },
 });
-
-export const CommentTreeRepository = dataSource
-  .getTreeRepository(Comment)
-  .extend({
-    async getCommentList(id: number) {
-      return await this.createQueryBuilder('comment')
-        .leftJoinAndSelect('comment.children', 'children')
-        // .leftJoinAndSelect('comment.user', 'user')
-        // .leftJoinAndSelect('comment.feed', 'feed')
-        .where('comment.feed = :id', { id })
-        .orderBy('children.id', 'ASC')
-        .getMany();
-    },
-  });

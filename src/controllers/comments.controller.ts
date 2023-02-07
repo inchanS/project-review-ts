@@ -9,8 +9,8 @@ const getCommentList = async (req: Request, res: Response) => {
 };
 
 const createComment = async (req: Request, res: Response) => {
-  const { feed, comment, is_private, parent }: CommentDto = req.body;
   const user = req.userInfo.id;
+  const { feed, comment, is_private, parent }: CommentDto = req.body;
   const commentInfo: CommentDto = {
     user,
     feed,
@@ -25,4 +25,17 @@ const createComment = async (req: Request, res: Response) => {
     .status(201)
     .json({ message: 'THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED' });
 };
-export default { getCommentList, createComment };
+
+const updateComment = async (req: Request, res: Response) => {
+  const { comment, is_private }: CommentDto = req.body;
+  const commentInfo: CommentDto = { comment, is_private };
+  const commentId: number = req.body.commentId;
+  const userId: number = req.userInfo.userId;
+
+  await commentsService.updateComment(userId, commentId, commentInfo);
+
+  res
+    .status(201)
+    .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_UPDATED` });
+};
+export default { getCommentList, createComment, updateComment };

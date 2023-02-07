@@ -10,5 +10,9 @@ router.post(
   asyncWrap(authMiddleware),
   asyncWrap(commentsController.createComment)
 );
-
+router.patch(
+  '',
+  asyncWrap(authMiddleware),
+  asyncWrap(commentsController.updateComment)
+);
 export default router;
