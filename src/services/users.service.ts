@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserDto } from '../entities/dto/user.dto';
 import { UserRepository } from '../repositories/user.repository';
+import { CommentRepository } from '../repositories/comment.repository';
+import { FeedListRepository } from '../repositories/feed.repository';
 
 const signUp = async (userInfo: UserDto): Promise<void> => {
   userInfo = plainToInstance(UserDto, userInfo);
@@ -63,7 +65,10 @@ const signIn = async (email: string, password: string): Promise<object> => {
 
   // <version 2> User entity에서 static 메소드 리턴시,
   const checkUserbyEmail = await User.findByEmail(email);
-
+  console.log(
+    '🔥users.service/signIn:66- checkUserbyEmail = ',
+    checkUserbyEmail
+  );
   if (!checkUserbyEmail) {
     throw new Error(`${email}_IS_NOT_FOUND`);
   }
@@ -81,8 +86,14 @@ const signIn = async (email: string, password: string): Promise<object> => {
   return { token };
 };
 
-const getMe = async (id: number): Promise<User> => {
-  return await UserRepository.findOneBy({ id: id });
+const getMe = async (userId: number): Promise<object> => {
+  if (!userId) {
+    throw new Error(`TOKEN'S_USERID_IS_UNDEFINED`);
+  }
+  const myInfo = await UserRepository.findOne({ where: { id: userId } });
+  const myFeeds = await FeedListRepository.getFeedListByUserId(userId);
+  const myComments = await CommentRepository.getCommentListByUserId(userId);
+  return { myInfo, myFeeds, myComments };
 };
 
 export default { signUp, signIn, getMe, checkDuplicateNickname };

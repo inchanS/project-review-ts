@@ -14,7 +14,7 @@ import { FeedSymbol } from './feedSymbol.entity';
 @Entity('users')
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
-  id?: number;
+  id: number;
 
   @CreateDateColumn({
     type: 'datetime',
@@ -60,5 +60,5 @@ export class User extends BaseEntity {
   feed: Feed[];
 
   @OneToMany(type => FeedSymbol, feedSymbol => feedSymbol.user)
-  feedsymbol: [];
+  feedSymbol: [];
 }

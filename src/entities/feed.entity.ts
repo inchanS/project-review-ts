@@ -14,31 +14,31 @@ export class Feed extends Base {
     nullable: false,
   })
   @JoinColumn({ name: 'userId' })
-  user?: User;
+  user: User;
 
   @Column({ length: 250 })
-  title?: string;
+  title: string;
 
   @Column({ length: 10000 })
-  content?: string;
+  content: string;
 
   @ManyToOne(type => Estimation, estimation => estimation.feed, {
     nullable: false,
   })
   @JoinColumn({ name: 'estimationId' })
-  estimation?: Estimation;
+  estimation: Estimation;
 
   @ManyToOne(type => Category, categories => categories.feed, {
     nullable: false,
   })
   @JoinColumn({ name: 'categoryId' })
-  category?: Category;
+  category: Category;
 
   @ManyToOne(type => FeedStatus, feed_status => feed_status.feed, {
     nullable: false,
   })
   @JoinColumn({ name: 'statusId' })
-  status?: FeedStatus;
+  status: FeedStatus;
 
   @Column({ nullable: true })
   posted_at?: Date;

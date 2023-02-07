@@ -1,6 +1,6 @@
-EXPLAIN WITH t1 AS (SELECT c.feedId AS feedId, COUNT(c.id) AS comment_cnt
+EXPLAIN
+WITH t1 AS (SELECT c.feedId AS feedId, COUNT(c.id) AS comment_cnt
             FROM comments c
-                     LEFT JOIN users u ON u.id = c.userId
             GROUP BY c.feedId),
      t2 AS (SELECT fuF.id,
                    fuF.feedId,
@@ -25,12 +25,15 @@ EXPLAIN WITH t1 AS (SELECT c.feedId AS feedId, COUNT(c.id) AS comment_cnt
 SELECT f.id,
        f.categoryId,
        c2.category,
+       u2.id                          AS userId,
+       u2.nickname                    AS userNickname,
        f.title,
        f.content,
-       t2.img_url,
-       IFNULL(t4.like_cnt, 0),
-       IFNULL(t3.files_cnt, 0),
-       SUBSTRING(f.created_at, 1, 16)
+       t2.img_url                     AS imgUrl,
+       IFNULL(t1.comment_cnt, 0)      AS commentCnt,
+       IFNULL(t4.like_cnt, 0)         AS likeCnt,
+       IFNULL(t3.files_cnt, 0)        AS filesCnt,
+       SUBSTRING(f.created_at, 1, 16) AS createdAt
 FROM feeds f
          LEFT JOIN estimation e ON f.estimationId = e.id
          LEFT JOIN t1 ON t1.feedId = f.id
@@ -38,3 +41,4 @@ FROM feeds f
          LEFT JOIN t2 ON t2.feedId = f.id
          LEFT JOIN t3 ON t3.feedId = f.id
          LEFT JOIN t4 ON t4.feedId = f.id
+         LEFT JOIN users u2 ON f.userId = u2.id

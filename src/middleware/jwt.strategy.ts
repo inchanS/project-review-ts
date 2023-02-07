@@ -15,7 +15,7 @@ async function authMiddleware(req: Request, _: any, next: NextFunction) {
     process.env.SECRET_KEY || 'MISSING_SECRET_KEY'
   );
 
-  req.id = decodedToken.id;
+  req.userInfo = { id: decodedToken.id };
   next();
 }
 

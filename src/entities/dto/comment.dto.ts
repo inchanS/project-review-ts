@@ -12,11 +12,11 @@ import { Feed } from '../feed.entity';
 export class CommentDto {
   @IsNotEmpty()
   @IsNumber()
-  user?: User;
+  user: User;
 
   @IsNotEmpty()
   @IsNumber()
-  feed?: Feed;
+  feed: Feed;
 
   @IsNotEmpty()
   @IsString()
@@ -24,7 +24,7 @@ export class CommentDto {
 
   @IsBoolean()
   @IsOptional()
-  is_private?: boolean;
+  is_private: boolean;
 
   @IsBoolean()
   @IsOptional()
@@ -32,5 +32,5 @@ export class CommentDto {
 
   @IsNumber()
   @IsOptional()
-  parent?: Comment;
+  parent: Comment;
 }

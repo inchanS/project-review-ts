@@ -29,8 +29,8 @@ const signIn = async (req: Request, res: Response): Promise<void> => {
 };
 
 const getMe = async (req: Request, res: Response): Promise<void> => {
-  const result = await usersService.getMe(req.id);
-  res.status(200).json(result);
+  const myInfo = await usersService.getMe(req.userInfo.id);
+  res.status(200).json(myInfo);
 };
 
 export default { signUp, signIn, getMe, checkDuplicateNickname };

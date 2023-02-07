@@ -4,8 +4,8 @@ import { FeedDto } from '../entities/dto/feed.dto';
 
 // TODO createdFeed => S3 연결해서 다시 작성하기
 const createFeed = async (req: Request, res: Response) => {
-  const { user, title, content, estimation, category, status }: FeedDto =
-    req.body;
+  const { title, content, estimation, category, status }: FeedDto = req.body;
+  const user = req.userInfo.id;
   const feedInfo: FeedDto = {
     user,
     title,

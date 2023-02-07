@@ -33,4 +33,12 @@ const createComment = async (commentInfo: CommentDto) => {
 
 const updateComment = async (commentInfo: Comment) => {};
 
-export default { getCommentList, createComment, updateComment };
+const getCommentsById = async (userId: number) => {
+  return await CommentRepository.getCommentListByUserId(userId);
+};
+export default {
+  getCommentList,
+  createComment,
+  updateComment,
+  getCommentsById,
+};

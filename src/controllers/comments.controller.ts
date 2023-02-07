@@ -9,7 +9,8 @@ const getCommentList = async (req: Request, res: Response) => {
 };
 
 const createComment = async (req: Request, res: Response) => {
-  const { user, feed, comment, is_private, parent }: CommentDto = req.body;
+  const { feed, comment, is_private, parent }: CommentDto = req.body;
+  const user = req.userInfo.id;
   const commentInfo: CommentDto = {
     user,
     feed,

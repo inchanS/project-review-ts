@@ -19,4 +19,8 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
       take: limit,
     });
   },
+
+  async getFeedListByUserId(userId: number) {
+    return await this.find({ where: { userId: userId } });
+  },
 });
