@@ -6,17 +6,15 @@ import {
   IsString,
 } from 'class-validator';
 import { Comment } from '../comment.entity';
-import { User } from '../users.entity';
-import { Feed } from '../feed.entity';
 
 export class CommentDto {
   @IsNotEmpty()
   @IsNumber()
-  user?: User;
+  user?: number;
 
   @IsNotEmpty()
   @IsNumber()
-  feed?: Feed;
+  feed?: number;
 
   @IsNotEmpty()
   @IsString()

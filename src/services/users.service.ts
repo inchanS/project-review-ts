@@ -65,10 +65,7 @@ const signIn = async (email: string, password: string): Promise<object> => {
 
   // <version 2> User entity에서 static 메소드 리턴시,
   const checkUserbyEmail = await User.findByEmail(email);
-  console.log(
-    '🔥users.service/signIn:66- checkUserbyEmail = ',
-    checkUserbyEmail
-  );
+
   if (!checkUserbyEmail) {
     throw new Error(`${email}_IS_NOT_FOUND`);
   }

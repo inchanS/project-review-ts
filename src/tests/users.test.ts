@@ -1,9 +1,9 @@
 import request from 'supertest';
 import { createApp } from '../app';
-import { DataSource } from 'typeorm';
 import jwt from 'jsonwebtoken';
 import usersService from '../services/users.service';
 import { User } from '../entities/users.entity';
+import { DataSource } from 'typeorm';
 
 const dataSource = new DataSource({
   type: process.env.TYPEORM_CONNECTION,
@@ -21,6 +21,18 @@ const dataSource = new DataSource({
 describe('users.service UNIT test', () => {
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  beforeAll(async () => {
+    await dataSource.initialize().then(() => {
+      if (process.env.NODE_ENV === 'test') {
+        console.log('💥TEST Data Source has been initialized!💥');
+      }
+    });
+  });
+
+  afterAll(async () => {
+    await dataSource.destroy();
   });
 
   test('checkDuplicateNickname - !nickname', async () => {
@@ -158,7 +170,7 @@ describe('USERS API test', () => {
       .expect({ message: 'test114@test.com_IS_NOT_FOUND' });
   });
 
-  test('get me test', async () => {
+  test('getMe test - password 속성 반환 제외', async () => {
     const token = jwt.sign({ id: 1 }, process.env.SECRET_KEY);
     const expected = { id: 1 };
     await request(app)
@@ -167,6 +179,9 @@ describe('USERS API test', () => {
       .expect(200)
       .then(res => {
         expect.objectContaining(expected);
+        expect(res.body).toHaveProperty('myFeeds');
+        expect(res.body).toHaveProperty('myComments');
+        expect(res.body).toHaveProperty('myInfo');
         expect(res.body).not.toHaveProperty('password');
       });
   });
