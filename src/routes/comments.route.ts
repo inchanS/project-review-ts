@@ -15,4 +15,9 @@ router.patch(
   asyncWrap(authMiddleware),
   asyncWrap(commentsController.updateComment)
 );
+router.delete(
+  '',
+  asyncWrap(authMiddleware),
+  asyncWrap(commentsController.deleteComment)
+);
 export default router;

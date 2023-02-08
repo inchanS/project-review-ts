@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -25,6 +26,9 @@ export class User extends BaseEntity {
     type: 'datetime',
   })
   public updated_at?: Date;
+
+  @DeleteDateColumn({ type: 'datetime' })
+  deleted_at?: Date | null;
 
   @Column({ unique: true })
   nickname: string;

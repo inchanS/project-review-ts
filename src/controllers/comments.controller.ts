@@ -20,7 +20,6 @@ const createComment = async (req: Request, res: Response) => {
   };
 
   await commentsService.createComment(commentInfo);
-
   res
     .status(201)
     .json({ message: 'THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED' });
@@ -30,12 +29,22 @@ const updateComment = async (req: Request, res: Response) => {
   const { comment, is_private }: CommentDto = req.body;
   const commentInfo: CommentDto = { comment, is_private };
   const commentId: number = req.body.commentId;
-  const userId: number = req.userInfo.userId;
+  const userId: number = req.userInfo.id;
 
   await commentsService.updateComment(userId, commentId, commentInfo);
-
   res
     .status(201)
     .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_UPDATED` });
 };
-export default { getCommentList, createComment, updateComment };
+
+const deleteComment = async (req: Request, res: Response) => {
+  const { commentId } = req.body;
+  const userId: number = req.userInfo.id;
+
+  await commentsService.deleteComment(commentId, userId);
+  res
+    .status(200)
+    .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_DELETED` });
+};
+
+export default { getCommentList, createComment, updateComment, deleteComment };

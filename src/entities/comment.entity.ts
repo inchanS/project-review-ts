@@ -19,9 +19,6 @@ export class Comment extends Base {
   @Column('boolean', { default: false })
   is_private: boolean;
 
-  @Column('boolean', { default: false })
-  is_deleted: boolean;
-
   @ManyToOne(type => Comment, comment => comment.children)
   @JoinColumn({ name: 'parentId' })
   parent: Comment;

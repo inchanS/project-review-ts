@@ -81,6 +81,7 @@ describe('comment.service UNIT test', () => {
 
   // updateComment Unit test
   test('updateComment - Success', async () => {
+    // FIXME : validateComment class 추가된 commentService 변경내역 반영하기
     const userId = 1;
     const commentId = 1;
     const commentInfo: CommentDto = {

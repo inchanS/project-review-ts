@@ -12,7 +12,7 @@ import { Comment } from '../comment.entity';
       .addSelect('user.nickname', 'nickname')
       .addSelect('comment.comment', 'comment')
       .addSelect('comment.is_private', 'isPrivate')
-      .addSelect('comment.is_deleted', 'isDeleted')
+      .addSelect('comment.deleted_at', 'deletedAt')
       .addSelect('SUBSTRING(comment.created_at,1,16)', 'createdAt')
       .addSelect('SUBSTRING(comment.updated_at,1,16)', 'updatedAt')
       .leftJoinAndSelect('comment.children', 'children')
@@ -45,4 +45,7 @@ export class CommentList {
 
   @ViewColumn()
   updatedAt: Date;
+
+  @ViewColumn()
+  deletedAt: Date | null;
 }
