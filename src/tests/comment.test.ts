@@ -1,21 +1,26 @@
 import commentsService from '../services/comments.service';
-import { DataSource } from 'typeorm';
 import { CommentRepository } from '../repositories/comment.repository';
 import { CommentDto } from '../entities/dto/comment.dto';
+import dataSource from '../repositories/index.db';
 
-const dataSource = new DataSource({
-  type: process.env.TYPEORM_CONNECTION,
-  host: process.env.TYPEORM_HOST,
-  port: process.env.TYPEORM_PORT,
-  username: process.env.TYPEORM_USERNAME,
-  password: process.env.TYPEORM_PASSWORD,
-  database: process.env.TYPEORM_DATABASE,
-  timezone: 'Z',
-  entities: [__dirname + '/../**/*.entity.{js,ts}'],
-  logging: Boolean(process.env.TYPEORM_LOGGING),
-  synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
-});
+// const dataSource = new DataSource({
+//   type: process.env.TYPEORM_CONNECTION,
+//   host: process.env.TYPEORM_HOST,
+//   port: process.env.TYPEORM_PORT,
+//   username: process.env.TYPEORM_USERNAME,
+//   password: process.env.TYPEORM_PASSWORD,
+//   database: process.env.TYPEORM_DATABASE,
+//   timezone: 'Z',
+//   entities: [__dirname + '/../**/*.entity.{js,ts}'],
+//   logging: Boolean(process.env.TYPEORM_LOGGING),
+//   synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
+// });
+
 describe('comment.service UNIT test', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
