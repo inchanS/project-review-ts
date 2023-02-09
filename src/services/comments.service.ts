@@ -107,4 +107,5 @@ export default {
   updateComment,
   getCommentsById,
   deleteComment,
+  validateComment,
 };
