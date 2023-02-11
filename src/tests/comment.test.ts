@@ -3,19 +3,6 @@ import { CommentRepository } from '../repositories/comment.repository';
 import { CommentDto } from '../entities/dto/comment.dto';
 import dataSource from '../repositories/index.db';
 
-// const dataSource = new DataSource({
-//   type: process.env.TYPEORM_CONNECTION,
-//   host: process.env.TYPEORM_HOST,
-//   port: process.env.TYPEORM_PORT,
-//   username: process.env.TYPEORM_USERNAME,
-//   password: process.env.TYPEORM_PASSWORD,
-//   database: process.env.TYPEORM_DATABASE,
-//   timezone: 'Z',
-//   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-//   logging: Boolean(process.env.TYPEORM_LOGGING),
-//   synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
-// });
-
 describe('comment.service UNIT test', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -83,14 +70,6 @@ describe('comment.service UNIT test', () => {
 
   // validateComment Unit test
   describe('validateComment', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
     it('should throw error if comment does not exist', async () => {
       jest.spyOn(CommentRepository, 'findOne').mockResolvedValue(null);
       await expect(commentsService.validateComment(1, 1)).rejects.toThrowError(
@@ -98,8 +77,8 @@ describe('comment.service UNIT test', () => {
       );
     });
     it('should throw error if user is not the author', async () => {
-      const result: any = { id: 1, user: 2 };
-      jest.spyOn(CommentRepository, 'findOne').mockResolvedValue(result);
+      const resultMock: any = { id: 1, user: 2 };
+      jest.spyOn(CommentRepository, 'findOne').mockResolvedValue(resultMock);
 
       await expect(commentsService.validateComment(1, 1)).rejects.toThrowError(
         'ONLY_THE_AUTHOR_CAN_EDIT'
@@ -107,8 +86,8 @@ describe('comment.service UNIT test', () => {
     });
 
     it('should return comment if validation is successful', async () => {
-      const result: any = { id: 1, user: 1 };
-      jest.spyOn(CommentRepository, 'findOne').mockResolvedValue(result);
+      const resultMock: any = { id: 1, user: 1 };
+      jest.spyOn(CommentRepository, 'findOne').mockResolvedValue(resultMock);
       const comment = await commentsService.validateComment(1, 1);
       expect(comment).toEqual({ id: 1, user: 1 });
     });
@@ -116,24 +95,68 @@ describe('comment.service UNIT test', () => {
 
   // updateComment Unit test
   describe('updateComment', () => {
-    test('Successful update of a comment', async () => {
-      // FIXME : validateComment class 추가된 commentService 변경내역 반영하기
-      const userId = 1;
-      const commentId = 1;
-      const commentInfo: CommentDto = {
-        comment: 'update comment',
+    it('should throw error if commentInfo does not changed', async () => {
+      const originCommentMock: any = {
+        id: 1,
+        user: 1,
         is_private: false,
+        comment: 'test',
       };
 
-      const originComment: any = {
-        user: { id: 1 },
-        comment: 'origin comment',
-        is_private: false,
-      };
-      jest.spyOn(CommentRepository, 'findOne').mockResolvedValue(originComment);
-      jest.spyOn(CommentRepository, 'updateComment').mockResolvedValue();
+      jest
+        .spyOn(CommentRepository, 'findOne')
+        .mockResolvedValue(originCommentMock);
 
-      await commentsService.updateComment(userId, commentId, commentInfo);
+      const commentInfo = { comment: 'test', is_private: false };
+
+      await expect(
+        commentsService.updateComment(1, 1, commentInfo)
+      ).rejects.toThrowError('COMMENT_IS_NOT_CHANGED');
+    });
+
+    it("should throw error if commentInfo's comment or is_private is not exits", async () => {
+      const originCommentMock: any = {
+        id: 1,
+        user: 1,
+        is_private: false,
+        comment: 'test',
+      };
+      jest
+        .spyOn(CommentRepository, 'findOne')
+        .mockResolvedValue(originCommentMock);
+
+      const commentInfo: any = { is_private: false };
+      await expect(
+        commentsService.updateComment(1, 1, commentInfo)
+      ).rejects.toThrowError('COMMENT_IS_NOT_CHANGED');
+
+      const commentInfo2: any = { comment: 'test' };
+      await expect(
+        commentsService.updateComment(1, 1, commentInfo2)
+      ).rejects.toThrowError('COMMENT_IS_NOT_CHANGED');
+
+      const commentInfo3: any = { comment: undefined, is_private: undefined };
+      await expect(
+        commentsService.updateComment(1, 1, commentInfo3)
+      ).rejects.toThrowError('COMMENT_IS_NOT_CHANGED');
+    });
+
+    it('Success: should return comment if validation is successful', async () => {
+      const originCommentMock: any = {
+        id: 1,
+        user: 1,
+        is_private: false,
+        comment: 'test',
+      };
+      jest
+        .spyOn(CommentRepository, 'findOne')
+        .mockResolvedValue(originCommentMock);
+      jest
+        .spyOn(CommentRepository, 'updateComment')
+        .mockResolvedValue(originCommentMock);
+
+      const commentInfo = { comment: 'test', is_private: true };
+      await commentsService.updateComment(1, 1, commentInfo);
       expect(CommentRepository.updateComment).toBeCalledTimes(1);
     });
   });
