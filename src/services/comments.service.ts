@@ -3,21 +3,28 @@ import { validateOrReject } from 'class-validator';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentRepository } from '../repositories/comment.repository';
 
-const getCommentList = async (id: number) => {
-  return await CommentRepository.getCommentList(id);
+const getCommentList = async (id: number, userId: number) => {
+  const result = await CommentRepository.getCommentList(id);
 
-  // return await commentListRepository
-  //   .find({ where: { feedId: id } })
-  //   .then(value => {
-  //     value = [...value].map((item: any) => {
-  //       return {
-  //         ...item,
-  //         isPrivate: item.isPrivate === 1,
-  //         isDeleted: item.isDeleted === 1,
-  //       };
-  //     });
-  //     return value;
-  //   });
+  return [...result].map((comment: any) => {
+    return {
+      ...comment,
+      comment:
+        comment.is_private === true && comment.user.id !== userId
+          ? false
+          : comment.comment,
+      children: comment.children.map((child: any) => {
+        return {
+          ...child,
+          comment:
+            child.is_private === true &&
+            (child.user.id || comment.user.id) !== userId
+              ? false
+              : child.comment,
+        };
+      }),
+    };
+  });
 };
 
 const createComment = async (commentInfo: CommentDto): Promise<void> => {

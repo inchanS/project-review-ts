@@ -83,6 +83,8 @@ const signIn = async (email: string, password: string): Promise<object> => {
   return { token };
 };
 
+// TODO user 삭제 API
+//  모든 서비스에서 user의 deleted_at이 not null일때 모두 탈퇴회원 처리
 const getMe = async (userId: number): Promise<object> => {
   if (!userId) {
     throw new Error(`TOKEN'S_USERID_IS_UNDEFINED`);
