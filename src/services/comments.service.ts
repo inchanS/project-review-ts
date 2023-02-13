@@ -25,6 +25,8 @@ const getCommentList = async (id: number, userId: number) => {
       }),
     };
   });
+
+  // TODO 삭제된 댓글 안보이게 처리
 };
 
 const createComment = async (commentInfo: CommentDto): Promise<void> => {

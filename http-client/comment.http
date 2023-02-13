@@ -22,7 +22,7 @@ Authorization: Bearer {{token}}
 
 {
   "commentId": 217,
-  "comment": "댓글 수정 테스트",
+  "comment": "댓글 수정 테스트입니다용",
   "is_private": true
 }
 

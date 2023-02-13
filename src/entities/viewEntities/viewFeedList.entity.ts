@@ -36,7 +36,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
              IFNULL(t1.comment_cnt, 0)      AS commentCnt,
              IFNULL(t4.like_cnt, 0)         AS likeCnt,
              IFNULL(t3.files_cnt, 0)        AS filesCnt,
-             SUBSTRING(f.created_at, 1, 16) AS createdAt
+             SUBSTRING(f.created_at, 1, 19) AS createdAt
       FROM feeds f
                LEFT JOIN estimation e ON f.estimationId = e.id
                LEFT JOIN t1 ON t1.feedId = f.id
