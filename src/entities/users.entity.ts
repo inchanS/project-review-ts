@@ -19,15 +19,50 @@ export class User extends BaseEntity {
 
   @CreateDateColumn({
     type: 'datetime',
+    transformer: {
+      from: (value: Date) =>
+        value
+          ? `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(
+              value.getDate()
+            )} ${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(
+              value.getSeconds()
+            )}`
+          : '',
+      to: (value: string) => new Date(value),
+    },
   })
   public created_at?: Date;
 
   @UpdateDateColumn({
     type: 'datetime',
+    transformer: {
+      from: (value: Date) =>
+        value
+          ? `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(
+              value.getDate()
+            )} ${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(
+              value.getSeconds()
+            )}`
+          : '',
+      to: (value: string) => new Date(value),
+    },
   })
   public updated_at?: Date;
 
-  @DeleteDateColumn({ type: 'datetime' })
+  @DeleteDateColumn({
+    type: 'datetime',
+    transformer: {
+      from: (value: Date) =>
+        value
+          ? `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(
+              value.getDate()
+            )} ${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(
+              value.getSeconds()
+            )}`
+          : '',
+      to: (value: string) => new Date(value),
+    },
+  })
   deleted_at?: Date | null;
 
   @Column({ unique: true })
@@ -65,4 +100,8 @@ export class User extends BaseEntity {
 
   @OneToMany(type => FeedSymbol, feedSymbol => feedSymbol.user)
   feedSymbol: [];
+}
+
+function pad(num: number): string {
+  return num.toString().padStart(2, '0');
 }
