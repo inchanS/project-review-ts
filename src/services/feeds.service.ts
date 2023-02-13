@@ -21,10 +21,8 @@ const getFeedList = async (page: number): Promise<FeedList[]> => {
   if (!page) {
     page = 1;
   }
-
-  const pageOffset: number = (page - 1) * limit;
-
-  return await FeedListRepository.getFeedList(pageOffset, limit);
+  const startIndex: number = (page - 1) * limit;
+  return await FeedListRepository.getFeedList(startIndex, limit);
 };
 
 export default { createFeed, getFeedList };

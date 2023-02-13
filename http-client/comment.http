@@ -1,0 +1,35 @@
+### comments 리스트 확인 (게시글별)
+GET {{url}}/comments/96
+Content-Type: application/json
+
+### comment 등록하기
+POST {{url}}/comments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "feed": 96,
+  "comment": "레포지토리 커멘트 생성 테스트",
+  "parent": 95
+}
+
+### comment 수정하기
+PATCH {{url}}/comments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "commentId": 214,
+  "comment": "댓글 수정 테스트",
+  "is_private": false
+}
+
+### comment 삭제하기
+DELETE {{url}}/comments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "commentId": 215
+}
+

@@ -10,12 +10,12 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
 });
 
 export const FeedListRepository = dataSource.getRepository(FeedList).extend({
-  async getFeedList(pageOffset: number, limit: number) {
+  async getFeedList(startIndex: number, limit: number) {
     return await this.find({
       order: {
         id: 'DESC',
       },
-      skip: pageOffset,
+      skip: startIndex,
       take: limit,
     });
   },

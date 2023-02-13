@@ -1,0 +1,16 @@
+### main 게시글 리스트 확인
+GET {{url}}/feeds?page=1
+Content-Type: application/json
+
+### main 게시글 등록
+POST {{url}}/feeds/post
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "title": "test title",
+  "content": "test content asdfasdfasdfasfd",
+  "estimation": 1,
+  "category": 1,
+  "status": 1
+}

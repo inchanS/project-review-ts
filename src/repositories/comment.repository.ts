@@ -8,8 +8,12 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
       .leftJoinAndSelect('comment.children', 'children')
       .leftJoinAndSelect('comment.user', 'user')
       .leftJoinAndSelect('comment.feed', 'feed')
+      .leftJoinAndSelect('children.feed', 'children.feed')
+      .leftJoinAndSelect('children.user', 'children.user')
       .where('comment.feed = :id', { id })
-      .orderBy('children.id', 'ASC')
+      .andWhere('comment.parentId IS NULL')
+      .orderBy('comment.id', 'ASC')
+      .addOrderBy('children.id', 'ASC')
       .getMany();
   },
 
