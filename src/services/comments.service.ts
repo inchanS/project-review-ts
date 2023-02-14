@@ -9,6 +9,7 @@ const getCommentList = async (id: number, userId: number) => {
   return [...result].map((comment: any) => {
     return {
       ...comment,
+      // 로그인 사용자의 비밀덧글 조회시 유효성 확인
       comment:
         comment.is_private === true && comment.user.id !== userId
           ? false
@@ -21,8 +22,14 @@ const getCommentList = async (id: number, userId: number) => {
             (child.user.id || comment.user.id) !== userId
               ? false
               : child.comment,
+          // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
+          created_at: child.created_at.substring(0, 19),
+          updated_at: child.updated_at.substring(0, 19),
         };
       }),
+      // // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
+      created_at: comment.created_at.substring(0, 19),
+      updated_at: comment.updated_at.substring(0, 19),
     };
   });
 

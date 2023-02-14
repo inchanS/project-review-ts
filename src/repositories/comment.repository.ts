@@ -5,11 +5,25 @@ import { CommentDto } from '../entities/dto/comment.dto';
 export const CommentRepository = dataSource.getRepository(Comment).extend({
   async getCommentList(id: number) {
     return await this.createQueryBuilder('comment')
+      .select([
+        'comment.id',
+        'comment.is_private',
+        'comment.comment',
+        'comment.created_at',
+        'comment.updated_at',
+        'comment.deleted_at',
+      ])
+      .addSelect(['user.id', 'user.nickname', 'user.email'])
+      .addSelect(['feed.id', 'feed.title'])
+      .addSelect([
+        'childrenUser.id',
+        'childrenUser.nickname',
+        'childrenUser.email',
+      ])
       .leftJoinAndSelect('comment.children', 'children')
-      .leftJoinAndSelect('comment.user', 'user')
-      .leftJoinAndSelect('comment.feed', 'feed')
-      .leftJoinAndSelect('children.user', 'childrenUser')
-      .leftJoinAndSelect('children.feed', 'childrenFeed')
+      .leftJoin('comment.user', 'user')
+      .leftJoin('comment.feed', 'feed')
+      .leftJoin('children.user', 'childrenUser')
       .where('comment.feed = :id', { id })
       .andWhere('comment.parentId IS NULL')
       .orderBy('comment.id', 'ASC')
