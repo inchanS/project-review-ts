@@ -7,33 +7,44 @@ const getCommentList = async (id: number, userId: number) => {
   const result = await CommentRepository.getCommentList(id);
 
   return [...result].map((comment: any) => {
+    const isPrivate = comment.is_private === true && comment.user.id !== userId;
+    const isDeleted = comment.deleted_at !== null;
+
     return {
       ...comment,
-      // 로그인 사용자의 비밀덧글 조회시 유효성 확인
-      comment:
-        comment.is_private === true && comment.user.id !== userId
-          ? false
-          : comment.comment,
+      // 로그인 사용자의 비밀덧글 조회시 유효성 확인 및 삭제된 덧글 필터링
+      comment: isDeleted
+        ? '## DELETED_COMMENT ##'
+        : isPrivate
+        ? '## PRIVATE_COMMENT ##'
+        : comment.comment,
+
+      // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
+      created_at: comment.created_at.substring(0, 19),
+      updated_at: comment.updated_at.substring(0, 19),
+
+      // 삭제된 댓글 처리
+
+      //대댓글 영역 --------------------------------
       children: comment.children.map((child: any) => {
+        const isPrivate = child.is_private === true && child.user.id !== userId;
+        const isDeleted = child.deleted_at !== null;
         return {
           ...child,
-          comment:
-            child.is_private === true &&
-            (child.user.id || comment.user.id) !== userId
-              ? false
-              : child.comment,
+
+          // 로그인 사용자의 비밀덧글 조회시 유효성 확인 및 삭제된 덧글 필터링
+          comment: isDeleted
+            ? '## DELETED_COMMENT ##'
+            : isPrivate
+            ? '## PRIVATE_COMMENT ##'
+            : comment.comment,
           // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
           created_at: child.created_at.substring(0, 19),
           updated_at: child.updated_at.substring(0, 19),
         };
       }),
-      // // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
-      created_at: comment.created_at.substring(0, 19),
-      updated_at: comment.updated_at.substring(0, 19),
     };
   });
-
-  // TODO 삭제된 댓글 안보이게 처리
 };
 
 const createComment = async (commentInfo: CommentDto): Promise<void> => {

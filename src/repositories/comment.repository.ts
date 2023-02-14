@@ -5,6 +5,7 @@ import { CommentDto } from '../entities/dto/comment.dto';
 export const CommentRepository = dataSource.getRepository(Comment).extend({
   async getCommentList(id: number) {
     return await this.createQueryBuilder('comment')
+      .withDeleted()
       .select([
         'comment.id',
         'comment.is_private',
