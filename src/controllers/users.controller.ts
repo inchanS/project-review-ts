@@ -28,6 +28,7 @@ const signIn = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ message: `SIGNIN_SUCCESS`, result });
 };
 
+// TODO : 해당되는 feed, comment의 Date 역시 16자리로 변경해서 반환처리하기
 const getMe = async (req: Request, res: Response): Promise<void> => {
   const myInfo = await usersService.getMe(req.userInfo.id);
   res.status(200).json(myInfo);

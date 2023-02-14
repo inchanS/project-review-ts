@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import feedsService from '../services/feeds.service';
 import { FeedDto } from '../entities/dto/feed.dto';
 
-// TODO createdFeed => S3 연결해서 다시 작성하기
 const createFeed = async (req: Request, res: Response) => {
   const { title, content, estimation, category, status }: FeedDto = req.body;
   const user = req.userInfo.id;
@@ -21,8 +20,11 @@ const createFeed = async (req: Request, res: Response) => {
 };
 
 const getFeedList = async (req: Request, res: Response) => {
+  const categoryId: number = Number(req.query.categoryId);
+  console.log('🔥feeds.controller/getFeedList:24- categoryId = ', categoryId);
+
   const page: number = Number(req.query.page);
-  const result = await feedsService.getFeedList(page);
+  const result = await feedsService.getFeedList(categoryId, page);
 
   res.status(200).json(result);
 };
