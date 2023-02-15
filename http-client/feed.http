@@ -1,5 +1,5 @@
 ### main 게시글 리스트 확인
-GET {{url}}/feeds?page=1
+GET {{url}}/feeds?page=1&categoryId=2
 Content-Type: application/json
 
 ### main 게시글 등록

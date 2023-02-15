@@ -4,6 +4,7 @@ import commentsController from '../controllers/comments.controller';
 import { authMiddleware } from '../middleware/jwt.strategy';
 const router = Router();
 
+// TODO 비로그인 사용자의 경우 게시물 열람 가능하게!!
 router.get(
   '/:id',
   asyncWrap(authMiddleware),
