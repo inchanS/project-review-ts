@@ -19,4 +19,7 @@ async function authMiddleware(req: Request, _: any, next: NextFunction) {
   next();
 }
 
+// TODO validteOrReject 추가해서 적용하기
+//  접근 불가한 API는 이걸 쓰고, token이 없어도 접근가능한 곳은 다른걸 쓸 수 있도록!
+
 export { authMiddleware };

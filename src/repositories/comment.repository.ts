@@ -6,14 +6,6 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
   async getCommentList(id: number) {
     return await this.createQueryBuilder('comment')
       .withDeleted()
-      .select([
-        'comment.id',
-        'comment.is_private',
-        'comment.comment',
-        'comment.created_at',
-        'comment.updated_at',
-        'comment.deleted_at',
-      ])
       .addSelect(['user.id', 'user.nickname', 'user.email'])
       .addSelect(['feed.id', 'feed.title'])
       .addSelect([
@@ -21,10 +13,17 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
         'childrenUser.nickname',
         'childrenUser.email',
       ])
-      .leftJoinAndSelect('comment.children', 'children')
+      .addSelect([
+        'childrenUser2.id',
+        'childrenUser2.nickname',
+        'childrenUser2.email',
+      ])
       .leftJoin('comment.user', 'user')
       .leftJoin('comment.feed', 'feed')
+      .leftJoinAndSelect('comment.children', 'children')
       .leftJoin('children.user', 'childrenUser')
+      .leftJoinAndSelect('children.children', 'children2')
+      .leftJoin('children2.user', 'childrenUser2')
       .where('comment.feed = :id', { id })
       .andWhere('comment.parentId IS NULL')
       .orderBy('comment.id', 'ASC')
