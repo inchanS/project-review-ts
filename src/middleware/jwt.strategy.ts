@@ -1,25 +1,38 @@
 import { NextFunction, Request } from 'express';
 import jwt from 'jsonwebtoken';
 
-async function authMiddleware(req: Request, _: any, next: NextFunction) {
-  let token = req.headers.authorization;
-
+async function decodeToken(token: string): Promise<any> {
   if (!token) {
-    throw { status: 401, message: 'TOKEN_DOES_NOT_EXIST' };
+    return { id: undefined };
   }
 
   token = token.includes('Bearer') ? token.replace(/^Bearer\s+/, '') : token;
-  let decodedToken: any;
-  decodedToken = jwt.verify(
-    token,
-    process.env.SECRET_KEY || 'MISSING_SECRET_KEY'
-  );
-
-  req.userInfo = { id: decodedToken.id };
-  next();
+  return jwt.verify(token, process.env.SECRET_KEY || 'MISSING_SECRET_KEY');
 }
 
-// TODO validteOrReject 추가해서 적용하기
-//  접근 불가한 API는 이걸 쓰고, token이 없어도 접근가능한 곳은 다른걸 쓸 수 있도록!
+// 토큰이 없으면 에러를 반환하는 유효성 검사 함수
+async function authValidateOrReject(req: Request, _: any, next: NextFunction) {
+  try {
+    const decodedToken = await decodeToken(req.headers.authorization);
+    if (!decodedToken.id) {
+      throw { status: 401, message: 'INVALID_TOKEN' };
+    }
+    req.userInfo = { id: decodedToken.id };
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
 
-export { authMiddleware };
+// 토큰이 없어도 다음으로 넘어가는 유효성 검사 함수
+async function authValidateOrNext(req: Request, _: any, next: NextFunction) {
+  try {
+    const decodedToken = await decodeToken(req.headers.authorization);
+    req.userInfo = { id: decodedToken.id };
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export { authValidateOrReject, authValidateOrNext };
