@@ -6,11 +6,13 @@ import usersRoute from './users.route';
 import feedsRoute from './feeds.route';
 import commentsRoute from './comments.route';
 import categoriesRoute from './categories.route';
+import uploadRoute from './upload.route';
 
 router.use('/users', usersRoute);
 router.use('/feeds', feedsRoute);
 router.use('/comments', commentsRoute);
 router.use('/categories', categoriesRoute);
+router.use('/upload', uploadRoute);
 
 router.use(errHandler);
 

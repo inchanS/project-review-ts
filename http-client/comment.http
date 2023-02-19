@@ -11,7 +11,8 @@ Authorization: Bearer {{token}}
 {
   "feed": 96,
   "comment": "레포지토리 커멘트 생성 테스트",
-  "is_private": true
+  "is_private": true,
+  "parent": 212
 }
 
 ### comment 수정하기
@@ -31,6 +32,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "commentId": 219
+  "commentId": 215
+
 }
 

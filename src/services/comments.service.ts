@@ -21,7 +21,7 @@ const formatComment = (comment: any, userId: number): any => {
     updated_at: comment.updated_at.substring(0, 19),
     deleted_at: comment.deleted_at ? comment.deleted_at.substring(0, 19) : null,
 
-    // 대댓글 영역 --------------------------------
+    // 대댓글 영역
     children: comment.children
       ? comment.children.map((child: any) => formatComment(child, userId))
       : [],
@@ -50,7 +50,6 @@ const createComment = async (commentInfo: CommentDto): Promise<void> => {
   await CommentRepository.createComment(commentInfo);
 };
 
-// DB에 있는 원 댓글을 찾고 없으면 반환
 const validateComment = async (userId: number, commentId: number) => {
   const result = await CommentRepository.findOne({
     loadRelationIds: true,
@@ -71,7 +70,6 @@ const validateComment = async (userId: number, commentId: number) => {
   return result;
 };
 
-// 댓글 내용 또는 공개처리에 대한 수정시
 const updateComment = async (
   userId: number,
   commentId: number,
@@ -107,7 +105,6 @@ const deleteComment = async (commentId: number, userId: number) => {
   await CommentRepository.softDelete(commentId);
 };
 
-// 작성자 id별 작성한 댓글 모두 가져오기
 const getCommentsById = async (userId: number) => {
   return await CommentRepository.getCommentListByUserId(userId);
 };

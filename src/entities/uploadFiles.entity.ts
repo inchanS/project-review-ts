@@ -7,8 +7,11 @@ export class UploadFiles extends Base {
   @Column('boolean', { default: true })
   is_img: boolean;
 
-  @Column({ length: 500 })
+  @Column()
   file_link: string;
+
+  @Column({ nullable: true })
+  file_name: string;
 
   @OneToMany(
     type => FeedUploadFiles,

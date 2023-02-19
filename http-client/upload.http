@@ -1,0 +1,17 @@
+### upload image file to s3
+POST {{url}}/upload
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="testimage.jpeg"
+
+< ./testimage.jpeg
+--WebAppBoundary--
+
+### delete image file from s3
+DELETE {{url}}/upload
+Content-Type: application/json
+
+{
+  "file_name": "9b657f75bb4d8ca416b1352e69d67fc571e2dc3e756482afb683cf1b110891f3"
+}
