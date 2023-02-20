@@ -10,32 +10,30 @@ import { Base } from './index.entity';
 
 @Entity('feeds')
 export class Feed extends Base {
-  @ManyToOne(type => User, users => users.feed, {
-    nullable: false,
-  })
+  @ManyToOne(type => User, users => users.feed)
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column({ length: 250 })
+  @Column({ length: 250, nullable: true })
   title: string;
 
-  @Column({ length: 10000 })
+  @Column({ length: 10000, nullable: true })
   content: string;
 
   @ManyToOne(type => Estimation, estimation => estimation.feed, {
-    nullable: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'estimationId' })
   estimation: Estimation;
 
   @ManyToOne(type => Category, categories => categories.feed, {
-    nullable: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
   @ManyToOne(type => FeedStatus, feed_status => feed_status.feed, {
-    nullable: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'statusId' })
   status: FeedStatus;

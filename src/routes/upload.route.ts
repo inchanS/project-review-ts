@@ -2,11 +2,13 @@ import { Router } from 'express';
 import { asyncWrap } from '../utils/util';
 const router = Router();
 
-import uploadToS3 from '../utils/uploadToS3';
+import uploadToS3 from '../middleware/uploadToS3';
+import { authValidateOrReject } from '../middleware/jwt.strategy';
 
 router.post(
   '',
-  uploadToS3.upload.single('image'),
+  asyncWrap(authValidateOrReject),
+  asyncWrap(uploadToS3.upload.single('file')),
   asyncWrap(uploadToS3.uploadFiles)
 );
 

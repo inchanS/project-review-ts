@@ -1,4 +1,3 @@
-import { User } from '../users.entity';
 import {
   IsNotEmpty,
   IsNumber,
@@ -7,6 +6,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { Estimation } from '../estimation.entity';
+import { User } from '../users.entity';
 import { Category } from '../category.entity';
 import { FeedStatus } from '../feedStatus.entity';
 

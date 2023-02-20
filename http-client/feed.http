@@ -2,7 +2,16 @@
 GET {{url}}/feeds?page=1&categoryId=2
 Content-Type: application/json
 
-### main 게시글 등록
+### main 임시 게시글 저장
+POST {{url}}/feeds/temp
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "content": "temp test content asdfasdfasdfasfd"
+}
+
+### main 정식 게시글 등록
 POST {{url}}/feeds/post
 Content-Type: application/json
 Authorization: {{token}}

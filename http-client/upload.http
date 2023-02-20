@@ -1,11 +1,13 @@
 ### upload image file to s3
 POST {{url}}/upload
 Content-Type: multipart/form-data; boundary=WebAppBoundary
+authorization: Bearer {{token}}
 
 --WebAppBoundary
-Content-Disposition: form-data; name="image"; filename="testimage.jpeg"
+Content-Disposition: form-data; name="file"; filename="testimage2.png"
+Content-type: image/png
 
-< ./testimage.jpeg
+< ./testimage2.png
 --WebAppBoundary--
 
 ### delete image file from s3

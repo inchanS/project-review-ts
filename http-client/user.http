@@ -1,6 +1,6 @@
 ### 회원가입
 < {%
-    client.global.set("number", "6");
+    client.global.set("number", "1");
 %}
 POST {{url}}/users/signup
 content-Type: application/json
