@@ -38,7 +38,7 @@ export class Feed extends Base {
   @JoinColumn({ name: 'statusId' })
   status: FeedStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   posted_at?: Date;
 
   @OneToMany(type => Comment, comment => comment.feed)

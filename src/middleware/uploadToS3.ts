@@ -7,6 +7,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import dataSource from '../repositories/index.db';
 import { UploadFiles } from '../entities/uploadFiles.entity';
@@ -62,34 +63,42 @@ const uploadFiles = async (req: Request, res: Response) => {
   }
 
   // aws S3에 업로드할 파일 이름을 생성합니다.(유형 파악을 위해 확장자 추가)
-  const fileNameWithExtension = fileName.concat('.', fileExtension);
   // userID별로 폴더를 구분하여 file을 업로드하기 위해 aws params의 Key값 재정렬
-  const fileNameWithExtensionInFolder = `${userId}/${fileNameWithExtension}`;
+  const fileNameWithExtensionInUserFolder = `${userId}/${fileName}.${fileExtension}`;
 
   // S3 업로드를 위한 파라미터를 생성합니다.
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
-    Key: fileNameWithExtensionInFolder,
+    Key: fileNameWithExtensionInUserFolder,
     Body: fileBuffer,
     ContentType: req.file.mimetype,
   };
 
   const command = new PutObjectCommand(params);
 
-  await s3.send(command);
+  try {
+    await s3.send(command);
+  } catch (err) {
+    if (err) {
+      throw new Error(`UPLOAD_FILE_FAIL: ${err}`);
+    }
+  }
 
-  const file_link = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileNameWithExtensionInFolder} `;
+  const file_link = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileNameWithExtensionInUserFolder}`;
 
   const newUploadFile = await dataSource.manager.create<UploadFiles>(
     'UploadFiles',
-    { file_link: file_link, file_name: fileNameWithExtension, is_img: isImage }
+    {
+      file_link: file_link,
+      file_name: fileNameWithExtensionInUserFolder,
+      is_img: isImage,
+    }
   );
-
   await dataSource.manager.save(newUploadFile);
 
   // TODO res에서 middleware로 보내며 아래 함수를 객체로 바꾸고 createFeed.controller.ts에서 사용
   await res.send({
-    file_name: fileNameWithExtension,
+    file_name: fileNameWithExtensionInUserFolder,
     file_link: file_link,
   });
 };
@@ -106,8 +115,25 @@ const deleteUploadFile = async (req: Request, res: Response) => {
     Key: findFile.file_name,
   };
 
-  const command = new DeleteObjectCommand(params);
-  await s3.send(command);
+  // 개체 확인
+  try {
+    await s3.send(new GetObjectCommand(params));
+  } catch (err: any) {
+    if (err.Code === 'AccessDenied' || err.$metadata.httpStatusCode === 404) {
+      throw new Error(`DELETE_UPLOADED_FILE_IS_NOT_EXISTS: ${err}`);
+    }
+  }
+
+  // 개체 삭제
+  try {
+    await s3.send(new DeleteObjectCommand(params));
+  } catch (err: any) {
+    if (err) {
+      throw new Error(`AWS_SEND_COMMAND_FILE_FAIL: ${err}`);
+    }
+  }
+
+  // TODO 개체 삭제 후 관련된 DB 데이터 삭제
 
   await res.status(200).json({ message: 'DELETE_UPLOADED_FILE_SUCCESS' });
 };

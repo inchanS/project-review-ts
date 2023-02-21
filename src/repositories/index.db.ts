@@ -8,7 +8,6 @@ const dataSource = new DataSource({
   password: process.env.TYPEORM_PASSWORD,
   database: process.env.TYPEORM_DATABASE,
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-  timezone: 'Z',
   dateStrings: true,
   logging: Boolean(process.env.TYPEORM_LOGGING),
   synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),

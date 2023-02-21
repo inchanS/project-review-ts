@@ -26,6 +26,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
            t4 AS (SELECT feedId, COUNT(*) AS like_cnt FROM feed_symbol fs WHERE symbolId = 1 GROUP BY feedId)
 
       SELECT f.id,
+             f.statusId,
              f.categoryId,
              c2.category,
              u2.id                          AS userId,
@@ -36,7 +37,9 @@ import { ViewColumn, ViewEntity } from 'typeorm';
              IFNULL(t1.comment_cnt, 0)      AS commentCnt,
              IFNULL(t4.like_cnt, 0)         AS likeCnt,
              IFNULL(t3.files_cnt, 0)        AS filesCnt,
-             SUBSTRING(f.created_at, 1, 19) AS createdAt
+             SUBSTRING(f.created_at, 1, 19) AS createdAt,
+             SUBSTRING(f.updated_at, 1, 19) AS updatedAt,
+             SUBSTRING(f.posted_at, 1, 19)  AS postedAt
       FROM feeds f
                LEFT JOIN estimation e ON f.estimationId = e.id
                LEFT JOIN t1 ON t1.feedId = f.id
@@ -83,4 +86,13 @@ export class FeedList {
 
   @ViewColumn()
   createdAt: Date;
+
+  @ViewColumn()
+  updatedAt: Date;
+
+  @ViewColumn()
+  postedAt: Date;
+
+  @ViewColumn()
+  statusId: number;
 }
