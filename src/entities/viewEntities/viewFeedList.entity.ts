@@ -16,11 +16,10 @@ import { ViewColumn, ViewEntity } from 'typeorm';
                                 FROM upload_files uf
                                 WHERE uf.is_img = TRUE
                                 GROUP BY feedId)),
-           t3 AS (SELECT fuF2.feedId AS feedId, COUNT(f.id) AS files_cnt
-                  FROM feed_uploadFiles fuF2
-                           LEFT JOIN upload_files f ON f.id = fuF2.uploadFilesId
+           t3 AS (SELECT f.feedId AS feedId, COUNT(f.id) AS files_cnt
+                  FROM upload_files f
                   WHERE f.is_img = FALSE
-                  GROUP BY fuF2.feedId),
+                  GROUP BY f.feedId),
            t4 AS (SELECT feedId, COUNT(*) AS like_cnt FROM feed_symbol fs WHERE symbolId = 1 GROUP BY feedId)
 
       SELECT f.id,

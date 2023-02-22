@@ -2,16 +2,17 @@ import { Router } from 'express';
 import { asyncWrap } from '../utils/util';
 const router = Router();
 
-import uploadToS3 from '../middleware/uploadToS3';
 import { authValidateOrReject } from '../middleware/jwt.strategy';
+import { upload } from '../middleware/uploadToS3';
+import uploadController from '../controllers/upload.controller';
 
 router.post(
   '',
   asyncWrap(authValidateOrReject),
-  asyncWrap(uploadToS3.upload.single('file')),
-  asyncWrap(uploadToS3.uploadFiles)
+  asyncWrap(upload.single('file')),
+  asyncWrap(uploadController.uploadFiles)
 );
 
-router.delete('', asyncWrap(uploadToS3.deleteUploadFile));
+router.delete('', asyncWrap(uploadController.deleteUploadFile));
 
 export default router;
