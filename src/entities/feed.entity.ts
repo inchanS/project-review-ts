@@ -5,8 +5,8 @@ import { Category } from './category.entity';
 import { FeedStatus } from './feedStatus.entity';
 import { Comment } from './comment.entity';
 import { FeedSymbol } from './feedSymbol.entity';
-import { FeedUploadFiles } from './feedUploadFiles.entity';
 import { Base } from './index.entity';
+import { UploadFiles } from './uploadFiles.entity';
 
 @Entity('feeds')
 export class Feed extends Base {
@@ -47,6 +47,6 @@ export class Feed extends Base {
   @OneToMany(type => FeedSymbol, feedSymbol => feedSymbol.feed)
   feedSymbol?: FeedSymbol[];
 
-  @OneToMany(type => FeedUploadFiles, feedUploadFiles => feedUploadFiles.feed)
-  feedUploadFiles?: FeedUploadFiles[];
+  @OneToMany(type => UploadFiles, uploadFiles => uploadFiles.feed)
+  uploadFiles?: UploadFiles[];
 }

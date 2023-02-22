@@ -26,7 +26,7 @@ const s3 = new S3Client({
 });
 
 // aws S3는 동일한 이름의 파일을 업로드하면 덮어쓰기를 한다. 이에 대한 대비책으로 파일 이름을 랜덤하게 생성한다.
-const randomFileName = (bytes: number = 32) =>
+const randomFileName = (bytes: number = 16) =>
   crypto.randomBytes(bytes).toString('hex');
 
 // ---------------------- API 엔드포인트 ----------------------
@@ -35,7 +35,7 @@ const randomFileName = (bytes: number = 32) =>
 const uploadFiles = async (req: Request, res: Response) => {
   const userId: number = req.userInfo.id;
 
-  const fileName = randomFileName();
+  const fileName = Date.now().toString().concat(randomFileName());
   const fileExtension = req.file.originalname.split('.').pop();
 
   // 이미지 파일인지 확인
@@ -90,7 +90,6 @@ const uploadFiles = async (req: Request, res: Response) => {
     'UploadFiles',
     {
       file_link: file_link,
-      file_name: fileNameWithExtensionInUserFolder,
       is_img: isImage,
     }
   );
@@ -105,14 +104,14 @@ const uploadFiles = async (req: Request, res: Response) => {
 
 // 파일 삭제를 처리하는 API 엔드포인트 ----------------------
 const deleteUploadFile = async (req: Request, res: Response) => {
-  const { file_name } = req.body;
+  const { file_link } = req.body;
   const findFile = await dataSource.manager.findOne<UploadFiles>(UploadFiles, {
-    where: { file_name: file_name },
+    where: { file_link: file_link },
   });
 
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
-    Key: findFile.file_name,
+    Key: findFile.file_link.split('.com/')[1],
   };
 
   // 개체 확인

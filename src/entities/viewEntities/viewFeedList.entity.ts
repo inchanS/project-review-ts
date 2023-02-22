@@ -5,17 +5,15 @@ import { ViewColumn, ViewEntity } from 'typeorm';
       WITH t1 AS (SELECT c.feedId AS feedId, COUNT(c.id) AS comment_cnt
                   FROM comments c
                   GROUP BY c.feedId),
-           t2 AS (SELECT fuF.id,
-                         fuF.feedId,
+           t2 AS (SELECT uF.id,
+                         uF.feedId,
                          uf.file_link AS img_url
-                  FROM feed_uploadFiles fuF
-                           LEFT JOIN upload_files uf ON uf.id = fuF.uploadFilesId
-                  WHERE (fuF.feedId,
-                         fuF.id)
-                            IN (SELECT fuF.feedId,
-                                       MAX(fuF.id)
-                                FROM feed_uploadFiles fuF
-                                         LEFT JOIN upload_files uf ON uf.id = fuF.uploadFilesId
+                  FROM upload_files uf
+                  WHERE (uF.feedId,
+                         uF.id)
+                            IN (SELECT uF.feedId,
+                                       MAX(uF.id)
+                                FROM upload_files uf
                                 WHERE uf.is_img = TRUE
                                 GROUP BY feedId)),
            t3 AS (SELECT fuF2.feedId AS feedId, COUNT(f.id) AS files_cnt

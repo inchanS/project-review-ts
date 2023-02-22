@@ -1,6 +1,6 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { Base } from './index.entity';
-import { FeedUploadFiles } from './feedUploadFiles.entity';
+import { Feed } from './feed.entity';
 
 @Entity('upload_files')
 export class UploadFiles extends Base {
@@ -10,12 +10,7 @@ export class UploadFiles extends Base {
   @Column()
   file_link: string;
 
-  @Column({ nullable: true })
-  file_name?: string;
-
-  @OneToMany(
-    type => FeedUploadFiles,
-    feedUploadFiles => feedUploadFiles.uploadFiles
-  )
-  feedUploadFiles?: FeedUploadFiles[];
+  @ManyToOne(type => Feed, feed => feed.uploadFiles)
+  @JoinColumn({ name: 'feedId' })
+  feed: Feed;
 }

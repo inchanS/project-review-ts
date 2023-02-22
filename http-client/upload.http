@@ -15,5 +15,5 @@ DELETE {{url}}/upload
 Content-Type: application/json
 
 {
-  "file_name": "11/5c4870f0bed196f81176c1cd310749c4c29c977f5f80fad81734b69c8d372837.png"
+  "file_link": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/Wed Feb 22 2023 08:54:31 GMT+0900 (Korean Standard Time)ae51c03e7c789e2d7e8ef26fb011fb05.png"
 }

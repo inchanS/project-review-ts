@@ -2,7 +2,7 @@ table users as u {
   id int [pk, increment, not null]
   nickname varchar(20) [not null, unique]
   password varchar(100) [not null]
-  email varchar(20) [not null, unique]
+  email varchar(50) [not null, unique]
   created_at datetime [not null, default: `now()`]
   updated_at "datetime default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" [not null,note:'update time']
 }
@@ -22,7 +22,7 @@ table feeds as f {
 
 table feed_status as fst  {
   id tinyint [pk, increment, not null]
-  status varchar(100) [not null] // published, temporary, deleted
+  is_status varchar(100) [not null] // published, temporary, deleted
   created_at datetime [not null, default: `now()`]
   updated_at "datetime default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" [not null,note:'update time']
 }
@@ -56,16 +56,9 @@ table feed_symbol as fs {
 
 table upload_files as uf  {
   id int [pk, increment, not null]
+  feedId int [not null, ref: > f.id]
   is_img boolean [not null]
   file_link varchar(500) [not null]
-  created_at datetime [not null, default: `now()`]
-  updated_at "datetime default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" [not null,note:'update time']
-}
-
-table feed_uploadFiles as fu {
-  id int [pk, increment, not null]
-  feedId int [not null, ref: > f.id]
-  upload_filesId int [not null, ref: > uf.id]
   created_at datetime [not null, default: `now()`]
   updated_at "datetime default CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" [not null,note:'update time']
 }
