@@ -10,6 +10,7 @@ import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import dataSource from '../repositories/index.db';
+import { IsNull, Like } from 'typeorm';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -21,7 +22,7 @@ const getTempFeedList = async (userId: number) => {
 // TODO createTempFeed와 updateTempFeed의 중복을 줄일 수 있을까?
 const createTempFeed = async (
   feedInfo: TempFeedDto,
-  file_link: string
+  file_links: string[]
 ): Promise<Feed> => {
   feedInfo = plainToInstance(TempFeedDto, feedInfo);
   await validateOrReject(feedInfo).catch(errors => {
@@ -34,17 +35,40 @@ const createTempFeed = async (
   let newTempFeed: Feed = plainToInstance(FeedDto, feedInfo);
   const tempFeed = await FeedRepository.createFeed(newTempFeed);
 
-  if (file_link) {
-    // uploadFile에 feed의 ID를 연결해주는 함수
-    const findUploadfile = await dataSource.manager.findOne(UploadFiles, {
-      where: { file_link: file_link },
+  // TODO transaction으로 묶어주기
+  // uploadFile에 feed의 ID를 연결해주는 함수
+  if (file_links) {
+    for (const file_link of file_links) {
+      // uploadFile테이블에서 file_link를 조건으로 id를 찾는다.
+      const findUploadfile = await dataSource.manager.findOne(UploadFiles, {
+        where: { file_link: file_link },
+      });
+
+      // uploadFile테이블에서 찾은 id를 feed테이블의 id와 연결해준다.
+      await dataSource.manager.update(UploadFiles, findUploadfile.id, {
+        feed: tempFeed,
+      });
+    }
+
+    // 해당 사용자의 uploadfile중 feedID가 없는 entity 찾기
+    const uploadFileWithoutFeed = await dataSource.manager.find(UploadFiles, {
+      loadRelationIds: true,
+      where: {
+        file_link: Like(
+          `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${feedInfo.user}%`
+        ),
+        feed: IsNull(),
+      },
     });
 
-    await dataSource.manager.update(UploadFiles, findUploadfile.id, {
-      feed: tempFeed,
+    // TODO AWS S3에서도 파일 삭제하기
+    // 해당 사용자의 uploadfile중 feedID가 없는 entity 삭제하기
+    const uploadFileWithoutFeedId = uploadFileWithoutFeed.map(uploadFile => {
+      return uploadFile.id;
     });
+
+    await dataSource.manager.delete(UploadFiles, uploadFileWithoutFeedId);
   }
-
   return await FeedRepository.getFeed(tempFeed.id);
 };
 

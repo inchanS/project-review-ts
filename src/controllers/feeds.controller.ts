@@ -16,7 +16,7 @@ const getTempFeedList = async (req: Request, res: Response) => {
 const createTempFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const { title, content, estimation, category }: TempFeedDto = req.body;
-  const file_link: string = req.body.file_link;
+  const file_links: string[] = req.body.file_links;
 
   const feedInfo: TempFeedDto = {
     user,
@@ -26,7 +26,7 @@ const createTempFeed = async (req: Request, res: Response) => {
     category,
   };
 
-  const result = await feedsService.createTempFeed(feedInfo, file_link);
+  const result = await feedsService.createTempFeed(feedInfo, file_links);
 
   res
     .status(200)
