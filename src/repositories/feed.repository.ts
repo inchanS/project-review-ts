@@ -37,16 +37,14 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
         'feed.posted_at',
         'feed.categoryId',
         'feed.userId',
-        'feedUploadFiles.uploadFilesId',
+        'uploadFiles.file_link',
       ])
-      .leftJoinAndSelect('feed.feedUploadFiles', 'feedUploadFiles')
-      .leftJoinAndSelect('feedUploadFiles.uploadFiles', 'uploadFiles')
-      .leftJoinAndSelect('feedUploadFiles.feed', 'UploadfilesFeed')
+      .leftJoinAndSelect('feed.uploadFiles', 'uploadFiles')
       .leftJoinAndSelect('feed.user', 'user')
       .leftJoinAndSelect('feed.category', 'category')
       .leftJoinAndSelect('feed.feedSymbol', 'feedSymbol')
       .where('feed.id = :feedId', { feedId: feedId })
-      .getMany();
+      .getOneOrFail();
   },
 });
 

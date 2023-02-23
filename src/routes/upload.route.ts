@@ -9,7 +9,7 @@ import uploadController from '../controllers/upload.controller';
 router.post(
   '',
   asyncWrap(authValidateOrReject),
-  asyncWrap(upload.single('file')),
+  asyncWrap(upload.array('file', 5)),
   asyncWrap(uploadController.uploadFiles)
 );
 

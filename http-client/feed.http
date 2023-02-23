@@ -1,5 +1,5 @@
 ### main 게시글 리스트 확인
-GET {{url}}/feeds?page=1&categoryId=1
+GET {{url}}/feeds?page=2&categoryId=1
 Content-Type: application/json
 
 ### main 임시 게시글 리스트 가져오기
@@ -14,7 +14,7 @@ Authorization: Bearer {{token}}
 
 {
   "content": "temp test content asdfasdfasdfasfd",
-  "file_link": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/bb7eb601836583430fcdfac70dd0eb3b193eec18a5b9fe9a7804f1c8c85ee6c4.png "
+  "file_links": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/167704815631603bca3977c0680e5cf8b47e691f531eb.png"
 
 }
 
@@ -24,9 +24,9 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "feedId": 172,
+  "feedId": 107,
   "content": "임시저장 수정 테스트",
-  "file_link": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/eb32fafd96d849c33091c4c93d86b9df15cee73cb33b42bc8cc22bb120d2c9e5.png"
+  "file_links": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/167704815631603bca3977c0680e5cf8b47e691f531eb.png"
 
 }
 
@@ -41,5 +41,5 @@ Authorization: {{token}}
   "estimation": 1,
   "category": 1,
   "status": 1,
-  "file_link": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/bb7eb601836583430fcdfac70dd0eb3b193eec18a5b9fe9a7804f1c8c85ee6c4.png "
+  "file_links": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/bb7eb601836583430fcdfac70dd0eb3b193eec18a5b9fe9a7804f1c8c85ee6c4.png "
 }

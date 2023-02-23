@@ -12,7 +12,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
                   WHERE (uF.feedId,
                          uF.id)
                             IN (SELECT uF.feedId,
-                                       MAX(uF.id)
+                                       MIN(uF.id)
                                 FROM upload_files uf
                                 WHERE uf.is_img = TRUE
                                 GROUP BY feedId)),

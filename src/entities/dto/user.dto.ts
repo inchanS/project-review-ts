@@ -21,7 +21,6 @@ export class UserDto {
   // @Matches(/^[a-zA-Z0-9]*$/, {
   //   message: 'password only accepts english and number',
   // })
-  // TODO 정규식 살펴보기
   @Matches(/^.*(?=^.{8,}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=]).*$/, {
     message: 'password only accepts english and number 그리고 특수기호',
   })

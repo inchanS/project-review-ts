@@ -3,13 +3,16 @@ import feedsService from '../services/feeds.service';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 
-// 임시저장 ------------------------------------------------
+// 임시저장 ==================================================================
+// 임시저장 게시글 리스트 --------------------------------------------------------
 const getTempFeedList = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const result = await feedsService.getTempFeedList(user);
 
   res.status(200).json({ message: `check temporary feed success`, result });
 };
+
+// 게시글 임시저장 -----------------------------------------------------------
 const createTempFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const { title, content, estimation, category }: TempFeedDto = req.body;
@@ -30,6 +33,7 @@ const createTempFeed = async (req: Request, res: Response) => {
     .json({ message: `create temporary feed success`, result: result });
 };
 
+// 게시글 임시저장 수정 -----------------------------------------------------------
 const updateTempFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const feedId: number = req.body.feedId;
@@ -51,7 +55,8 @@ const updateTempFeed = async (req: Request, res: Response) => {
     .json({ message: `update temporary feed success`, result: result });
 };
 
-// 게시글 ------------------------------------------------
+// 게시글 ==================================================================
+// 게시글 생성 --------------------------------------------------------------
 const createFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const file_link: string = req.body.file_link;
@@ -70,6 +75,7 @@ const createFeed = async (req: Request, res: Response) => {
   res.status(200).json({ message: `create feed success`, result: result });
 };
 
+// 게시글 리스트 ------------------------------------------------------------
 const getFeedList = async (req: Request, res: Response) => {
   const categoryId: number = Number(req.query.categoryId);
 

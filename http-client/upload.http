@@ -8,12 +8,19 @@ Content-Disposition: form-data; name="file"; filename="testimage2.png"
 Content-type: image/png
 
 < ./testimage2.png
---WebAppBoundary--
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="testPDF.pdf"
+Content-type: pdf/png
+
+< ./testPDF.pdf
+
 
 ### delete image file from s3
 DELETE {{url}}/upload
 Content-Type: application/json
 
 {
-  "file_link": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/Wed Feb 22 2023 08:54:31 GMT+0900 (Korean Standard Time)ae51c03e7c789e2d7e8ef26fb011fb05.png"
+  "file_links": [
+    "https://project-review.s3.ap-northeast-2.amazonaws.com/11/16771335271165927d4c2c1af785db6627cf4edd4ca88.pdf"
+  ]
 }
