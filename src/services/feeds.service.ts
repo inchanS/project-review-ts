@@ -35,7 +35,6 @@ const createTempFeed = async (
   const tempFeed = await FeedRepository.createFeed(newTempFeed);
 
   if (file_link) {
-    // TODO 파일이 여러개일 경우 처리
     // uploadFile에 feed의 ID를 연결해주는 함수
     const findUploadfile = await dataSource.manager.findOne(UploadFiles, {
       where: { file_link: file_link },

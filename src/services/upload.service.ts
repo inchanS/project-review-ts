@@ -86,7 +86,12 @@ const uploadFiles = async (
 };
 
 const deleteUploadFile = async (file_links: string[]): Promise<void> => {
+  // AWS S3 Key값을 담을 배열
   let keyArray = [];
+
+  // mySQL에서 file_link를 통해 uploadFile의 ID를 담을 배열
+  let uploadFileIdArray = [];
+
   for (const file_link of file_links) {
     const findFile = await dataSource.manager.findOneOrFail<UploadFiles>(
       UploadFiles,
@@ -101,7 +106,7 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
     };
 
     keyArray.push({ Key: param.Key });
-
+    uploadFileIdArray.push(findFile.id);
     // 개체 확인
     try {
       await s3.send(new GetObjectCommand(param));
@@ -119,7 +124,7 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
     },
   };
 
-  // 개체 삭제
+  // AWS S3에서 개체 삭제
   try {
     await s3.send(new DeleteObjectsCommand(params));
   } catch (err: any) {
@@ -128,7 +133,8 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
     }
   }
 
-  // TODO 개체 삭제 후 관련된 DB 데이터 삭제
+  // mySQL에서 개체 삭제
+  await dataSource.manager.delete(UploadFiles, uploadFileIdArray);
 };
 
 export default { uploadFiles, deleteUploadFile };
