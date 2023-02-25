@@ -13,7 +13,8 @@ const uploadFiles = async (req: Request, res: Response) => {
 
 // 파일 삭제를 처리하는 API 엔드포인트 ----------------------
 const deleteUploadFile = async (req: Request, res: Response) => {
-  const { file_links } = req.body;
+  let { file_links } = req.body;
+  file_links.push('deleteUploadFile.constroller');
 
   await uploadService.deleteUploadFile(file_links);
 
