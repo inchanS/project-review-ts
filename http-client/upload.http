@@ -21,6 +21,7 @@ Content-Type: application/json
 
 {
   "file_links": [
-    "https://project-review.s3.ap-northeast-2.amazonaws.com/11/16771335271165927d4c2c1af785db6627cf4edd4ca88.pdf"
+            "https://project-review.s3.ap-northeast-2.amazonaws.com/15/1677301247843e4e85dac66c74b9d2f2d9138b969c684.png",
+    "https://project-review.s3.ap-northeast-2.amazonaws.com/15/167730124796622ce0bb350134af13cb1fd91449676f6.pdf"
   ]
 }

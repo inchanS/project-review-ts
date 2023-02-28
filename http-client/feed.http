@@ -14,7 +14,10 @@ Authorization: Bearer {{token}}
 
 {
   "content": "temp test content asdfasdfasdfasfd",
-  "file_links": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/167704815631603bca3977c0680e5cf8b47e691f531eb.png"
+  "file_links": [
+    "https://project-review.s3.ap-northeast-2.amazonaws.com/16/1677303368645b4a968242d79bbad7f8b3017b151d6e9.png",
+    "https://project-review.s3.ap-northeast-2.amazonaws.com/16/16773033686968dcb92e4eb04e9d138e41303d630e05c.pdf"
+  ]
 
 }
 
@@ -24,9 +27,9 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "feedId": 107,
-  "content": "임시저장 수정 테스트",
-  "file_links": "https://project-review.s3.ap-northeast-2.amazonaws.com/11/167704815631603bca3977c0680e5cf8b47e691f531eb.png"
+  "feedId": 212,
+  "content": "임시저장 수정 테스트"
+
 
 }
 
