@@ -137,17 +137,17 @@ describe('USERS API test', () => {
 
   test('check duplicate nickname', async () => {
     await request(app)
-      .get('/users/signup?nickname=nickname113')
+      .get('/users/checkenickname?nickname=nickname113')
       .expect(200)
       .expect({ message: 'AVAILABLE_NICKNAME' });
 
     await request(app)
-      .get('/users/signup?nickname=nickname112')
+      .get('/users/checkenickname?nickname=nickname112')
       .expect(409)
       .expect({ message: `nickname112_IS_NICKNAME_THAT_ALREADY_EXSITS` });
 
     await request(app)
-      .get('/users/signup')
+      .get('/users/checkenickname')
       .expect({ message: `NICKNAME_IS_UNDEFINED` });
   });
 

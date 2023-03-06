@@ -21,6 +21,15 @@ const checkDuplicateNickname = async (
   res.status(200).json(result /**/);
 };
 
+const checkDuplicateEmail = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { email }: UserDto = req.query;
+  const result = await usersService.checkDuplicateEmail(email);
+  res.status(200).json(result);
+};
+
 const signIn = async (req: Request, res: Response): Promise<void> => {
   const { email, password }: UserDto = req.body;
 
@@ -33,4 +42,10 @@ const getMe = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json(myInfo);
 };
 
-export default { signUp, signIn, getMe, checkDuplicateNickname };
+export default {
+  signUp,
+  signIn,
+  getMe,
+  checkDuplicateNickname,
+  checkDuplicateEmail,
+};

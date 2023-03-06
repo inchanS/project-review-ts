@@ -54,6 +54,23 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   }
 };
 
+// TODO user email 중복체크 API
+const checkDuplicateEmail = async (email: string): Promise<object> => {
+  if (!email) {
+    throw new Error(`EMAIL_IS_UNDEFINED`);
+  }
+  const checkData = await User.findByEmail(email);
+
+  if (!checkData) {
+    return { message: 'AVAILABLE_EMAIL' };
+  }
+
+  if (checkData.email === email) {
+    const err = new Error(`${checkData.email}_IS_EMAIL_THAT_ALREADY_EXSITS`);
+    err.status = 409;
+    throw err;
+  }
+};
 const signIn = async (email: string, password: string): Promise<object> => {
   // // <version 1>
   // // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
@@ -95,4 +112,10 @@ const getMe = async (userId: number): Promise<object> => {
   return { myInfo, myFeeds, myComments };
 };
 
-export default { signUp, signIn, getMe, checkDuplicateNickname };
+export default {
+  signUp,
+  signIn,
+  getMe,
+  checkDuplicateNickname,
+  checkDuplicateEmail,
+};
