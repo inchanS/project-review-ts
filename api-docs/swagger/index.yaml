@@ -1,0 +1,36 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: project_review localhost API document
+    url: http://localhost:8000
+info:
+  version: "1.0.0"
+  title: project_review-API
+  description: The API for project_review
+paths:
+  /users/signup:
+    post:
+      tags:
+        - User
+      description: Create a new user
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: nickname
+          description: User object that needs to be added to the store
+          required: true
+          schema:
+            $ref: '#/components/schemas/User/properties/nickname'
+        - in: body
+          name: email
+          description: User object that needs to be added to the store
+          required: true
+          schema:
+            $ref: '#/components/schemas/User/properties/email'
+        - in: body
+          name: password
+          description: User object that needs to be added to the store
+          required: true
+          schema:
+              $ref: '#/components/schemas/User/properties/password'
