@@ -1,0 +1,40 @@
+openapi: 3.0.0
+servers:
+  - description: project_review localhost API document
+    url: 'http://localhost:8000'
+info:
+  version: 1.0.0
+  title: project_review-API
+  description: The API for project_review
+paths:
+  /users/signup:
+    post:
+      tags:
+        - User
+      description: Create a new user
+      produces:
+        - application/json
+      requestBody:
+        description: User object that needs to be added to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                nickname:
+                  type: string
+                  description: The nickname of the user
+                  example: John Doe
+                email:
+                  type: string
+                  description: The email of the user
+                  example: test@test.com
+                password:
+                  type: string
+                  description: The password of the user
+                  example: Abc123@!
+      responses:
+        '200':
+          description: successful operation
+        '500':
+          description: Internal server error

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit",
     "build": "npx tsc",
+    "api-docs": "swagger-cli bundle api-docs/swagger/index.yaml --outfile api-docs/_build/index.yaml --type yaml",
     "start": "cross-env NODE_ENV=production node dist/main.js",
     "dev": "cross-env NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
     "distribute": "npm i && pm2 start dist/main.js --name review -i max"

@@ -1,6 +1,5 @@
 openapi: 3.0.0
 servers:
-  # Added by API Auto Mocking Plugin
   - description: project_review localhost API document
     url: http://localhost:8000
 info:
@@ -9,21 +8,4 @@ info:
   description: The API for project_review
 paths:
   /users/signup:
-    post:
-      tags:
-        - User
-      description: Create a new user
-      produces:
-        - application/json
-      requestBody:
-        description: User object that needs to be added to the store
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: './user.yaml#/components/schemas/User'
-      responses:
-        200:
-          description: successful operation
-        500:
-          description: Internal server error
+    $ref: "./user.yaml"
