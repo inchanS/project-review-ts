@@ -1,0 +1,98 @@
+post:
+  tags:
+    - User
+  summary: 회원가입
+  description: 회원가입
+  produces:
+    - application/json
+  requestBody:
+    description: 회원가입시 필요한 사용자 정보 객체
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/User'
+  responses:
+    201:
+      description: successful operation
+      content:
+        apllication/json:
+          schema:
+            $ref: '#/components/schemas/Success'
+    500:
+      description: Internal server error
+      content:
+          apllication/json:
+            schema:
+              $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        nickname:
+          type: string
+          description: The nickname of the user
+          example: '블랙팬서'
+        email:
+          type: string
+          description: The email of the user
+          example: 'black@test.com'
+        password:
+          type: string
+          description: The password of the user
+          example: 'Abcd@1234'
+    Success:
+      type: object
+      properties:
+        message:
+          type: string
+          description: 회원가입 성공 메세지
+          example: 'SIGNUP_SUCCESS'
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: 가입 실패시 메세지
+          example: '(THIS_EMAIL)_IS_MAIL_THAT_ALREADY_EXSITS'
+    SuccessEmail:
+      type: object
+      properties:
+        message:
+          type: string
+          description: 이메일 중복체크 성공 메세지
+          example: 'AVAILABLE_NICKNAME'
+    ErrorEmail:
+      type: object
+      properties:
+        message:
+          type: string
+          description: 이메일 중복체크 실패 메세지
+          example: '(THIS_EMAIL)_IS_NICKNAME_THAT_ALREADY_EXSITS'
+get:
+  tags:
+    - User
+  summary: 회원가입시 이메일 중복체크
+  description: 회원가입시 이메일 중복체크
+  produces:
+    - application/json
+  parameters:
+    - name: email
+      in: query
+      description: 중복체크할 이메일
+      required: true
+      type: string
+  responses:
+      200:
+        description: successful operation
+        content:
+          apllication/json:
+            schema:
+              $ref: '#/components/schemas/SuccessEmail'
+      500:
+        description: Internal server error
+        content:
+          apllication/json:
+            schema:
+              $ref: '#/components/schemas/ErrorEmail'

@@ -151,6 +151,8 @@ describe('USERS API test', () => {
       .expect({ message: `NICKNAME_IS_UNDEFINED` });
   });
 
+  // TODO check duplicate email test code 작성
+
   test('log in', async () => {
     await request(app)
       .post('/users/signin')

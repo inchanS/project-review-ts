@@ -6,6 +6,12 @@ info:
   version: "1.0.0"
   title: project_review-API
   description: The API for project_review
+  contact:
+    name: Inchan Song
+    url: https://github.com/inchanS
+    email: song@inchan.dev
 paths:
   /users/signup:
-    $ref: "./user.yaml"
+    $ref: "./user/signUp.yaml"
+  /users/signin:
+    $ref: "./user/signIn.yaml"

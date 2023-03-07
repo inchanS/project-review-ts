@@ -1,0 +1,4 @@
+[submodule "api-docs"]
+	path = api-docs
+	url = https://github.com/inchanS/project-review-API-docs.git
+    branch = main
