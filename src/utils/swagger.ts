@@ -1,6 +1,7 @@
-import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 
+// @ts-ignore
+// @ts-ignore
 const options = {
   swaggerDefinition: {
     openapi: '3.0.0',
@@ -18,6 +19,14 @@ const options = {
         email: 'song@inchan.dev',
       },
     },
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+        },
+      },
+    },
     servers: [
       {
         url: 'http://localhost:8000',
@@ -30,4 +39,4 @@ const options = {
 
 const specs = swaggerJsdoc(options);
 
-export { swaggerUi, specs };
+export { specs };

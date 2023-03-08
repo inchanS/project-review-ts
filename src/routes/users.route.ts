@@ -6,10 +6,7 @@ import { asyncWrap } from '../utils/util';
 import { authValidateOrReject } from '../middleware/jwt.strategy';
 
 router.post('/signup', asyncWrap(usersController.signUp));
-router.get(
-  '/checkenickname',
-  asyncWrap(usersController.checkDuplicateNickname)
-);
+router.get('/checknickname', asyncWrap(usersController.checkDuplicateNickname));
 router.get('/checkemail', asyncWrap(usersController.checkDuplicateEmail));
 router.post('/signin', asyncWrap(usersController.signIn));
 router.get(

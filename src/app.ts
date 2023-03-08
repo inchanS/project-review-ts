@@ -3,7 +3,8 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { morganCustomFormat } from './utils/util';
 import router from './routes/index.route';
-import { specs, swaggerUi } from './utils/swagger';
+import { specs } from './utils/swagger';
+import swaggerUi from 'swagger-ui-express';
 
 let corsOptions = {
   origin: '*',
