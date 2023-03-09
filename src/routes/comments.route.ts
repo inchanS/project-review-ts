@@ -23,7 +23,7 @@ router.patch(
   asyncWrap(commentsController.updateComment)
 );
 router.delete(
-  '',
+  '/:id',
   asyncWrap(authValidateOrReject),
   asyncWrap(commentsController.deleteComment)
 );

@@ -39,7 +39,7 @@ const updateComment = async (req: Request, res: Response) => {
 };
 
 const deleteComment = async (req: Request, res: Response) => {
-  const { commentId } = req.body;
+  const commentId: number = Number(req.params.id);
   const userId: number = req.userInfo.id;
 
   await commentsService.deleteComment(commentId, userId);
