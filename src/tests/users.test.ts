@@ -5,19 +5,6 @@ import usersService from '../services/users.service';
 import { User } from '../entities/users.entity';
 import dataSource from '../repositories/index.db';
 
-// const dataSource = new DataSource({
-//   type: process.env.TYPEORM_CONNECTION,
-//   host: process.env.TYPEORM_HOST,
-//   port: process.env.TYPEORM_PORT,
-//   username: process.env.TYPEORM_USERNAME,
-//   password: process.env.TYPEORM_PASSWORD,
-//   database: process.env.TYPEORM_DATABASE,
-//   timezone: 'Z',
-//   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-//   logging: Boolean(process.env.TYPEORM_LOGGING),
-//   synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
-// });
-
 describe('users.service UNIT test', () => {
   afterEach(() => {
     jest.restoreAllMocks();
@@ -26,7 +13,7 @@ describe('users.service UNIT test', () => {
   beforeAll(async () => {
     await dataSource.initialize().then(() => {
       if (process.env.NODE_ENV === 'test') {
-        console.log('💥TEST Data Source has been initialized!💥');
+        console.log('💥TEST Data Source has been initialized!');
       }
     });
   });
@@ -69,6 +56,37 @@ describe('users.service UNIT test', () => {
       message: 'AVAILABLE_NICKNAME',
     });
   });
+
+  test('checkDuplicateEmail - !email', async () => {
+    let email: string;
+    await expect(async () => {
+      await usersService.checkDuplicateEmail(email);
+    }).rejects.toThrowError(new Error(`EMAIL_IS_UNDEFINED`));
+  });
+
+  test('checkDuplicateEmail - !checkData', async () => {
+    const email: string = 'abc';
+    const userRepositoryResult = new User();
+    userRepositoryResult.email = email;
+
+    jest
+      .spyOn(await User, 'findByEmail')
+      .mockResolvedValue(userRepositoryResult);
+
+    await expect(async () => {
+      await usersService.checkDuplicateEmail(email);
+    }).rejects.toThrowError(new Error(`${email}_IS_EMAIL_THAT_ALREADY_EXSITS`));
+  });
+
+  test('checkDuplicateEmail - success', async () => {
+    jest.spyOn(await User, 'findByEmail').mockResolvedValue(null);
+
+    const email = 'test20000';
+
+    await expect(usersService.checkDuplicateEmail(email)).resolves.toEqual({
+      message: 'AVAILABLE_EMAIL',
+    });
+  });
 });
 
 describe('USERS API test', () => {
@@ -77,7 +95,7 @@ describe('USERS API test', () => {
   beforeAll(async () => {
     await dataSource.initialize().then(() => {
       if (process.env.NODE_ENV === 'test') {
-        console.log('💥TEST Data Source has been initialized!💥');
+        console.log('💥TEST Data Source has been initialized!');
       }
     });
   });
@@ -137,21 +155,31 @@ describe('USERS API test', () => {
 
   test('check duplicate nickname', async () => {
     await request(app)
-      .get('/users/checkenickname?nickname=nickname113')
+      .get('/users/checknickname?nickname=nickname113')
       .expect(200)
       .expect({ message: 'AVAILABLE_NICKNAME' });
 
     await request(app)
-      .get('/users/checkenickname?nickname=nickname112')
+      .get('/users/checknickname?nickname=nickname112')
       .expect(409)
       .expect({ message: `nickname112_IS_NICKNAME_THAT_ALREADY_EXSITS` });
 
     await request(app)
-      .get('/users/checkenickname')
+      .get('/users/checknickname')
       .expect({ message: `NICKNAME_IS_UNDEFINED` });
   });
 
-  // TODO check duplicate email test code 작성
+  test('check duplicate email', async () => {
+    await request(app)
+      .get('/users/checkemail?email=test112000@test.com')
+      .expect(200)
+      .expect({ message: 'AVAILABLE_EMAIL' });
+
+    await request(app)
+      .get('/users/checkemail?email=test112@test.com')
+      .expect(409)
+      .expect({ message: `test112@test.com_IS_EMAIL_THAT_ALREADY_EXSITS` });
+  });
 
   test('log in', async () => {
     await request(app)

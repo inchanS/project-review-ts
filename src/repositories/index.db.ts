@@ -19,6 +19,10 @@ dataSource
     if (process.env.NODE_ENV === 'develop') {
       console.log('Data Source has been initialized!');
     }
+
+    if (process.env.NODE_ENV === 'test') {
+      console.log('TEST Data Source has been initialized! 💥');
+    }
   })
   .catch((err: Error) => {
     console.error('Error during Data Source initialization:', err);

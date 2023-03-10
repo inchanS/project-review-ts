@@ -15,7 +15,7 @@ describe('comment.service UNIT test', () => {
   beforeAll(async () => {
     await dataSource.initialize().then(() => {
       if (process.env.NODE_ENV === 'test') {
-        console.log('💥TEST Data Source has been initialized!💥');
+        console.log('💥TEST Data Source has been initialized!');
       }
     });
   });
