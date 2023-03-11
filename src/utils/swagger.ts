@@ -1,10 +1,8 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 
-// @ts-ignore
-// @ts-ignore
 const options = {
   swaggerDefinition: {
-    openapi: '3.0.0',
+    openapi: '3.0.2',
     info: {
       title: 'Project_review',
       version: '1.0.0',

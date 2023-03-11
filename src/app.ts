@@ -24,8 +24,15 @@ const createApp = () => {
     app.use(morgan('combined'));
   }
 
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(specs, {
+      swaggerOptions: {
+        defaultModelExpandDepth: 9,
+      },
+    })
+  );
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
   app.use(router);
