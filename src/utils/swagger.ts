@@ -36,5 +36,10 @@ const options = {
 };
 
 const specs = swaggerJsdoc(options);
+const swaggerOptions = {
+  swaggerOptions: {
+    defaultModelExpandDepth: 9,
+  },
+};
 
-export { specs };
+export { specs, swaggerOptions };
