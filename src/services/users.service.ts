@@ -54,7 +54,6 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   }
 };
 
-// TODO user email 중복체크 API
 const checkDuplicateEmail = async (email: string): Promise<object> => {
   if (!email) {
     throw new Error(`EMAIL_IS_UNDEFINED`);

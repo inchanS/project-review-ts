@@ -85,10 +85,16 @@ const getFeedList = async (req: Request, res: Response) => {
   res.status(200).json(result);
 };
 
+const getEstimations = async (req: Request, res: Response) => {
+  const result = await feedsService.getEstimations();
+
+  res.status(200).json(result);
+};
 export default {
   createFeed,
   getFeedList,
   createTempFeed,
   getTempFeedList,
   updateTempFeed,
+  getEstimations,
 };

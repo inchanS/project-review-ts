@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { asyncWrap } from '../utils/util';
-const router = Router();
-
 import feedsController from '../controllers/feeds.controller';
 import { authValidateOrReject } from '../middleware/jwt.strategy';
+
+const router = Router();
 
 // 임시저장 ------------------------------------------------
 router.get(
@@ -30,6 +30,9 @@ router.post(
   asyncWrap(authValidateOrReject),
   asyncWrap(feedsController.createFeed)
 );
+
+// TODO API 명세 작성하기
+router.get('/estimations', asyncWrap(feedsController.getEstimations));
 
 router.get('', asyncWrap(feedsController.getFeedList));
 

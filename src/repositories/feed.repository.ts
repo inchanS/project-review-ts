@@ -46,6 +46,22 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .where('feed.id = :feedId', { feedId: feedId })
       .getOneOrFail();
   },
+
+  // 피드의 symbol id별 count 가져오기
+  async getFeedSymbolCount(feedId: number) {
+    return await this.createQueryBuilder('feed')
+      .select([
+        'feed.id AS feedId',
+        'feedSymbol.symbolId',
+        'symbol.symbol AS symbol',
+        'COUNT(feedSymbol.symbolId) AS count',
+      ])
+      .leftJoin('feed.feedSymbol', 'feedSymbol')
+      .leftJoin('feedSymbol.symbol', 'symbol')
+      .where('feed.id = :feedId', { feedId: feedId })
+      .groupBy('feedSymbol.symbolId')
+      .getRawMany();
+  },
 });
 
 export const FeedListRepository = dataSource.getRepository(FeedList).extend({

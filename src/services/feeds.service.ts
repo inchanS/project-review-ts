@@ -12,6 +12,7 @@ import { UploadFiles } from '../entities/uploadFiles.entity';
 import dataSource from '../repositories/index.db';
 import { IsNull, Like } from 'typeorm';
 import uploadService from './upload.service';
+import { Estimation } from '../entities/estimation.entity';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -231,10 +232,15 @@ const createFeed = async (
 
 // TODO deleteFeed
 
+const getEstimations = async (): Promise<Estimation[]> => {
+  return await dataSource.getRepository(Estimation).find();
+};
+
 export default {
   createFeed,
   getFeedList,
   createTempFeed,
   getTempFeedList,
   updateTempFeed,
+  getEstimations,
 };
