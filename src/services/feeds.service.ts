@@ -26,6 +26,7 @@ const createTempFeed = async (
   feedInfo: TempFeedDto,
   file_links: string[]
 ): Promise<Feed> => {
+  // 임시저장 dto로 유효성 검사 후, 해당 값들을 entity로 전환하기 (class-transformer)
   feedInfo = plainToInstance(TempFeedDto, feedInfo);
   await validateOrReject(feedInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
@@ -216,6 +217,7 @@ const createFeed = async (
     throw { status: 500, message: errors[0].constraints };
   });
 
+  // TODO 임시저장 글이 게시글로 저장될 때, 임시저장 글은 삭제한다. (임시저장 글의 id를 받아서 삭제한다.)
   const feed: Feed = feedInfo;
   feed.posted_at = new Date();
 

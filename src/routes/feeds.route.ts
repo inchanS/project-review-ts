@@ -31,7 +31,6 @@ router.post(
   asyncWrap(feedsController.createFeed)
 );
 
-// TODO API 명세 작성하기
 router.get('/estimations', asyncWrap(feedsController.getEstimations));
 
 router.get('', asyncWrap(feedsController.getFeedList));

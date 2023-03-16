@@ -30,6 +30,10 @@ const options = {
         url: 'http://localhost:8000',
         description: 'local Server',
       },
+      {
+        description: 'project_review AWS RDS Test API document',
+        url: 'http://15.164.86.242:8005',
+      },
     ],
   },
   apis: ['api-docs/_build/*'],
