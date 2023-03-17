@@ -7,7 +7,7 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     return await this.createQueryBuilder('comment')
       .withDeleted()
       .addSelect(['user.id', 'user.nickname', 'user.email'])
-      .addSelect(['feed.id', 'feed.title'])
+      .addSelect(['feed.id', 'feed.title', 'feedUser'])
       .addSelect([
         'childrenUser.id',
         'childrenUser.nickname',
@@ -20,6 +20,7 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
       ])
       .leftJoin('comment.user', 'user')
       .leftJoin('comment.feed', 'feed')
+      .leftJoin('feed.user', 'feedUser')
       .leftJoinAndSelect('comment.children', 'children')
       .leftJoin('children.user', 'childrenUser')
       .leftJoinAndSelect('children.children', 'children2')

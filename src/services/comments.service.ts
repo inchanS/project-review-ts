@@ -4,12 +4,19 @@ import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentRepository } from '../repositories/comment.repository';
 
 // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
-const formatComment = (comment: any, userId: number): any => {
+const formatComment = (
+  comment: any,
+  userId: number,
+  feedUserId: number,
+  parentUserId?: number
+): any => {
   // 로그인 사용자의 비밀덧글 조회시 유효성 확인 및 삭제된 덧글 필터링
-  // TODO 비밀덧글 조회시, 게시글작성자와 원댓글 작성자만 조회가능하도록 수정
-  const isPrivate = comment.is_private === true && comment.user.id !== userId;
+  const isPrivate =
+    comment.is_private === true &&
+    comment.user.id !== userId &&
+    (parentUserId ? parentUserId !== userId : feedUserId !== userId);
   const isDeleted = comment.deleted_at !== null;
-  const formattedComment = {
+  return {
     ...comment,
     comment: isDeleted
       ? '## DELETED_COMMENT ##'
@@ -24,21 +31,19 @@ const formatComment = (comment: any, userId: number): any => {
 
     // 대댓글 영역
     children: comment.children
-      ? comment.children.map((child: any) => formatComment(child, userId))
+      ? comment.children.map((child: any) =>
+          formatComment(child, userId, feedUserId, comment.user.id)
+        )
       : [],
   };
-  /**/
-  return formattedComment;
 };
 
-const getCommentList = async (id: number, userId: number) => {
-  const result = await CommentRepository.getCommentList(id);
-
-  const formattedResult = [...result].map((comment: any) =>
-    formatComment(comment, userId)
+const getCommentList = async (feedId: number, userId: number) => {
+  const result = await CommentRepository.getCommentList(feedId);
+  const feedUserId = result[0].feed.user.id;
+  return [...result].map((comment: any) =>
+    formatComment(comment, userId, feedUserId)
   );
-
-  return formattedResult;
 };
 
 const createComment = async (commentInfo: CommentDto): Promise<void> => {

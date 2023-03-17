@@ -10,7 +10,7 @@
     "predev": "npm run api-docs",
     "start": "NODE_ENV=production node dist/main.js",
     "dev": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
-    "distribute": "npm i && NODE_ENV=production pm2 start dist/main.js --name review -i max"
+    "distribute": "npm i --verbose && NODE_ENV=production pm2 start dist/main.js --name review -i max"
   },
   "repository": {
     "type": "git",

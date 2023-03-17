@@ -3,9 +3,9 @@ import commentsService from '../services/comments.service';
 import { CommentDto } from '../entities/dto/comment.dto';
 
 const getCommentList = async (req: Request, res: Response) => {
-  const id: number = Number(req.params.id);
+  const feedId: number = Number(req.params.id);
   const userId: number = req.userInfo.id;
-  const result = await commentsService.getCommentList(id, userId);
+  const result = await commentsService.getCommentList(feedId, userId);
   res.status(200).json(result);
 };
 
