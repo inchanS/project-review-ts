@@ -5,16 +5,16 @@ import { ViewColumn, ViewEntity } from 'typeorm';
       WITH t1 AS (SELECT c.feedId AS feedId, COUNT(c.id) AS comment_cnt
                   FROM comments c
                   GROUP BY c.feedId),
-           t2 AS (SELECT uF.id,
-                         uF.feedId,
-                         uf.file_link AS img_url
-                  FROM upload_files uf
-                  WHERE (uF.feedId,
-                         uF.id)
-                            IN (SELECT uF.feedId,
-                                       MIN(uF.id)
-                                FROM upload_files uf
-                                WHERE uf.is_img = TRUE
+           t2 AS (SELECT id,
+                         feedId,
+                         file_link AS img_url
+                  FROM upload_files
+                  WHERE (feedId,
+                         id)
+                            IN (SELECT feedId,
+                                       MIN(id)
+                                FROM upload_files
+                                WHERE is_img = TRUE
                                 GROUP BY feedId)),
            t3 AS (SELECT f.feedId AS feedId, COUNT(f.id) AS files_cnt
                   FROM upload_files f
