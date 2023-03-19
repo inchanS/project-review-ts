@@ -8,11 +8,10 @@ import {
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
-import { UploadFiles } from '../entities/uploadFiles.entity';
 import dataSource from '../repositories/index.db';
-import { IsNull, Like } from 'typeorm';
-import uploadService from './upload.service';
+import { QueryRunner } from 'typeorm';
 import { Estimation } from '../entities/estimation.entity';
+import uploadFileService, { DeleteUploadFiles } from './uploadFile.service';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -21,12 +20,22 @@ const getTempFeedList = async (userId: number) => {
 };
 
 // 임시저장 게시글 저장 -----------------------------------------------------------
-// TODO createTempFeed와 updateTempFeed의 중복을 줄일 수 있을까?
+
+const getTempFeed = async (
+  queryRunner: QueryRunner,
+  tempFeedId: number
+): Promise<Feed> => {
+  return await queryRunner.manager
+    .withRepository(FeedRepository)
+    .getFeed(tempFeedId);
+};
+
+// -----------------------------------------------------------
+
 const createTempFeed = async (
   feedInfo: TempFeedDto,
-  file_links: string[]
+  fileLinks: string[]
 ): Promise<Feed> => {
-  // 임시저장 dto로 유효성 검사 후, 해당 값들을 entity로 전환하기 (class-transformer)
   feedInfo = plainToInstance(TempFeedDto, feedInfo);
   await validateOrReject(feedInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
@@ -41,66 +50,29 @@ const createTempFeed = async (
 
   try {
     // feed 저장
-    const newTempFeed: Feed = plainToInstance(FeedDto, feedInfo);
-    const tempFeed = await queryRunner.manager
+    const tempFeed: Feed = plainToInstance(FeedDto, feedInfo);
+    const newTempFeed = await queryRunner.manager
       .withRepository(FeedRepository)
-      .createFeed(newTempFeed);
+      .createFeed(tempFeed);
 
     // uploadFile에 feed의 ID를 연결해주는 함수
-    if (file_links) {
-      for (const file_link of file_links) {
-        // uploadFile테이블에서 file_link를 조건으로 id를 찾는다.
-        const findUploadfile = await queryRunner.manager.findOne(UploadFiles, {
-          loadRelationIds: true,
-          where: { file_link: file_link },
-        });
-
-        // 만약 이미 다른 feed와 연결되어있는 file_link라면 에러를 던진다.
-        if (findUploadfile.feed !== null) {
-          // FIXME "'throw' of exception caught locally" 해결하기
-          throw new Error(`file_link already exists`);
-        }
-
-        // uploadFile테이블에서 찾은 id의 Entity에 feed테이블의 id를 연결하여 update한다.
-        await queryRunner.manager.update(UploadFiles, findUploadfile.id, {
-          feed: tempFeed,
-        });
-      }
-
-      // 해당 사용자의 uploadfile중 feedID가 없는 entity 찾기
-      const uploadFileWithoutFeed = await queryRunner.manager.find(
-        UploadFiles,
-        {
-          loadRelationIds: true,
-          where: {
-            file_link: Like(
-              `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${feedInfo.user}%`
-            ),
-            feed: IsNull(),
-          },
-        }
+    if (fileLinks) {
+      await uploadFileService.updateFileLinks(
+        queryRunner,
+        newTempFeed,
+        fileLinks
       );
+      const deleteUploadFiles: DeleteUploadFiles =
+        await uploadFileService.deleteUnusedUploadFiles(queryRunner, tempFeed);
 
-      // 해당 사용자의 uploadfile중 feedID가 없는 entity 삭제하기
-      if (uploadFileWithoutFeed.length > 0) {
-        const uploadFileWithoutFeedId = uploadFileWithoutFeed.map(
-          uploadFile => {
-            return uploadFile.id;
-          }
-        );
-        await queryRunner.manager.delete(UploadFiles, uploadFileWithoutFeedId);
-
-        // AWS S3에서도 파일 삭제하기
-        let deleteFileLinksArray = [];
-        for (const uploadFile of uploadFileWithoutFeed) {
-          deleteFileLinksArray.push(uploadFile.file_link);
-        }
-        await uploadService.deleteUploadFile(deleteFileLinksArray);
-      }
+      await uploadFileService.deleteUnconnectedLinks(
+        queryRunner,
+        deleteUploadFiles.uploadFileWithoutFeedId,
+        deleteUploadFiles.deleteFileLinksArray
+      );
     }
-    const result = await queryRunner.manager
-      .withRepository(FeedRepository)
-      .getFeed(tempFeed.id);
+
+    const result = await getTempFeed(queryRunner, newTempFeed.id);
 
     await queryRunner.commitTransaction();
 
@@ -115,9 +87,9 @@ const createTempFeed = async (
 
 // 게시글 임시저장 수정 -----------------------------------------------------------
 const updateTempFeed = async (
-  feedId: number,
   feedInfo: TempFeedDto,
-  file_links: string
+  feedId: number,
+  fileLinks: string[]
 ): Promise<Feed> => {
   // 수정 전 기존 feed 정보
   const originFeed = await FeedRepository.getFeed(feedId);
@@ -136,45 +108,20 @@ const updateTempFeed = async (
   try {
     // 수정된 feed 저장
     let newTempFeed: Feed = plainToInstance(FeedDto, feedInfo);
+
+    // 수정내용 중 fileLink가 있는지 확인하고, 있다면 uploadFile에 feed의 ID를 연결해주는 함수
+    // fildLink가 없다면 기존의 fileLink를 삭제한다.
+    await uploadFileService.checkUploadFileOfFeed(
+      queryRunner,
+      feedId,
+      newTempFeed,
+      originFeed,
+      fileLinks
+    );
+
     const tempFeed = await queryRunner.manager
       .withRepository(FeedRepository)
-      .createOrUpdateFeed(feedId, newTempFeed);
-
-    // 새로운 업로드 파일이 변경되었는지 확인
-    for (const file_link of file_links) {
-      const checkFileLink = await originFeed.uploadFiles.find(
-        (uploadFile: UploadFiles) => uploadFile.file_link === file_link
-      );
-
-      // FIXME 업로드 파일의 내용이 변경됐을 경우,
-      //  파일 링크는 배열이고, 그중, 하나는 수정된 파일링크인데 다른 하나만 수정됐을때!! 어떻게 처리할지 고민해보기
-      //  1. update 할때, 기존 파일링크와 새 파일링크를 함께 업데이트 한다.
-      //  2. 그리고 나서 feed와 연결되지 않은 사용자의 파일링크를 찾아 지운다.
-
-      // 업로드 파일의 내용이 변경됐을 경우
-      if (!checkFileLink) {
-        // 파일링크가 하나도 없다면, feedId가 비어있는채 업로드된 파일의 entity와 S3에서의 파일을 삭제
-        let uploadFilesIdArray = [];
-        let deleteFileLinksArray = [];
-        for (const uploadFile of originFeed.uploadFiles) {
-          uploadFilesIdArray.push(uploadFile.id);
-          deleteFileLinksArray.push(uploadFile.file_link);
-        }
-        if (uploadFilesIdArray.length > 0) {
-          await queryRunner.manager.delete(UploadFiles, uploadFilesIdArray);
-          await uploadService.deleteUploadFile(deleteFileLinksArray);
-        }
-      }
-
-      const findUploadFile = await queryRunner.manager.findOne(UploadFiles, {
-        where: { file_link: file_link },
-      });
-      // uploadFile에 feed의 ID를 연결해주는 함수
-      await queryRunner.manager.update(UploadFiles, findUploadFile, {
-        feed: tempFeed,
-      });
-    }
-
+      .updateFeed(feedId, newTempFeed);
     const result = await queryRunner.manager
       .withRepository(FeedRepository)
       .getFeed(tempFeed.id);

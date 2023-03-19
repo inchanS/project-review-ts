@@ -16,7 +16,7 @@ const getTempFeedList = async (req: Request, res: Response) => {
 const createTempFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const { title, content, estimation, category }: TempFeedDto = req.body;
-  const file_links: string[] = req.body.file_links;
+  const fileLinks: string[] = req.body.fileLinks;
 
   const feedInfo: TempFeedDto = {
     user,
@@ -26,10 +26,16 @@ const createTempFeed = async (req: Request, res: Response) => {
     category,
   };
 
-  const result = await feedsService.createTempFeed(feedInfo, file_links);
+  if (Object.keys(req.body).length === 0 && !fileLinks) {
+    const error = new Error('NO_CONTENT');
+    error.status = 400;
+    throw error;
+  }
+
+  const result = await feedsService.createTempFeed(feedInfo, fileLinks);
 
   res
-    .status(200)
+    .status(201)
     .json({ message: `create temporary feed success`, result: result });
 };
 
@@ -38,7 +44,7 @@ const updateTempFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const feedId: number = req.body.feedId;
   const { title, content, estimation, category }: TempFeedDto = req.body;
-  const file_link: string = req.body.file_link;
+  const fileLinks: string[] = req.body.fileLinks;
 
   const feedInfo: TempFeedDto = {
     user,
@@ -48,7 +54,7 @@ const updateTempFeed = async (req: Request, res: Response) => {
     category,
   };
 
-  const result = await feedsService.updateTempFeed(feedId, feedInfo, file_link);
+  const result = await feedsService.updateTempFeed(feedInfo, feedId, fileLinks);
 
   res
     .status(200)
@@ -94,7 +100,7 @@ export default {
   createFeed,
   getFeedList,
   createTempFeed,
-  getTempFeedList,
   updateTempFeed,
+  getTempFeedList,
   getEstimations,
 };

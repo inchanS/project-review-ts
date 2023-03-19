@@ -15,7 +15,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
     });
   },
 
-  async createOrUpdateFeed(feedId: number, feedInfo: Feed) {
+  async updateFeed(feedId: number, feedInfo: Feed) {
     await this.update(feedId, feedInfo);
 
     return await this.findOne({
