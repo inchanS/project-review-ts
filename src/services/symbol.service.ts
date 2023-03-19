@@ -72,7 +72,9 @@ const addAndUpdateSymbolToFeed = async (
 
   // 사용자 유효성검사 (게시글 작성자는 공감할 수 없음)
   if (validateFeed.user.id === feedSymbolInfo.user) {
-    throw new Error('THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
+    const error = new Error('THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
+    error.status = 403;
+    throw error;
   }
 
   // 심볼 유효성검사
@@ -91,38 +93,19 @@ const addAndUpdateSymbolToFeed = async (
     feedSymbolInfo.user
   );
 
+  // create와 update에 따른 sort 값 조정으로 controller에서 res.statusCode를 조정한다.
+  let sort: AddAndUpdateSymbolToFeedResult['sort'] = 'add';
   // 이미 공감했을 경우, 공감 종류 변경으로 수정 반영
   if (checkFeedSymbol) {
-    if (Number(checkFeedSymbol.symbol) === feedSymbolInfo.symbol) {
-      throw new Error('NOT_CHANGED');
-    }
-
-    if (Number(checkFeedSymbol.symbol) !== feedSymbolInfo.symbol) {
-      await FeedSymbolRepository.updateFeedSymbol(
-        checkFeedSymbol.id,
-        feedSymbolInfo.symbol
-      );
-
-      const sort: AddAndUpdateSymbolToFeedResult['sort'] = 'update';
-      const result = await getFeedSymbolCount(feedSymbolInfo.feed);
-      return { sort, result };
-    }
+    sort = 'update';
   }
 
-  // 게시글별 조회자의 공감표시를 DB에 저장
   const newFeedSymbol = plainToInstance(FeedSymbol, feedSymbolInfo);
 
-  await FeedSymbolRepository.addFeedSymbol(newFeedSymbol).catch(
-    (err: Error) => {
-      if (err.message.includes('ER_DUP_ENTRY')) {
-        throw new Error('DUPLICATE_FEED_SYMBOL');
-      }
-      throw new Error(err.message);
-    }
-  );
+  await FeedSymbolRepository.upsertFeedSymbol(newFeedSymbol);
 
-  const sort: AddAndUpdateSymbolToFeedResult['sort'] = 'add';
   const result = await getFeedSymbolCount(feedSymbolInfo.feed);
+
   return { sort, result };
 };
 
