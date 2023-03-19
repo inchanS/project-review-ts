@@ -32,16 +32,20 @@ const getTempFeed = async (
 
 // -----------------------------------------------------------
 
-const createTempFeed = async (
-  feedInfo: TempFeedDto,
+const createFeed = async (
+  feedInfo: TempFeedDto | FeedDto,
   fileLinks: string[]
 ): Promise<Feed> => {
-  feedInfo = plainToInstance(TempFeedDto, feedInfo);
+  if (feedInfo.status === 2) {
+    feedInfo = plainToInstance(TempFeedDto, feedInfo);
+  } else {
+    feedInfo = plainToInstance(FeedDto, feedInfo);
+    feedInfo.posted_at = new Date();
+  }
+
   await validateOrReject(feedInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
   });
-  // FeedStatus id 2 is 'temporary'
-  feedInfo.status = 2;
 
   // transaction으로 묶어주기
   const queryRunner = dataSource.createQueryRunner();
@@ -50,7 +54,7 @@ const createTempFeed = async (
 
   try {
     // feed 저장
-    const tempFeed: Feed = plainToInstance(FeedDto, feedInfo);
+    const tempFeed = plainToInstance(Feed, feedInfo);
     const newTempFeed = await queryRunner.manager
       .withRepository(FeedRepository)
       .createFeed(tempFeed);
@@ -85,9 +89,9 @@ const createTempFeed = async (
   }
 };
 
-// 게시글 임시저장 수정 -----------------------------------------------------------
-const updateTempFeed = async (
-  feedInfo: TempFeedDto,
+// 게시글 수정 -----------------------------------------------------------
+const updateFeed = async (
+  feedInfo: TempFeedDto | FeedDto,
   feedId: number,
   fileLinks: string[]
 ): Promise<Feed> => {
@@ -95,7 +99,12 @@ const updateTempFeed = async (
   const originFeed = await FeedRepository.getFeed(feedId);
 
   // TODO 유저 확인 유효성검사 추가하기
-  feedInfo = plainToInstance(TempFeedDto, feedInfo);
+  if (originFeed.status === 2) {
+    feedInfo = plainToInstance(TempFeedDto, feedInfo);
+  } else {
+    feedInfo = plainToInstance(FeedDto, feedInfo);
+  }
+
   await validateOrReject(feedInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
   });
@@ -107,24 +116,24 @@ const updateTempFeed = async (
 
   try {
     // 수정된 feed 저장
-    let newTempFeed: Feed = plainToInstance(FeedDto, feedInfo);
+    const feed = plainToInstance(Feed, feedInfo);
 
     // 수정내용 중 fileLink가 있는지 확인하고, 있다면 uploadFile에 feed의 ID를 연결해주는 함수
     // fildLink가 없다면 기존의 fileLink를 삭제한다.
     await uploadFileService.checkUploadFileOfFeed(
       queryRunner,
       feedId,
-      newTempFeed,
+      feed,
       originFeed,
       fileLinks
     );
 
-    const tempFeed = await queryRunner.manager
+    const newFeed = await queryRunner.manager
       .withRepository(FeedRepository)
-      .updateFeed(feedId, newTempFeed);
+      .updateFeed(feedId, feed);
     const result = await queryRunner.manager
       .withRepository(FeedRepository)
-      .getFeed(tempFeed.id);
+      .getFeed(newFeed.id);
 
     await queryRunner.commitTransaction();
 
@@ -137,7 +146,6 @@ const updateTempFeed = async (
   }
 };
 
-// 게시글 ===================================================================
 // 게시글 리스트 --------------------------------------------------------------
 const getFeedList = async (
   categoryId: number,
@@ -154,31 +162,6 @@ const getFeedList = async (
   return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
 };
 
-// 게시글 저장 ----------------------------------------------------------------
-const createFeed = async (
-  feedInfo: FeedDto,
-  file_link: string
-): Promise<Feed> => {
-  feedInfo = plainToInstance(FeedDto, feedInfo);
-  await validateOrReject(feedInfo).catch(errors => {
-    throw { status: 500, message: errors[0].constraints };
-  });
-
-  // TODO 임시저장 글이 게시글로 저장될 때, 임시저장 글은 삭제한다. (임시저장 글의 id를 받아서 삭제한다.)
-  const feed: Feed = feedInfo;
-  feed.posted_at = new Date();
-
-  const newFeed = await FeedRepository.createFeed(feed);
-
-  if (file_link) {
-    // TODO feedId 연결하는 함수 넣기
-  }
-
-  return await FeedRepository.getFeed(newFeed.id);
-};
-
-// TODO updateFeed
-
 // TODO deleteFeed
 
 const getEstimations = async (): Promise<Estimation[]> => {
@@ -187,9 +170,8 @@ const getEstimations = async (): Promise<Estimation[]> => {
 
 export default {
   createFeed,
+  updateFeed,
   getFeedList,
-  createTempFeed,
   getTempFeedList,
-  updateTempFeed,
   getEstimations,
 };

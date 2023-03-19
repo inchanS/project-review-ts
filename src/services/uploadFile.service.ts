@@ -114,11 +114,18 @@ const checkUploadFileOfFeed = async (
     await updateFileLinks(queryRunner, originFeed, fileLinks);
   }
 
-  const { uploadFileWithoutFeedId, deleteFileLinksArray } =
-    await deleteUnusedUploadFiles(queryRunner, feed);
+  const findUnusedUploadFiles = await deleteUnusedUploadFiles(
+    queryRunner,
+    feed
+  );
 
-  uploadFileIdsToDelete.push(...uploadFileWithoutFeedId);
-  fileLinksToDelete.push(...deleteFileLinksArray);
+  if (findUnusedUploadFiles) {
+    const { uploadFileWithoutFeedId, deleteFileLinksArray } =
+      findUnusedUploadFiles;
+
+    uploadFileIdsToDelete.push(...uploadFileWithoutFeedId);
+    fileLinksToDelete.push(...deleteFileLinksArray);
+  }
 
   await deleteUnconnectedLinks(
     queryRunner,

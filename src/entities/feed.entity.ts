@@ -32,11 +32,9 @@ export class Feed extends Base {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
-  @ManyToOne(type => FeedStatus, feed_status => feed_status.feed, {
-    nullable: true,
-  })
+  @ManyToOne(type => FeedStatus, feed_status => feed_status.feed)
   @JoinColumn({ name: 'statusId' })
-  status: FeedStatus;
+  status?: FeedStatus;
 
   @Column({ type: 'timestamp', nullable: true })
   posted_at?: Date;

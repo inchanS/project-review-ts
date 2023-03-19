@@ -32,7 +32,10 @@ const createTempFeed = async (req: Request, res: Response) => {
     throw error;
   }
 
-  const result = await feedsService.createTempFeed(feedInfo, fileLinks);
+  // FeedStatus id 2 is 'temporary'
+  feedInfo.status = 2;
+
+  const result = await feedsService.createFeed(feedInfo, fileLinks);
 
   res
     .status(201)
@@ -54,7 +57,7 @@ const updateTempFeed = async (req: Request, res: Response) => {
     category,
   };
 
-  const result = await feedsService.updateTempFeed(feedInfo, feedId, fileLinks);
+  const result = await feedsService.updateFeed(feedInfo, feedId, fileLinks);
 
   res
     .status(200)
@@ -65,20 +68,43 @@ const updateTempFeed = async (req: Request, res: Response) => {
 // 게시글 생성 --------------------------------------------------------------
 const createFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
-  const file_link: string = req.body.file_link;
-  const { title, content, estimation, category, status }: FeedDto = req.body;
+  const fileLinks: string[] = req.body.fileLinks;
+  const { title, content, estimation, category }: FeedDto = req.body;
+
   const feedInfo: FeedDto = {
     user,
     title,
     content,
     estimation,
     category,
-    status,
   };
 
-  const result = await feedsService.createFeed(feedInfo, file_link);
+  // FeedStatus id 1 is 'posted'
+  feedInfo.status = 1;
 
-  res.status(200).json({ message: `create feed success`, result: result });
+  const result = await feedsService.createFeed(feedInfo, fileLinks);
+
+  res.status(201).json({ message: `create feed success`, result: result });
+};
+
+// 게시글 수정 --------------------------------------------------------------
+const updateFeed = async (req: Request, res: Response) => {
+  const user = req.userInfo.id;
+  const feedId: number = req.body.feedId;
+  const fileLinks: string[] = req.body.fileLinks;
+  const { title, content, estimation, category }: FeedDto = req.body;
+
+  const feedInfo: FeedDto = {
+    user,
+    title,
+    content,
+    estimation,
+    category,
+  };
+
+  const result = await feedsService.updateFeed(feedInfo, feedId, fileLinks);
+
+  res.status(200).json({ message: `update feed success`, result: result });
 };
 
 // 게시글 리스트 ------------------------------------------------------------
@@ -98,6 +124,7 @@ const getEstimations = async (req: Request, res: Response) => {
 };
 export default {
   createFeed,
+  updateFeed,
   getFeedList,
   createTempFeed,
   updateTempFeed,

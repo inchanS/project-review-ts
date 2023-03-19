@@ -31,6 +31,12 @@ router.post(
   asyncWrap(feedsController.createFeed)
 );
 
+router.patch(
+  '/post',
+  asyncWrap(authValidateOrReject),
+  asyncWrap(feedsController.updateFeed)
+);
+
 router.get('/estimations', asyncWrap(feedsController.getEstimations));
 
 router.get('', asyncWrap(feedsController.getFeedList));

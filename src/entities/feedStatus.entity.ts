@@ -11,8 +11,8 @@ export class FeedStatus extends Base {
     enum: ['published', 'temporary', 'deleted'],
     default: 'temporary',
   })
-  is_status: feedStatusType;
+  is_status?: feedStatusType;
 
   @OneToMany(type => Feed, feed => feed.status)
-  feed: Feed[];
+  feed?: Feed[];
 }

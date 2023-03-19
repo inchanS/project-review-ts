@@ -1,14 +1,12 @@
 import {
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Estimation } from '../estimation.entity';
 import { User } from '../users.entity';
-import { Category } from '../category.entity';
-import { FeedStatus } from '../feedStatus.entity';
 
 export class FeedDto {
   @IsNotEmpty()
@@ -28,13 +26,16 @@ export class FeedDto {
 
   @IsNotEmpty()
   @IsNumber()
-  estimation: Estimation;
+  estimation: number;
 
   @IsNotEmpty()
   @IsNumber()
-  category: Category;
+  category: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
-  status: FeedStatus;
+  status?: number;
+
+  @IsOptional()
+  posted_at?: Date;
 }
