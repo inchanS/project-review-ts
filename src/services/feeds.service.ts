@@ -9,7 +9,7 @@ import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import dataSource from '../repositories/index.db';
-import { QueryRunner } from 'typeorm';
+import { EntityNotFoundError, QueryRunner } from 'typeorm';
 import { Estimation } from '../entities/estimation.entity';
 import uploadFileService, { DeleteUploadFiles } from './uploadFile.service';
 
@@ -27,8 +27,8 @@ const getTempFeedList = async (userId: number) => {
 };
 
 // 임시저장 게시글 저장 -----------------------------------------------------------
-
-const getTempFeed = async (
+// 임시저장 게시글 저장간 transaction내 새 임시게시글 가져오기 -----------------------------------------------------------
+const findTempFeed = async (
   queryRunner: QueryRunner,
   tempFeedId: number
 ): Promise<Feed> => {
@@ -85,7 +85,7 @@ const createFeed = async (
       }
     }
 
-    const result = await getTempFeed(queryRunner, newTempFeed.id);
+    const result = await findTempFeed(queryRunner, newTempFeed.id);
 
     await queryRunner.commitTransaction();
 
@@ -161,6 +161,36 @@ const updateFeed = async (
   }
 };
 
+// 게시글 가져오기 --------------------------------------------------------
+const getFeed = async (userId: number, feedId: number) => {
+  // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
+  const result = await FeedRepository.getFeed(feedId).catch(err => {
+    if (err instanceof EntityNotFoundError) {
+      const error = new Error(`NOT_FOUND_FEED`);
+      error.status = 404;
+      throw error;
+    }
+  });
+
+  // feed 값 재가공
+  result.created_at = result.created_at.substring(0, 19);
+  result.updated_at = result.updated_at.substring(0, 19);
+
+  const updatedAt = result.updated_at.substring(2);
+  result.title =
+    result.title === null
+      ? `${updatedAt}에 임시저장된 글입니다.`
+      : result.title;
+
+  // 임시저장 게시글은 본인만 볼 수 있음
+  if (result.status.id === 2 && result.user.id !== userId) {
+    const error = new Error(`UNAUTHORIZED_TO_ACCESS_THE_POST`);
+    error.status = 403;
+    throw error;
+  }
+  return result;
+};
+
 // 게시글 리스트 --------------------------------------------------------------
 const getFeedList = async (
   categoryId: number,
@@ -188,6 +218,7 @@ export default {
   createFeed,
   updateFeed,
   getFeedList,
+  getFeed,
   getTempFeedList,
   getEstimations,
 };

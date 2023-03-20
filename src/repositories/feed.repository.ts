@@ -28,20 +28,28 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
     return await this.createQueryBuilder('feed')
       .select([
         'feed.id',
+        'user.id',
+        'user.nickname',
         'feed.title',
         'feed.content',
-        'feed.estimation',
-        'feed.status',
+        'estimation.id',
+        'estimation.estimation',
+        'status.id',
+        'status.is_status',
         'feed.created_at',
         'feed.updated_at',
         'feed.posted_at',
-        'feed.categoryId',
-        'feed.userId',
+        'category.id',
+        'category.category',
+        'uploadFiles.id',
+        'uploadFiles.is_img',
         'uploadFiles.file_link',
       ])
-      .leftJoinAndSelect('feed.uploadFiles', 'uploadFiles')
-      .leftJoinAndSelect('feed.user', 'user')
-      .leftJoinAndSelect('feed.category', 'category')
+      .leftJoin('feed.user', 'user')
+      .leftJoin('feed.category', 'category')
+      .leftJoin('feed.estimation', 'estimation')
+      .leftJoin('feed.status', 'status')
+      .leftJoin('feed.uploadFiles', 'uploadFiles')
       .leftJoinAndSelect('feed.feedSymbol', 'feedSymbol')
       .where('feed.id = :feedId', { feedId: feedId })
       .getOneOrFail();

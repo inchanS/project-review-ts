@@ -12,6 +12,16 @@ const getTempFeedList = async (req: Request, res: Response) => {
   res.status(200).json({ message: `check temporary feed success`, result });
 };
 
+// 임시저장 게시글 불러오기 -----------------------------------------------------------
+const getFeed = async (req: Request, res: Response) => {
+  const user = req.userInfo.id;
+  const feedId: number = Number(req.params.feedId);
+
+  const result = await feedsService.getFeed(user, feedId);
+
+  res.status(200).json({ message: `check feed success`, result });
+};
+
 // 게시글 임시저장 -----------------------------------------------------------
 const createTempFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
@@ -139,5 +149,6 @@ export default {
   createTempFeed,
   updateTempFeed,
   getTempFeedList,
+  getTempFeed: getFeed,
   getEstimations,
 };
