@@ -16,7 +16,14 @@ import uploadFileService, { DeleteUploadFiles } from './uploadFile.service';
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
 const getTempFeedList = async (userId: number) => {
-  return await FeedListRepository.getTempFeedList(userId);
+  const results = await FeedListRepository.getTempFeedList(userId);
+  for (const result of results) {
+    const updatedAt = result.updatedAt.substring(2);
+    if (result.title === null) {
+      result.title = `${updatedAt}에 임시저장된 글입니다.`;
+    }
+  }
+  return results;
 };
 
 // 임시저장 게시글 저장 -----------------------------------------------------------
@@ -151,9 +158,10 @@ const getFeedList = async (
   categoryId: number,
   page: number
 ): Promise<FeedList[]> => {
-  if (!categoryId) {
+  if (!categoryId || categoryId === 0) {
     categoryId = undefined;
   }
+
   const limit: number = 5;
   if (!page) {
     page = 1;

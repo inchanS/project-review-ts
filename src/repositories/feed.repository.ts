@@ -70,9 +70,6 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
     startIndex: number,
     limit: number
   ) {
-    if (categoryId === 0) {
-      categoryId = undefined;
-    }
     return await this.find({
       order: {
         postedAt: 'DESC',
