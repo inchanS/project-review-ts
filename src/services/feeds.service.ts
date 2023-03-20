@@ -76,11 +76,13 @@ const createFeed = async (
       const deleteUploadFiles: DeleteUploadFiles =
         await uploadFileService.deleteUnusedUploadFiles(queryRunner, tempFeed);
 
-      await uploadFileService.deleteUnconnectedLinks(
-        queryRunner,
-        deleteUploadFiles.uploadFileWithoutFeedId,
-        deleteUploadFiles.deleteFileLinksArray
-      );
+      if (deleteUploadFiles) {
+        await uploadFileService.deleteUnconnectedLinks(
+          queryRunner,
+          deleteUploadFiles.uploadFileWithoutFeedId,
+          deleteUploadFiles.deleteFileLinksArray
+        );
+      }
     }
 
     const result = await getTempFeed(queryRunner, newTempFeed.id);
@@ -106,7 +108,6 @@ const updateFeed = async (
   // 수정 전 기존 feed 정보
   const originFeed = await FeedRepository.getFeed(feedId);
 
-  // TODO 유저 확인 유효성검사 추가하기
   if (originFeed.user.id !== userId) {
     const error = new Error('ONLY_THE_AUTHOR_CAN_EDIT');
     error.status = 403;
