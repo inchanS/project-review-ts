@@ -57,7 +57,12 @@ const updateTempFeed = async (req: Request, res: Response) => {
     category,
   };
 
-  const result = await feedsService.updateFeed(feedInfo, feedId, fileLinks);
+  const result = await feedsService.updateFeed(
+    user,
+    feedInfo,
+    feedId,
+    fileLinks
+  );
 
   res
     .status(200)
@@ -102,7 +107,12 @@ const updateFeed = async (req: Request, res: Response) => {
     category,
   };
 
-  const result = await feedsService.updateFeed(feedInfo, feedId, fileLinks);
+  const result = await feedsService.updateFeed(
+    user,
+    feedInfo,
+    feedId,
+    fileLinks
+  );
 
   res.status(200).json({ message: `update feed success`, result: result });
 };

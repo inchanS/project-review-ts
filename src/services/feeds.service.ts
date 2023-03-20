@@ -98,6 +98,7 @@ const createFeed = async (
 
 // 게시글 수정 -----------------------------------------------------------
 const updateFeed = async (
+  userId: number,
   feedInfo: TempFeedDto | FeedDto,
   feedId: number,
   fileLinks: string[]
@@ -106,6 +107,12 @@ const updateFeed = async (
   const originFeed = await FeedRepository.getFeed(feedId);
 
   // TODO 유저 확인 유효성검사 추가하기
+  if (originFeed.user.id !== userId) {
+    const error = new Error('ONLY_THE_AUTHOR_CAN_EDIT');
+    error.status = 403;
+    throw error;
+  }
+
   if (originFeed.status === 2) {
     feedInfo = plainToInstance(TempFeedDto, feedInfo);
   } else {
