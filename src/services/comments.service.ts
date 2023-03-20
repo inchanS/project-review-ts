@@ -63,7 +63,9 @@ const validateComment = async (userId: number, commentId: number) => {
   });
 
   if (!result) {
-    throw new Error(`ID_${commentId}_COMMENT_DOES_NOT_EXIST`);
+    const error = new Error(`ID_${commentId}_COMMENT_DOES_NOT_EXIST`);
+    error.status = 404;
+    throw error;
   }
 
   // 작성자 아이디가 다를 때 에러처리

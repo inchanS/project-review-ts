@@ -49,7 +49,9 @@ const updateFileLinks = async (
       if (Number(findUploadFile.feed) === feed.id) {
         continue;
       }
-      throw new Error(`file_link already exists`);
+      const error = new Error(`file_link already exists`);
+      error.status = 409;
+      throw error;
     }
 
     await queryRunner.manager.update(UploadFiles, findUploadFile.id, {

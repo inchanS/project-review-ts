@@ -17,12 +17,18 @@ const signUp = async (userInfo: UserDto): Promise<void> => {
 
   const uniqueCheckEmail = await User.findByEmail(userInfo.email);
   if (uniqueCheckEmail) {
-    throw new Error(`${userInfo.email}_IS_MAIL_THAT_ALREADY_EXSITS`);
+    const error = new Error(`${userInfo.email}_IS_MAIL_THAT_ALREADY_EXSITS`);
+    error.status = 409;
+    throw error;
   }
 
   const uniqueCheckNickname = await User.findByNickname(userInfo.nickname);
   if (uniqueCheckNickname) {
-    throw new Error(`${userInfo.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`);
+    const error = new Error(
+      `${userInfo.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`
+    );
+    error.status = 409;
+    throw error;
   }
 
   await UserRepository.createUser(userInfo);
@@ -36,7 +42,9 @@ const signUp = async (userInfo: UserDto): Promise<void> => {
 
 const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   if (!nickname) {
-    throw new Error(`NICKNAME_IS_UNDEFINED`);
+    const error = new Error(`NICKNAME_IS_UNDEFINED`);
+    error.status = 400;
+    throw error;
   }
   // const checkData = await userRepository.findOneBy({ nickname: nickname });
   const checkData = await User.findByNickname(nickname);
@@ -56,7 +64,9 @@ const checkDuplicateNickname = async (nickname: string): Promise<object> => {
 
 const checkDuplicateEmail = async (email: string): Promise<object> => {
   if (!email) {
-    throw new Error(`EMAIL_IS_UNDEFINED`);
+    const error = new Error(`EMAIL_IS_UNDEFINED`);
+    error.status = 400;
+    throw error;
   }
   const checkData = await User.findByEmail(email);
 
@@ -83,13 +93,15 @@ const signIn = async (email: string, password: string): Promise<object> => {
   const checkUserbyEmail = await User.findByEmail(email);
 
   if (!checkUserbyEmail) {
-    throw new Error(`${email}_IS_NOT_FOUND`);
+    const error = new Error(`${email}_IS_NOT_FOUND`);
+    error.status = 404;
+    throw error;
   }
 
   const isSame = bcrypt.compareSync(password, checkUserbyEmail.password);
   if (!isSame) {
     const error = new Error('PASSWORD_IS_INCORRECT');
-    error.status = 404;
+    error.status = 401;
     throw error;
   }
 
@@ -143,7 +155,9 @@ const findUserInfoById = async (
 // 로그인 유저가 자신의 정보를 불러올때 사용하는 함수
 const getMe = async (userId: number): Promise<object> => {
   if (!userId) {
-    throw new Error(`TOKEN'S_USERID_IS_UNDEFINED`);
+    const error = new Error(`TOKEN'S_USERID_IS_UNDEFINED`);
+    error.status = 400;
+    throw error;
   }
   return findUserInfoById(userId, userId);
 };
@@ -154,7 +168,9 @@ const getUserInfo = async (
   loggedInUserId: number
 ): Promise<object> => {
   if (!targetUserId) {
-    throw new Error(`USERID_IS_UNDEFINED`);
+    const error = new Error(`USERID_IS_UNDEFINED`);
+    error.status = 400;
+    throw error;
   }
   return findUserInfoById(targetUserId, loggedInUserId);
 };

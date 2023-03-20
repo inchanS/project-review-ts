@@ -24,7 +24,9 @@ const getSymbols = async () => {
 const getFeedSymbolCount = async (feedId: number) => {
   // 피드 유효성검사
   await FeedRepository.getFeed(feedId).catch(() => {
-    throw new Error('INVALID_FEED');
+    const error = new Error('INVALID_FEED');
+    error.status = 404;
+    throw error;
   });
 
   const result = await FeedRepository.getFeedSymbolCount(feedId);
@@ -66,7 +68,9 @@ const addAndUpdateSymbolToFeed = async (
   // 피드 유효성검사
   const validateFeed = await FeedRepository.getFeed(feedSymbolInfo.feed).catch(
     () => {
-      throw new Error('INVALID_FEED');
+      const error = new Error('INVALID_FEED');
+      error.status = 404;
+      throw error;
     }
   );
 
@@ -84,7 +88,9 @@ const addAndUpdateSymbolToFeed = async (
       where: { id: feedSymbolInfo.symbol },
     })
     .catch(() => {
-      throw new Error('INVALID_SYMBOL');
+      const error = new Error('INVALID_SYMBOL');
+      error.status = 404;
+      throw error;
     });
 
   // 피드 심볼 중복검사
@@ -117,7 +123,9 @@ const removeSymbolFromFeed = async (userId: number, feedId: number) => {
   );
 
   if (!validateFeedSymbol) {
-    throw new Error(`FEED_SYMBOL_NOT_FOUND`);
+    const error = new Error(`FEED_SYMBOL_NOT_FOUND`);
+    error.status = 404;
+    throw error;
   }
 
   await FeedSymbolRepository.deleteFeedSymbol(validateFeedSymbol.id);
