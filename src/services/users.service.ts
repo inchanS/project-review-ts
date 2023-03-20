@@ -101,14 +101,62 @@ const signIn = async (email: string, password: string): Promise<object> => {
 
 // TODO user 삭제 API
 //  모든 서비스에서 user의 deleted_at이 not null일때 모두 탈퇴회원 처리
+
+const findUserInfoById = async (
+  targetUserId: number,
+  loggedInUserId: number
+): Promise<object> => {
+  const userInfo = await UserRepository.findOne({
+    where: { id: targetUserId },
+  });
+
+  if (!userInfo) {
+    const error = new Error('USER_IS_NOT_FOUND');
+    error.status = 404;
+    throw error;
+  }
+
+  const userFeeds = await FeedListRepository.getFeedListByUserId(targetUserId);
+  const userComments = await CommentRepository.getCommentListByUserId(
+    targetUserId
+  );
+  for (const comment of userComments) {
+    const isPrivate =
+      comment.is_private === true && comment.user !== loggedInUserId;
+    const isDeleted = comment.deleted_at !== null;
+    comment.comment = isDeleted
+      ? '## DELETED_COMMENT ##'
+      : isPrivate
+      ? '## PRIVATE_COMMENT ##'
+      : comment.comment;
+
+    comment.created_at = comment.created_at.substring(0, 19);
+    comment.updated_at = comment.updated_at.substring(0, 19);
+    comment.deleted_at = comment.deleted_at
+      ? comment.deleted_at.substring(0, 19)
+      : null;
+  }
+
+  return { userInfo, userFeeds, userComments };
+};
+
+// 로그인 유저가 자신의 정보를 불러올때 사용하는 함수
 const getMe = async (userId: number): Promise<object> => {
   if (!userId) {
     throw new Error(`TOKEN'S_USERID_IS_UNDEFINED`);
   }
-  const myInfo = await UserRepository.findOne({ where: { id: userId } });
-  const myFeeds = await FeedListRepository.getFeedListByUserId(userId);
-  const myComments = await CommentRepository.getCommentListByUserId(userId);
-  return { myInfo, myFeeds, myComments };
+  return findUserInfoById(userId, userId);
+};
+
+// 로그인 유저가 다른 유저의 정보를 불러올때 사용하는 함수
+const getUserInfo = async (
+  targetUserId: number,
+  loggedInUserId: number
+): Promise<object> => {
+  if (!targetUserId) {
+    throw new Error(`USERID_IS_UNDEFINED`);
+  }
+  return findUserInfoById(targetUserId, loggedInUserId);
 };
 
 export default {
@@ -117,4 +165,5 @@ export default {
   getMe,
   checkDuplicateNickname,
   checkDuplicateEmail,
+  getUserInfo,
 };

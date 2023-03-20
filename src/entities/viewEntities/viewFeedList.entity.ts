@@ -36,7 +36,8 @@ import { ViewColumn, ViewEntity } from 'typeorm';
              IFNULL(t3.files_cnt, 0)        AS filesCnt,
              SUBSTRING(f.created_at, 1, 19) AS createdAt,
              SUBSTRING(f.updated_at, 1, 19) AS updatedAt,
-             SUBSTRING(f.posted_at, 1, 19)  AS postedAt
+             SUBSTRING(f.posted_at, 1, 19)  AS postedAt,
+             SUBSTRING(f.deleted_at, 1, 19) AS deletedAt
       FROM feeds f
                LEFT JOIN estimation e ON f.estimationId = e.id
                LEFT JOIN t1 ON t1.feedId = f.id
@@ -89,6 +90,9 @@ export class FeedList {
 
   @ViewColumn()
   postedAt: Date;
+
+  @ViewColumn()
+  deletedAt: Date;
 
   @ViewColumn()
   statusId: number;

@@ -76,12 +76,18 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
       },
       skip: startIndex,
       take: limit,
-      where: { categoryId: categoryId, postedAt: Not(IsNull()) },
+      where: {
+        categoryId: categoryId,
+        postedAt: Not(IsNull()),
+        deletedAt: IsNull(),
+      },
     });
   },
 
   async getFeedListByUserId(userId: number) {
-    return await this.find({ where: { userId: userId } });
+    return await this.find({
+      where: { userId: userId, postedAt: Not(IsNull()), deletedAt: IsNull() },
+    });
   },
 
   async getTempFeedList(userId: number) {

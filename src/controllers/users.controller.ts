@@ -42,10 +42,19 @@ const getMe = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json(myInfo);
 };
 
+// 다른 사람의 정보 가져오기
+const getUserInfo = async (req: Request, res: Response): Promise<void> => {
+  const targetUserId = Number(req.params.id);
+  const loggedInUserId = req.userInfo.id;
+  const result = await usersService.getUserInfo(targetUserId, loggedInUserId);
+  res.status(200).json(result);
+};
+
 export default {
   signUp,
   signIn,
   getMe,
   checkDuplicateNickname,
   checkDuplicateEmail,
+  getUserInfo,
 };
