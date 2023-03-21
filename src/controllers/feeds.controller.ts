@@ -79,6 +79,8 @@ const updateTempFeed = async (req: Request, res: Response) => {
     .json({ message: `update temporary feed success`, result: result });
 };
 
+// TODO : 임시저장 게시글 삭제
+
 // 게시글 ==================================================================
 // 게시글 생성 --------------------------------------------------------------
 const createFeed = async (req: Request, res: Response) => {

@@ -32,6 +32,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
         'user.nickname',
         'feed.title',
         'feed.content',
+        'feed.viewCnt',
         'estimation.id',
         'estimation.estimation',
         'status.id',
@@ -69,6 +70,14 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .where('feed.id = :feedId', { feedId: feedId })
       .groupBy('feedSymbol.symbolId')
       .getRawMany();
+  },
+
+  async addViewCount(feedId: number) {
+    await this.createQueryBuilder()
+      .update(Feed)
+      .set({ viewCnt: () => 'viewCnt + 1' })
+      .where('id = :feedId', { feedId: feedId })
+      .execute();
   },
 });
 

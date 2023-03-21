@@ -188,6 +188,12 @@ const getFeed = async (userId: number, feedId: number) => {
     error.status = 403;
     throw error;
   }
+
+  // 등록된 정식 게시글의 경우 호출시 조회수 +1 증가
+  if (result.status.id === 1) {
+    await FeedRepository.addViewCount(feedId);
+  }
+
   return result;
 };
 

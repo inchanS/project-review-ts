@@ -20,6 +20,9 @@ export class Feed extends Base {
   @Column({ length: 10000, nullable: true })
   content: string;
 
+  @Column({ default: 0 })
+  viewCnt: number;
+
   @ManyToOne(type => Estimation, estimation => estimation.feed, {
     nullable: true,
   })

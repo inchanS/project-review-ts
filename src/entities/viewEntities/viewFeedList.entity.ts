@@ -31,6 +31,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
              f.title,
              f.content,
              t2.img_url                     AS imgUrl,
+             f.viewCnt,
              IFNULL(t1.comment_cnt, 0)      AS commentCnt,
              IFNULL(t4.like_cnt, 0)         AS likeCnt,
              IFNULL(t3.files_cnt, 0)        AS filesCnt,
@@ -72,6 +73,9 @@ export class FeedList {
 
   @ViewColumn()
   imgUrl: string;
+
+  @ViewColumn()
+  viewCnt: number;
 
   @ViewColumn()
   commentCnt: number;
