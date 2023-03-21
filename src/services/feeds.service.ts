@@ -164,7 +164,7 @@ const updateFeed = async (
 // 게시글 가져오기 --------------------------------------------------------
 const getFeed = async (userId: number, feedId: number) => {
   // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
-  const result = await FeedRepository.getFeed(feedId).catch(err => {
+  const result = await FeedRepository.getFeed(feedId).catch((err: Error) => {
     if (err instanceof EntityNotFoundError) {
       const error = new Error(`NOT_FOUND_FEED`);
       error.status = 404;

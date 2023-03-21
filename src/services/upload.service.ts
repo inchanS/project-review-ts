@@ -42,7 +42,7 @@ const uploadFiles = async (
       } else {
         // 이미지가 resize할 크기보다 클 때, resize 실행
         fileBuffer = await image
-          .resize({ width: 1080, fit: 'inside' })
+          .resize({ width: 1920, fit: 'inside' })
           .toBuffer();
       }
     }
@@ -98,12 +98,15 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
   );
 
   for (const file_link of newFileLinks) {
-    const findFile = await dataSource.manager.findOneOrFail<UploadFiles>(
-      UploadFiles,
-      {
+    const findFile = await dataSource.manager
+      .findOneOrFail<UploadFiles>(UploadFiles, {
         where: { file_link: file_link },
-      }
-    );
+      })
+      .catch((err: any) => {
+        const error = new Error(`NOT_FOUND_UPLOAD_FILE`);
+        error.status = 404;
+        throw error;
+      });
 
     const param = {
       Bucket: process.env.AWS_S3_BUCKET,

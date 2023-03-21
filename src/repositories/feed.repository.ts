@@ -51,7 +51,6 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .leftJoin('feed.estimation', 'estimation')
       .leftJoin('feed.status', 'status')
       .leftJoin('feed.uploadFiles', 'uploadFiles')
-      .leftJoinAndSelect('feed.feedSymbol', 'feedSymbol')
       .where('feed.id = :feedId', { feedId: feedId })
       .getOneOrFail();
   },

@@ -9,7 +9,7 @@ import uploadController from '../controllers/upload.controller';
 router.post(
   '',
   asyncWrap(authValidateOrReject),
-  asyncWrap(upload.array('file', 5)),
+  asyncWrap(upload.array('file', 5)), // 한번에 업로드 가능한 파일 개수는 5개로 제한
   asyncWrap(uploadController.uploadFiles)
 );
 
