@@ -34,4 +34,10 @@ router.get(
   asyncWrap(usersController.getUserInfo)
 );
 
+router.patch(
+  '/userinfo/:id',
+  asyncWrap(authValidateOrReject),
+  asyncWrap(usersController.updateUserInfo)
+);
+
 export default router;

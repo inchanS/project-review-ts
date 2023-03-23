@@ -8,38 +8,6 @@ import { UserRepository } from '../repositories/user.repository';
 import { CommentRepository } from '../repositories/comment.repository';
 import { FeedListRepository } from '../repositories/feed.repository';
 
-const signUp = async (userInfo: UserDto): Promise<void> => {
-  userInfo = plainToInstance(UserDto, userInfo);
-
-  await validateOrReject(userInfo).catch(errors => {
-    throw { status: 500, message: errors[0].constraints };
-  });
-
-  const uniqueCheckEmail = await User.findByEmail(userInfo.email);
-  if (uniqueCheckEmail) {
-    const error = new Error(`${userInfo.email}_IS_MAIL_THAT_ALREADY_EXSITS`);
-    error.status = 409;
-    throw error;
-  }
-
-  const uniqueCheckNickname = await User.findByNickname(userInfo.nickname);
-  if (uniqueCheckNickname) {
-    const error = new Error(
-      `${userInfo.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`
-    );
-    error.status = 409;
-    throw error;
-  }
-
-  await UserRepository.createUser(userInfo);
-
-  // const salt = await bcrypt.genSalt();
-  // userInfo.password = await bcrypt.hash(userInfo.password, salt);
-  //
-  // const user = await userRepository.create(userInfo);
-  // await userRepository.save(user);
-};
-
 const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   if (!nickname) {
     const error = new Error(`NICKNAME_IS_UNDEFINED`);
@@ -80,6 +48,25 @@ const checkDuplicateEmail = async (email: string): Promise<object> => {
     throw err;
   }
 };
+
+const signUp = async (userInfo: UserDto): Promise<void> => {
+  userInfo = plainToInstance(UserDto, userInfo);
+
+  await validateOrReject(userInfo).catch(errors => {
+    throw { status: 500, message: errors[0].constraints };
+  });
+
+  await checkDuplicateEmail(userInfo.email);
+  await checkDuplicateNickname(userInfo.nickname);
+
+  await UserRepository.createUser(userInfo);
+
+  // const salt = await bcrypt.genSalt();
+  // userInfo.password = await bcrypt.hash(userInfo.password, salt);
+  //
+  // const user = await userRepository.create(userInfo);
+  // await userRepository.save(user);
+};
 const signIn = async (email: string, password: string): Promise<object> => {
   // // <version 1>
   // // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
@@ -90,6 +77,7 @@ const signIn = async (email: string, password: string): Promise<object> => {
   //   .getOne();
 
   // <version 2> User entity에서 static 메소드 리턴시,
+  // typeORM 문법으로 삭제된 유저, 즉 deleted_at이 not null인 유저는 제외하고 리턴한다.
   const checkUserbyEmail = await User.findByEmail(email);
 
   if (!checkUserbyEmail) {
@@ -175,9 +163,45 @@ const getUserInfo = async (
   return findUserInfoById(targetUserId, loggedInUserId);
 };
 
-// TODO user 정보 수정하기
-//  - 닉네임, 비밀번호 수정할 수 있는...?
-//  - 나중에 프로필 이미지 넣어볼까나 ㅎㅎ
+const updateUserInfo = async (userId: number, userInfo: UserDto) => {
+  const originUserInfo = await UserRepository.findOne({
+    where: { id: userId },
+  });
+
+  if (
+    userInfo.nickname === originUserInfo.nickname &&
+    userInfo.email === originUserInfo.email &&
+    !userInfo.password
+  ) {
+    const error = new Error('NO_CHANGE');
+    error.status = 400;
+    throw error;
+  }
+
+  if (
+    userInfo.nickname &&
+    userInfo.nickname !== originUserInfo.nickname &&
+    !userInfo.password
+  ) {
+    await checkDuplicateNickname(userInfo.nickname);
+  }
+
+  if (userInfo.email && userInfo.email !== originUserInfo.email) {
+    await checkDuplicateEmail(userInfo.email);
+  }
+
+  if (userInfo.password) {
+    const salt = await bcrypt.genSalt();
+    userInfo.password = await bcrypt.hash(userInfo.password, salt);
+  }
+
+  await UserRepository.update(userId, userInfo);
+  return await UserRepository.findOne({
+    where: { id: userId },
+  });
+};
+
+// TODO 나중에 프로필 이미지 넣어볼까나
 export default {
   signUp,
   signIn,
@@ -185,4 +209,5 @@ export default {
   checkDuplicateNickname,
   checkDuplicateEmail,
   getUserInfo,
+  updateUserInfo,
 };

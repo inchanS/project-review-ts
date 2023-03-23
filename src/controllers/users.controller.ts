@@ -50,6 +50,15 @@ const getUserInfo = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json(result);
 };
 
+const updateUserInfo = async (req: Request, res: Response): Promise<void> => {
+  const { nickname, password, email }: UserDto = req.body;
+  const userInfo: UserDto = { nickname, password, email };
+  const userId = req.userInfo.id;
+
+  const result = await usersService.updateUserInfo(userId, userInfo);
+  res.status(200).json({ message: `UPDATE_USERINFO_SUCCESS`, result });
+};
+
 export default {
   signUp,
   signIn,
@@ -57,4 +66,5 @@ export default {
   checkDuplicateNickname,
   checkDuplicateEmail,
   getUserInfo,
+  updateUserInfo,
 };

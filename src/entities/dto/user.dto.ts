@@ -16,14 +16,17 @@ export class UserDto {
 
   @IsString()
   @IsNotEmpty()
-  @MinLength(4)
+  @MinLength(8)
   @MaxLength(20)
   // @Matches(/^[a-zA-Z0-9]*$/, {
   //   message: 'password only accepts english and number',
   // })
-  @Matches(/^.*(?=^.{8,}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=]).*$/, {
-    message: 'password only accepts english and number 그리고 특수기호',
-  })
+  @Matches(
+    /^.*(?=^.{8,20}$)(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&+=]).*$/,
+    {
+      message: 'password only accepts english and number 그리고 특수기호',
+    }
+  )
   password?: string;
 
   @IsNotEmpty()
