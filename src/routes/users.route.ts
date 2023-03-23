@@ -22,9 +22,16 @@ router.get('/checkemail', asyncWrap(usersController.checkDuplicateEmail));
 
 // 로그인 유저의 모든 정보 조회하기
 router.get(
-  '/getme',
+  '/userinfo',
   asyncWrap(authValidateOrReject),
   asyncWrap(usersController.getMe)
+);
+
+// 유저 정보 수정하기
+router.patch(
+  '/userinfo',
+  asyncWrap(authValidateOrReject),
+  asyncWrap(usersController.updateUserInfo)
 );
 
 // 타겟 유저의 정보 조회하기
@@ -32,12 +39,6 @@ router.get(
   '/userinfo/:id',
   asyncWrap(authValidateOrNext),
   asyncWrap(usersController.getUserInfo)
-);
-
-router.patch(
-  '/userinfo/:id',
-  asyncWrap(authValidateOrReject),
-  asyncWrap(usersController.updateUserInfo)
 );
 
 export default router;
