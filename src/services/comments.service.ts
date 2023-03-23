@@ -10,19 +10,26 @@ const formatComment = (
   feedUserId: number,
   parentUserId?: number
 ): any => {
-  // 로그인 사용자의 비밀덧글 조회시 유효성 확인 및 삭제된 덧글 필터링
   const isPrivate =
     comment.is_private === true &&
     comment.user.id !== userId &&
     (parentUserId ? parentUserId !== userId : feedUserId !== userId);
   const isDeleted = comment.deleted_at !== null;
+
   return {
     ...comment,
+    // 로그인 사용자의 비밀덧글 조회시 유효성 확인 및 삭제된 덧글 필터링
     comment: isDeleted
       ? '## DELETED_COMMENT ##'
       : isPrivate
       ? '## PRIVATE_COMMENT ##'
       : comment.comment,
+
+    user: isDeleted
+      ? { id: null, nickname: null, email: null }
+      : isPrivate
+      ? { id: null, nickname: null, email: null }
+      : comment.user,
 
     // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
     created_at: comment.created_at.substring(0, 19),
@@ -41,8 +48,6 @@ const formatComment = (
 const getCommentList = async (feedId: number, userId: number) => {
   const result = await CommentRepository.getCommentList(feedId);
 
-  // TODO 비밀덧글, 삭제된 덧글일 경우, 내용뿐만 아니라 닉네임 등등도 가리기!!
-
   const feedUserId = result[0].feed.user.id;
   return [...result].map((comment: any) =>
     formatComment(comment, userId, feedUserId)
@@ -52,13 +57,17 @@ const getCommentList = async (feedId: number, userId: number) => {
 const createComment = async (commentInfo: CommentDto): Promise<void> => {
   commentInfo = plainToInstance(CommentDto, commentInfo);
 
-  // TODO 없는 게시물 에러핸들링
-
   await validateOrReject(commentInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
   });
 
-  await CommentRepository.createComment(commentInfo);
+  await CommentRepository.createComment(commentInfo).catch(err => {
+    if (err.code === 'ER_NO_REFERENCED_ROW_2') {
+      const error = new Error(`COMMENT'S_FEED_VALIDATION_ERROR`);
+      error.status = 404;
+      throw error;
+    }
+  });
 };
 
 const validateComment = async (userId: number, commentId: number) => {

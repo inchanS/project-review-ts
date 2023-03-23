@@ -1,6 +1,5 @@
 import { ViewColumn, ViewEntity } from 'typeorm';
 
-// TODO 이미지 파일의 수도 가져오기
 @ViewEntity({
   expression: `
       WITH t1 AS (SELECT c.feedId AS feedId, COUNT(c.id) AS comment_cnt
