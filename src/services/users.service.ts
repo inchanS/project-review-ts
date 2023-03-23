@@ -175,6 +175,9 @@ const getUserInfo = async (
   return findUserInfoById(targetUserId, loggedInUserId);
 };
 
+// TODO user 정보 수정하기
+//  - 닉네임, 비밀번호 수정할 수 있는...?
+//  - 나중에 프로필 이미지 넣어볼까나 ㅎㅎ
 export default {
   signUp,
   signIn,

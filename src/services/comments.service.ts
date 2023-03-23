@@ -40,6 +40,9 @@ const formatComment = (
 
 const getCommentList = async (feedId: number, userId: number) => {
   const result = await CommentRepository.getCommentList(feedId);
+
+  // TODO 비밀덧글, 삭제된 덧글일 경우, 내용뿐만 아니라 닉네임 등등도 가리기!!
+
   const feedUserId = result[0].feed.user.id;
   return [...result].map((comment: any) =>
     formatComment(comment, userId, feedUserId)
@@ -48,6 +51,8 @@ const getCommentList = async (feedId: number, userId: number) => {
 
 const createComment = async (commentInfo: CommentDto): Promise<void> => {
   commentInfo = plainToInstance(CommentDto, commentInfo);
+
+  // TODO 없는 게시물 에러핸들링
 
   await validateOrReject(commentInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };

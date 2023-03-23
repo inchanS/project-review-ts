@@ -10,8 +10,8 @@ import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import dataSource from '../repositories/index.db';
 import { EntityNotFoundError, QueryRunner } from 'typeorm';
-import { Estimation } from '../entities/estimation.entity';
 import uploadFileService, { DeleteUploadFiles } from './uploadFile.service';
+import { Estimation } from '../entities/estimation.entity';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -200,13 +200,19 @@ const getFeed = async (userId: number, feedId: number) => {
 // 게시글 리스트 --------------------------------------------------------------
 const getFeedList = async (
   categoryId: number,
-  page: number
+  page: number,
+  limit: number
 ): Promise<FeedList[]> => {
+  // query로 전달된 categoryId가 0이거나 없을 경우 undefined로 변경 처리
   if (!categoryId || categoryId === 0) {
     categoryId = undefined;
   }
 
-  const limit: number = 5;
+  // query로 전달된 limit가 0이거나 없을 경우 기본값 10으로 변경 처리
+  if (!limit || limit === 0) {
+    limit = 10;
+  }
+
   if (!page) {
     page = 1;
   }
@@ -217,7 +223,11 @@ const getFeedList = async (
 // TODO deleteFeed
 
 const getEstimations = async (): Promise<Estimation[]> => {
-  return await dataSource.getRepository(Estimation).find();
+  const result = await dataSource
+    .getRepository(Estimation)
+    .find({ select: ['id', 'estimation'] });
+
+  return result;
 };
 
 export default {

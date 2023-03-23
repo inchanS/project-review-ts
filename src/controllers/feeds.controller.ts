@@ -134,7 +134,9 @@ const getFeedList = async (req: Request, res: Response) => {
   const categoryId: number = Number(req.query.categoryId);
 
   const page: number = Number(req.query.page);
-  const result = await feedsService.getFeedList(categoryId, page);
+  const limit: number = Number(req.query.limit);
+
+  const result = await feedsService.getFeedList(categoryId, page, limit);
 
   res.status(200).json(result);
 };
@@ -151,6 +153,6 @@ export default {
   createTempFeed,
   updateTempFeed,
   getTempFeedList,
-  getTempFeed: getFeed,
+  getFeed,
   getEstimations,
 };
