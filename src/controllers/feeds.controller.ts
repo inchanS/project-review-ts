@@ -82,7 +82,7 @@ const updateTempFeed = async (req: Request, res: Response) => {
 // TODO : 임시저장 게시글 삭제
 
 // 게시글 ==================================================================
-// 게시글 생성 --------------------------------------------------------------
+// 게시글 작성 --------------------------------------------------------------
 const createFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const fileLinks: string[] = req.body.fileLinks;

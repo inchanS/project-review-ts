@@ -9,18 +9,21 @@ import {
 const router = Router();
 
 // 임시저장글 ------------------------------------------------
+// 임시저장 목록 가져오기
 router.get(
   '/temp',
   asyncWrap(authValidateOrReject),
   asyncWrap(feedsController.getTempFeedList)
 );
 
+// 임시글 저장하기
 router.post(
   '/temp',
   asyncWrap(authValidateOrReject),
   asyncWrap(feedsController.createTempFeed)
 );
 
+// 임시저장글 수정하기
 router.patch(
   '/temp',
   asyncWrap(authValidateOrReject),
