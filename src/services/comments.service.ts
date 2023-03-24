@@ -3,6 +3,7 @@ import { validateOrReject } from 'class-validator';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentRepository } from '../repositories/comment.repository';
 import { FeedRepository } from '../repositories/feed.repository';
+import { IsNull, Not } from 'typeorm';
 
 // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
 const formatComment = (
@@ -64,22 +65,38 @@ const getCommentList = async (feedId: number, userId: number) => {
 };
 
 const createComment = async (commentInfo: CommentDto): Promise<void> => {
+  // 임시게시글, 삭제된 게시글, 존재하지 않는 게시글에 댓글 달기 시도시 에러처리
+  await FeedRepository.findOneOrFail({
+    where: {
+      id: commentInfo.feed,
+      posted_at: Not(IsNull()),
+    },
+  }).catch(err => {
+    throw { status: 404, message: "COMMENT'S_FEED_VALIDATION_ERROR" };
+  });
+
+  if (commentInfo.parent) {
+    // 대댓글의 경우 부모댓글이 없을 때 에러 반환
+    const parentComment = await CommentRepository.findOneOrFail({
+      loadRelationIds: true,
+      where: { id: commentInfo.parent },
+    }).catch(err => {
+      throw { status: 404, message: 'COMMENT_PARENT_NOT_FOUND' };
+    });
+
+    // 부모 댓글의 feedId와 body의 feedId가 다를 경우 에러 반환
+    if (Number(parentComment.feed) !== commentInfo.feed) {
+      throw { status: 400, message: 'COMMENT_PARENT_VALIDATION_ERROR' };
+    }
+  }
+
   commentInfo = plainToInstance(CommentDto, commentInfo);
 
   await validateOrReject(commentInfo).catch(errors => {
     throw { status: 500, message: errors[0].constraints };
   });
 
-  // FIXME 임시게시글, 삭제된 게시글, 존재하지 않는 게시글에 댓글 달기 시도시 에러처리
-
-  // FIXME 대댓글의 경우 부모 댓글의 feedId와 body의 feedId가 다를 경우 에러처리
-  await CommentRepository.createComment(commentInfo).catch(err => {
-    if (err.code === 'ER_NO_REFERENCED_ROW_2') {
-      const error = new Error(`COMMENT'S_FEED_VALIDATION_ERROR`);
-      error.status = 404;
-      throw error;
-    }
-  });
+  await CommentRepository.createComment(commentInfo);
 };
 
 const validateComment = async (userId: number, commentId: number) => {

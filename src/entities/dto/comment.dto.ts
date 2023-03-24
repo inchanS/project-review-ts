@@ -5,7 +5,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Comment } from '../comment.entity';
 
 export class CommentDto {
   @IsNotEmpty()
@@ -30,5 +29,5 @@ export class CommentDto {
 
   @IsNumber()
   @IsOptional()
-  parent?: Comment;
+  parent?: number;
 }
