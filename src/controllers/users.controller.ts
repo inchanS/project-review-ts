@@ -59,6 +59,12 @@ const updateUserInfo = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ message: `UPDATE_USERINFO_SUCCESS`, result });
 };
 
+const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  const userId = req.userInfo.id;
+  await usersService.deleteUser(userId);
+  res.status(200).json({ message: `DELETE_USER_SUCCESS` });
+};
+
 export default {
   signUp,
   signIn,
@@ -67,4 +73,5 @@ export default {
   checkDuplicateEmail,
   getUserInfo,
   updateUserInfo,
+  deleteUser,
 };

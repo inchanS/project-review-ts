@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentRepository } from '../repositories/comment.repository';
+import { FeedRepository } from '../repositories/feed.repository';
 
 // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
 const formatComment = (
@@ -46,7 +47,15 @@ const formatComment = (
 };
 
 const getCommentList = async (feedId: number, userId: number) => {
+  const feed = await FeedRepository.findOneById(feedId);
+  if (!feed) throw { status: 404, message: 'FEED_NOT_FOUND' };
+
   const result = await CommentRepository.getCommentList(feedId);
+
+  // 덧글이 없을 경우 빈 배열 반환
+  if (result.length === 0) {
+    return [];
+  }
 
   const feedUserId = result[0].feed.user.id;
   return [...result].map((comment: any) =>
@@ -61,6 +70,9 @@ const createComment = async (commentInfo: CommentDto): Promise<void> => {
     throw { status: 500, message: errors[0].constraints };
   });
 
+  // FIXME 임시게시글, 삭제된 게시글, 존재하지 않는 게시글에 댓글 달기 시도시 에러처리
+
+  // FIXME 대댓글의 경우 부모 댓글의 feedId와 body의 feedId가 다를 경우 에러처리
   await CommentRepository.createComment(commentInfo).catch(err => {
     if (err.code === 'ER_NO_REFERENCED_ROW_2') {
       const error = new Error(`COMMENT'S_FEED_VALIDATION_ERROR`);

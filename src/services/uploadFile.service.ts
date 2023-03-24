@@ -1,4 +1,4 @@
-import { IsNull, Like, QueryRunner } from 'typeorm';
+import { Brackets, QueryRunner } from 'typeorm';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import uploadService from './upload.service';
 import { Feed } from '../entities/feed.entity';
@@ -66,17 +66,24 @@ export type DeleteUploadFiles = {
 };
 const deleteUnusedUploadFiles = async (
   queryRunner: QueryRunner,
-  feedInfo: Feed
+  userId: number
 ): Promise<DeleteUploadFiles> => {
-  const uploadFileWithoutFeed = await queryRunner.manager.find(UploadFiles, {
-    loadRelationIds: true,
-    where: {
-      file_link: Like(
-        `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${feedInfo.user}%`
-      ),
-      feed: IsNull(),
-    },
-  });
+  const uploadFileWithoutFeed = await queryRunner.manager
+    .getRepository(UploadFiles)
+    .createQueryBuilder('uploadFiles')
+    .leftJoinAndSelect('uploadFiles.feed', 'feed')
+    .where('uploadFiles.file_link LIKE :fileLink', {
+      fileLink: `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${userId}%`,
+    })
+    // .andWhere('feed.id IS NULL')
+    // .orWhere('feed.deleted_at IS NOT NULL')
+    // 아래 콜백함수 메소드가 아닌 위의 방법처럼 체이닝하여 조건을 사용할 수도 있다.
+    .andWhere(
+      new Brackets(qb => {
+        qb.where('feed.id IS NULL').orWhere('feed.deleted_at IS NOT NULL');
+      })
+    )
+    .getMany();
 
   if (uploadFileWithoutFeed.length > 0) {
     const uploadFileWithoutFeedId = uploadFileWithoutFeed.map(
@@ -98,14 +105,14 @@ const deleteUnconnectedLinks = async (
   fileLinksToDelete: string[]
 ) => {
   if (uploadFileIdsToDelete.length > 0) {
-    await queryRunner.manager.delete(UploadFiles, uploadFileIdsToDelete);
+    await queryRunner.manager.softDelete(UploadFiles, uploadFileIdsToDelete);
     await uploadService.deleteUploadFile(fileLinksToDelete);
   }
 };
 const checkUploadFileOfFeed = async (
   queryRunner: QueryRunner,
   feedId: number,
-  feed: Feed,
+  userId: number,
   originFeed: Feed,
   fileLinks: string[]
 ) => {
@@ -118,7 +125,7 @@ const checkUploadFileOfFeed = async (
 
   const findUnusedUploadFiles = await deleteUnusedUploadFiles(
     queryRunner,
-    feed
+    userId
   );
 
   if (findUnusedUploadFiles) {

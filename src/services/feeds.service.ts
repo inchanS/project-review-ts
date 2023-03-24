@@ -12,11 +12,15 @@ import dataSource from '../repositories/index.db';
 import { EntityNotFoundError, QueryRunner } from 'typeorm';
 import uploadFileService, { DeleteUploadFiles } from './uploadFile.service';
 import { Estimation } from '../entities/estimation.entity';
+import uploadService from './upload.service';
+import { FeedSymbol } from '../entities/feedSymbol.entity';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
 const getTempFeedList = async (userId: number) => {
-  const results = await FeedListRepository.getTempFeedList(userId);
+  const results = await FeedListRepository.getFeedListByUserId(userId, {
+    onlyTempFeeds: true,
+  });
   for (const result of results) {
     const updatedAt = result.updatedAt.substring(2);
     if (result.title === null) {
@@ -61,10 +65,10 @@ const createFeed = async (
 
   try {
     // feed 저장
-    const tempFeed = plainToInstance(Feed, feedInfo);
+    const newFeed = plainToInstance(Feed, feedInfo);
     const newTempFeed = await queryRunner.manager
       .withRepository(FeedRepository)
-      .createFeed(tempFeed);
+      .createFeed(newFeed);
 
     // uploadFile에 feed의 ID를 연결해주는 함수
     if (fileLinks) {
@@ -73,8 +77,12 @@ const createFeed = async (
         newTempFeed,
         fileLinks
       );
+
       const deleteUploadFiles: DeleteUploadFiles =
-        await uploadFileService.deleteUnusedUploadFiles(queryRunner, tempFeed);
+        await uploadFileService.deleteUnusedUploadFiles(
+          queryRunner,
+          Number(newFeed.user)
+        );
 
       if (deleteUploadFiles) {
         await uploadFileService.deleteUnconnectedLinks(
@@ -92,7 +100,7 @@ const createFeed = async (
     return result;
   } catch (err) {
     await queryRunner.rollbackTransaction();
-    throw new Error(`createTempFeed TRANSACTION error: ${err}`);
+    throw new Error(`createFeed TRANSACTION error: ${err}`);
   } finally {
     await queryRunner.release();
   }
@@ -114,7 +122,7 @@ const updateFeed = async (
     throw error;
   }
 
-  if (originFeed.status === 2) {
+  if (originFeed.status.id === 2) {
     feedInfo = plainToInstance(TempFeedDto, feedInfo);
   } else {
     feedInfo = plainToInstance(FeedDto, feedInfo);
@@ -135,10 +143,11 @@ const updateFeed = async (
 
     // 수정내용 중 fileLink가 있는지 확인하고, 있다면 uploadFile에 feed의 ID를 연결해주는 함수
     // fildLink가 없다면 기존의 fileLink를 삭제한다.
+
     await uploadFileService.checkUploadFileOfFeed(
       queryRunner,
       feedId,
-      feed,
+      Number(feed.user),
       originFeed,
       fileLinks
     );
@@ -155,7 +164,7 @@ const updateFeed = async (
     return result;
   } catch (err) {
     await queryRunner.rollbackTransaction();
-    throw new Error(`updateTempFeed TRANSACTION error: ${err}`);
+    throw new Error(`updateFeed TRANSACTION error: ${err}`);
   } finally {
     await queryRunner.release();
   }
@@ -220,14 +229,58 @@ const getFeedList = async (
   return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
 };
 
-// TODO deleteFeed
+const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
+  const feed = await FeedRepository.getFeed(feedId).catch((err: Error) => {
+    if (err instanceof EntityNotFoundError) {
+      const error = new Error(`NOT_FOUND_FEED`);
+      error.status = 404;
+      throw error;
+    }
+  });
+
+  if (feed.user.id !== userId) {
+    const error = new Error('ONLY_THE_AUTHOR_CAN_DELETE');
+    error.status = 403;
+    throw error;
+  }
+
+  // transaction으로 묶어주기
+  const queryRunner = dataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    if (feed.uploadFiles.length > 0) {
+      const deleteFileLinksArray = [];
+      // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
+      deleteFileLinksArray.push('DELETE_FROM_UPLOAD_FILES_TABLE');
+
+      for (const uploadFile of feed.uploadFiles) {
+        deleteFileLinksArray.push(uploadFile.file_link);
+      }
+      await uploadService.deleteUploadFile(deleteFileLinksArray).catch(err => {
+        throw new Error(`deleteUploadFile error: ${err}`);
+      });
+    }
+    // feed 삭제
+    await queryRunner.manager.softDelete(Feed, feedId);
+    // feedSymbol 삭제
+    await queryRunner.manager.softDelete(FeedSymbol, { feed: feedId });
+
+    await queryRunner.commitTransaction();
+    return;
+  } catch (err) {
+    await queryRunner.rollbackTransaction();
+    throw new Error(`deleteFeed TRANSACTION error: ${err}`);
+  } finally {
+    await queryRunner.release();
+  }
+};
 
 const getEstimations = async (): Promise<Estimation[]> => {
-  const result = await dataSource
+  return await dataSource
     .getRepository(Estimation)
     .find({ select: ['id', 'estimation'] });
-
-  return result;
 };
 
 export default {
@@ -236,5 +289,6 @@ export default {
   getFeedList,
   getFeed,
   getTempFeedList,
+  deleteFeed,
   getEstimations,
 };

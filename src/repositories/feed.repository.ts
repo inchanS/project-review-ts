@@ -80,6 +80,10 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
   },
 });
 
+export type FeedListOptions = {
+  includeTempFeeds?: boolean;
+  onlyTempFeeds?: boolean;
+};
 export const FeedListRepository = dataSource.getRepository(FeedList).extend({
   async getFeedList(
     categoryId: number | undefined,
@@ -100,15 +104,51 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
     });
   },
 
-  async getFeedListByUserId(userId: number) {
-    return await this.find({
-      where: { userId: userId, postedAt: Not(IsNull()), deletedAt: IsNull() },
-    });
-  },
+  async getFeedListByUserId(userId: number, options: FeedListOptions = {}) {
+    const { includeTempFeeds = false, onlyTempFeeds = false } = options;
 
-  async getTempFeedList(userId: number) {
+    let feedListCondition = {};
+
+    if (includeTempFeeds && onlyTempFeeds) {
+      throw {
+        status: 400,
+        message:
+          'INCLUDE_TEMP_FEEDS_AND_ONLY_TEMP_FEEDS_CANNOT_BE_SET_TO_TRUE_AT_THE_SAME_TIME',
+      };
+    }
+
+    if (includeTempFeeds) {
+      // 없어도 되는 빈 if문이지만 코드 가독성을 위해 추가
+      // 사용자의 정식 게시글 + 임시저장 게시글 목록 반환 (삭제된 글은 반환하지 않음)
+    } else if (onlyTempFeeds) {
+      // 사용자의 임시저장 게시글 목록만 반환
+      feedListCondition = { postedAt: IsNull() };
+    } else {
+      // 사용자의 정식 게시글 목록만 반환
+      feedListCondition = { postedAt: Not(IsNull()) };
+    }
+
     return await this.find({
-      where: { userId: userId, statusId: 2 },
+      where: { userId: userId, deletedAt: IsNull(), ...feedListCondition },
     });
+
+    // --------------------------------------------------------------------------
+    // 아래의 2 코드를 위 코드로 리팩토링 함 (2023.03.24) ---------------------------------
+
+    //   if (includeTempFeeds) {
+    //     return await this.find({
+    //       where: { userId: userId, deletedAt: IsNull() },
+    //     });
+    //   } else {
+    //     return await this.find({
+    //       where: { userId: userId, postedAt: Not(IsNull()), deletedAt: IsNull() },
+    //     });
+    //   }
+    // },
+    //
+    // async getTempFeedList(userId: number) {
+    //   return await this.find({
+    //     where: { userId: userId, postedAt: IsNull() },
+    //   });
   },
 });

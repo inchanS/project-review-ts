@@ -79,8 +79,6 @@ const updateTempFeed = async (req: Request, res: Response) => {
     .json({ message: `update temporary feed success`, result: result });
 };
 
-// TODO : 임시저장 게시글 삭제
-
 // 게시글 ==================================================================
 // 게시글 작성 --------------------------------------------------------------
 const createFeed = async (req: Request, res: Response) => {
@@ -129,6 +127,15 @@ const updateFeed = async (req: Request, res: Response) => {
   res.status(200).json({ message: `update feed success`, result: result });
 };
 
+const deleteFeed = async (req: Request, res: Response) => {
+  const userId = req.userInfo.id;
+  const feedId: number = Number(req.params.feedId);
+
+  await feedsService.deleteFeed(userId, feedId);
+
+  res.status(200).json({ message: `delete feed success` });
+};
+
 // 게시글 리스트 ------------------------------------------------------------
 const getFeedList = async (req: Request, res: Response) => {
   const categoryId: number = Number(req.query.categoryId);
@@ -154,5 +161,6 @@ export default {
   updateTempFeed,
   getTempFeedList,
   getFeed,
+  deleteFeed,
   getEstimations,
 };

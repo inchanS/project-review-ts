@@ -6,7 +6,17 @@ import jwt from 'jsonwebtoken';
 import { UserDto } from '../entities/dto/user.dto';
 import { UserRepository } from '../repositories/user.repository';
 import { CommentRepository } from '../repositories/comment.repository';
-import { FeedListRepository } from '../repositories/feed.repository';
+import {
+  FeedListOptions,
+  FeedListRepository,
+} from '../repositories/feed.repository';
+import dataSource from '../repositories/index.db';
+import { FeedSymbol } from '../entities/feedSymbol.entity';
+import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
+import { Comment } from '../entities/comment.entity';
+import UploadFileService from './uploadFile.service';
+import uploadFileService from './uploadFile.service';
+import { Feed } from '../entities/feed.entity';
 
 const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   if (!nickname) {
@@ -99,13 +109,16 @@ const signIn = async (email: string, password: string): Promise<object> => {
   return { token };
 };
 
-// TODO user 삭제 API
-//  모든 서비스에서 user의 deleted_at이 not null일때 모두 탈퇴회원 처리
-
+type UserInfo = {
+  userInfo: User;
+  userFeeds: FeedList[];
+  userComments: Comment[];
+};
 const findUserInfoById = async (
   targetUserId: number,
-  loggedInUserId: number
-): Promise<object> => {
+  loggedInUserId: number,
+  options?: FeedListOptions
+): Promise<UserInfo> => {
   const userInfo = await UserRepository.findOne({
     where: { id: targetUserId },
   });
@@ -116,10 +129,14 @@ const findUserInfoById = async (
     throw error;
   }
 
-  const userFeeds = await FeedListRepository.getFeedListByUserId(targetUserId);
+  const userFeeds = await FeedListRepository.getFeedListByUserId(
+    targetUserId,
+    options
+  );
   const userComments = await CommentRepository.getCommentListByUserId(
     targetUserId
   );
+
   for (const comment of userComments) {
     const isPrivate =
       comment.is_private === true && comment.user !== loggedInUserId;
@@ -201,6 +218,73 @@ const updateUserInfo = async (userId: number, userInfo: UserDto) => {
   });
 };
 
+const deleteUser = async (userId: number): Promise<void> => {
+  const userInfo = await findUserInfoById(userId, userId, {
+    includeTempFeeds: true,
+  });
+  const userSymbols = await dataSource.manager.find<FeedSymbol>('FeedSymbol', {
+    loadRelationIds: true,
+    where: { user: { id: userId } },
+  });
+
+  if (!userInfo) throw { status: 404, message: 'USER_IS_NOT_FOUND' };
+
+  const queryRunner = dataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
+  try {
+    const userFeedIds = userInfo.userFeeds.map(feed => feed.id);
+    const userCommentIds = userInfo.userComments.map(comment => comment.id);
+    const userSymbolIds = userSymbols.map(symbol => symbol.id);
+
+    // 사용자의 User entity를 삭제한다.
+    await queryRunner.manager.softDelete(User, userId);
+
+    // 사용자의 Feed entity를 모두 삭제한다.
+    if (userFeedIds.length > 0) {
+      await queryRunner.manager.softDelete(Feed, userFeedIds);
+    }
+    // feed를 모두 삭제한 후, 사용하지 않는 fileLinks를 삭제한다.
+
+    // UploadFilesService.deleteUnusedUploadFiles()함수를 사용하기 위해 Feed entity를 만들어서
+    // id만 넣어준다.
+    // const mockUserEntity = new User();
+    // mockUserEntity.id = userId;
+    // const userInfoForDeleteFileLinks = new Feed();
+    // userInfoForDeleteFileLinks.user = mockUserEntity;
+
+    const unusedFileLinks = await UploadFileService.deleteUnusedUploadFiles(
+      queryRunner,
+      userId
+    );
+    if (unusedFileLinks) {
+      await uploadFileService.deleteUnconnectedLinks(
+        queryRunner,
+        unusedFileLinks.uploadFileWithoutFeedId,
+        unusedFileLinks.deleteFileLinksArray
+      );
+    }
+
+    // 사용자의 덧글을 모두 삭제한다.
+    if (userCommentIds.length > 0) {
+      await queryRunner.manager.softDelete(Comment, userCommentIds);
+    }
+    // 사용자의 symbol을 모두 삭제한다.
+    if (userSymbolIds.length > 0) {
+      await queryRunner.manager.softDelete(FeedSymbol, userSymbolIds);
+    }
+    // transaction commit
+    await queryRunner.commitTransaction();
+    return;
+  } catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
+  } finally {
+    await queryRunner.release();
+  }
+};
+
 // TODO 나중에 프로필 이미지 넣어볼까나
 export default {
   signUp,
@@ -210,4 +294,5 @@ export default {
   checkDuplicateEmail,
   getUserInfo,
   updateUserInfo,
+  deleteUser,
 };

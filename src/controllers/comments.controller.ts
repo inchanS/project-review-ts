@@ -5,6 +5,7 @@ import { CommentDto } from '../entities/dto/comment.dto';
 const getCommentList = async (req: Request, res: Response) => {
   const feedId: number = Number(req.params.id);
   const userId: number = req.userInfo.id;
+
   const result = await commentsService.getCommentList(feedId, userId);
   res.status(200).json(result);
 };

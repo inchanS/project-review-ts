@@ -45,6 +45,13 @@ router.get(
   asyncWrap(feedsController.getFeed)
 );
 
+// 게시글 삭제
+router.delete(
+  '/:feedId',
+  asyncWrap(authValidateOrReject),
+  asyncWrap(feedsController.deleteFeed)
+);
+
 // 게시글 작성
 router.post(
   '/post',

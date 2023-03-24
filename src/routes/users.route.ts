@@ -34,6 +34,13 @@ router.patch(
   asyncWrap(usersController.updateUserInfo)
 );
 
+// 유저 정보 삭제하기
+router.delete(
+  '/userinfo',
+  asyncWrap(authValidateOrReject),
+  asyncWrap(usersController.deleteUser)
+);
+
 // 타겟 유저의 정보 조회하기
 router.get(
   '/userinfo/:id',

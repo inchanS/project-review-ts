@@ -92,9 +92,9 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
   // mySQL에서 file_link를 통해 uploadFile의 ID를 담을 배열
   let uploadFileIdArray = [];
 
-  // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서는 삭제할 필요가 없기때문에 조건을 만들어준다.
+  // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
   const newFileLinks = file_links.filter(
-    (file_link: string) => file_link !== 'deleteUploadFile.constroller'
+    (file_link: string) => file_link !== 'DELETE_FROM_UPLOAD_FILES_TABLE'
   );
 
   for (const file_link of newFileLinks) {
@@ -141,9 +141,9 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
     }
   }
 
-  if (file_links.includes('deleteUploadFile.constroller')) {
+  if (file_links.includes('DELETE_FROM_UPLOAD_FILES_TABLE')) {
     // mySQL에서 개체 삭제
-    await dataSource.manager.delete(UploadFiles, uploadFileIdArray);
+    await dataSource.manager.softDelete(UploadFiles, uploadFileIdArray);
   }
 };
 

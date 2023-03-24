@@ -110,6 +110,7 @@ const addAndUpdateSymbolToFeed = async (
 
   await FeedSymbolRepository.upsertFeedSymbol(newFeedSymbol);
 
+  // FIXME 삭제된 피드의 경우 500에러처리되는데 이걸 404로 바꿔야함
   const result = await getFeedSymbolCount(feedSymbolInfo.feed);
 
   return { sort, result };
