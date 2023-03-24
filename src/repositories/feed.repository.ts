@@ -52,6 +52,8 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .leftJoin('feed.status', 'status')
       .leftJoin('feed.uploadFiles', 'uploadFiles')
       .where('feed.id = :feedId', { feedId: feedId })
+      .andWhere('feed.posted_at IS NOT NULL')
+      .andWhere('feed.deleted_at IS NULL')
       .getOneOrFail();
   },
 

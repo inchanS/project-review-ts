@@ -53,7 +53,8 @@ const checkUsersSymbolForfeed = async (
   }
 
   if (result) {
-    (newResult.checkValue = true), (newResult.result = result);
+    newResult.checkValue = true;
+    newResult.result = result;
     return newResult;
   }
 };
@@ -68,17 +69,13 @@ const addAndUpdateSymbolToFeed = async (
   // 피드 유효성검사
   const validateFeed = await FeedRepository.getFeed(feedSymbolInfo.feed).catch(
     () => {
-      const error = new Error('INVALID_FEED');
-      error.status = 404;
-      throw error;
+      throw { status: 404, message: 'INVALID_FEED' };
     }
   );
 
   // 사용자 유효성검사 (게시글 작성자는 공감할 수 없음)
   if (validateFeed.user.id === feedSymbolInfo.user) {
-    const error = new Error('THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
-    error.status = 403;
-    throw error;
+    throw { status: 403, message: 'THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE' };
   }
 
   // 심볼 유효성검사
@@ -88,9 +85,7 @@ const addAndUpdateSymbolToFeed = async (
       where: { id: feedSymbolInfo.symbol },
     })
     .catch(() => {
-      const error = new Error('INVALID_SYMBOL');
-      error.status = 404;
-      throw error;
+      throw { status: 404, message: 'INVALID_SYMBOL' };
     });
 
   // 피드 심볼 중복검사
@@ -110,7 +105,6 @@ const addAndUpdateSymbolToFeed = async (
 
   await FeedSymbolRepository.upsertFeedSymbol(newFeedSymbol);
 
-  // FIXME 삭제된 피드의 경우 500에러처리되는데 이걸 404로 바꿔야함
   const result = await getFeedSymbolCount(feedSymbolInfo.feed);
 
   return { sort, result };
