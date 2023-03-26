@@ -17,6 +17,7 @@ if (process.env.NODE_ENV === 'production') {
 //   console.log('process.env.NODE_ENV IS_NOT_SET!! RUN_DEV_MODE!!');
 // }
 
+import dataSource from './repositories/index.db';
 import { createApp } from './app';
 
 const startApp = async () => {
@@ -26,6 +27,21 @@ const startApp = async () => {
 
   app.listen(port, () => {
     console.log(`⚡️[server]: Server is running at ${url}${port}`);
+
+    dataSource
+      .initialize()
+      .then(() => {
+        if (process.env.NODE_ENV === 'develop') {
+          console.log('Data Source has been initialized!');
+        }
+
+        if (process.env.NODE_ENV === 'test') {
+          console.log('TEST Data Source has been initialized! 💥');
+        }
+      })
+      .catch((err: Error) => {
+        console.error('Error during Data Source initialization:', err);
+      });
   });
 };
 

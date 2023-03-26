@@ -4,7 +4,7 @@
   "description": "230118 project start / with front-end : Oh DaWon ",
   "main": "dist/main.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit",
+    "test": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit",
     "build": "npx tsc",
     "api-docs": "swagger-cli bundle api-docs/swagger/index.yaml --outfile api-docs/_build/index.yaml --type yaml",
     "predev": "npm run api-docs",
@@ -18,7 +18,7 @@
     "url": "git+https://github.com/inchanS/project-review-ts.git"
   },
   "keywords": [],
-  "author": "inchanS-Song InChan",
+  "author": "inchanS - Song InChan",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/inchanS/project-review-ts/issues"

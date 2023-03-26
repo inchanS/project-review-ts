@@ -4,7 +4,5 @@ module.exports = {
   testMatch: ['**/src/tests/*.test.ts'], //js 파일은 dist에서도 감지가 될 수 있으니 폴더를 조정해서 test이 있는 위치로 잡아준다.
   verbose: true,
   collectCoverage: true,
-  setupFiles: [
-    '/Users/song-inchan/Documents/Code/projectCodject/project-review/project-review-ts/src/tests/setup-tests.ts',
-  ],
+  setupFiles: ['<rootDir>/src/tests/setup-test.ts'],
 };
