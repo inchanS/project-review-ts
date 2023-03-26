@@ -17,6 +17,7 @@ import { Comment } from '../entities/comment.entity';
 import UploadFileService from './uploadFile.service';
 import uploadFileService from './uploadFile.service';
 import { Feed } from '../entities/feed.entity';
+import { sendMail } from '../utils/sendMail';
 
 const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   if (!nickname) {
@@ -285,6 +286,48 @@ const deleteUser = async (userId: number): Promise<void> => {
   }
 };
 
+// 비밀번호 찾기 기능 구현
+const resetPassword = async (email: string, resetPasswordUrl: string) => {
+  const user = await UserRepository.findOneOrFail({ where: { email } }).catch(
+    err => {
+      throw { status: 404, message: 'USER_IS_NOT_FOUND' };
+    }
+  );
+
+  const jwtSecret = process.env.SECRET_KEY;
+  const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: '10m' });
+
+  const url = `${resetPasswordUrl}/${token}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: email,
+    subject: '비밀번호를 재설정해주세요 - review site',
+    html: `
+      <p>안녕하세요, Review Site입니다.</p>
+      <p>비밀번호를 재설정하려면 아래 링크를 클릭해주세요.</p>
+      <p>링크는 10분 후에 만료됩니다.</p>
+      <a href="${url}">
+        <button style="
+          padding: 10px 20px;
+          background-color: #676FA3;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        ">
+          비밀번호 재설정
+        </button>
+      </a>
+      <p>만약 비밀번호 재설정을 요청하지 않으셨다면, 이 메일을 무시하시면 됩니다.</p>
+      <p>감사합니다.</p>
+    `,
+  };
+
+  await sendMail(mailOptions);
+  return;
+};
+
 // TODO 나중에 프로필 이미지 넣어볼까나
 export default {
   signUp,
@@ -295,4 +338,5 @@ export default {
   getUserInfo,
   updateUserInfo,
   deleteUser,
+  resetPassword,
 };

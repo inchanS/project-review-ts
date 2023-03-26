@@ -48,4 +48,7 @@ router.get(
   asyncWrap(usersController.getUserInfo)
 );
 
+// 유저 비밀번호 찾기 - 이메일로 비밀번호 재설정 링크 보내기
+router.post('/password', asyncWrap(usersController.resetPassword));
+
 export default router;

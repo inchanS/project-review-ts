@@ -65,6 +65,14 @@ const deleteUser = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ message: `DELETE_USER_SUCCESS` });
 };
 
+const resetPassword = async (req: Request, res: Response): Promise<void> => {
+  const { email }: UserDto = req.body;
+  const resetPasswordUrl: string = req.body.resetPasswordUrl;
+
+  await usersService.resetPassword(email, resetPasswordUrl);
+  res.status(200).json({ message: `RESET_PASSWORD_SUCCESS_AND_SEND_MAIL` });
+};
+
 export default {
   signUp,
   signIn,
@@ -74,4 +82,5 @@ export default {
   getUserInfo,
   updateUserInfo,
   deleteUser,
+  resetPassword,
 };

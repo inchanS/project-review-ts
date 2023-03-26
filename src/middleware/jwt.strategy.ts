@@ -11,7 +11,11 @@ async function decodeToken(token: string): Promise<any> {
 }
 
 // 토큰이 없으면 에러를 반환하는 유효성 검사 함수
-async function authValidateOrReject(req: Request, _: any, next: NextFunction) {
+export async function authValidateOrReject(
+  req: Request,
+  _: any,
+  next: NextFunction
+) {
   try {
     const decodedToken = await decodeToken(req.headers.authorization);
     if (!decodedToken.id) {
@@ -25,7 +29,11 @@ async function authValidateOrReject(req: Request, _: any, next: NextFunction) {
 }
 
 // 토큰이 없어도 다음으로 넘어가는 유효성 검사 함수
-async function authValidateOrNext(req: Request, _: any, next: NextFunction) {
+export async function authValidateOrNext(
+  req: Request,
+  _: any,
+  next: NextFunction
+) {
   try {
     const decodedToken = await decodeToken(req.headers.authorization);
     req.userInfo = { id: decodedToken.id };
@@ -34,5 +42,3 @@ async function authValidateOrNext(req: Request, _: any, next: NextFunction) {
     next(err);
   }
 }
-
-export { authValidateOrReject, authValidateOrNext };
