@@ -47,6 +47,7 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
 
   async getCommentListByUserId(userId: number) {
     return await this.find({
+      withDeleted: true,
       loadRelationIds: true,
       where: { user: { id: userId } },
     });

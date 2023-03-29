@@ -71,12 +71,6 @@ const signUp = async (userInfo: UserDto): Promise<void> => {
   await checkDuplicateNickname(userInfo.nickname);
 
   await UserRepository.createUser(userInfo);
-
-  // const salt = await bcrypt.genSalt();
-  // userInfo.password = await bcrypt.hash(userInfo.password, salt);
-  //
-  // const user = await userRepository.create(userInfo);
-  // await userRepository.save(user);
 };
 const signIn = async (email: string, password: string): Promise<object> => {
   // // <version 1>
@@ -92,16 +86,12 @@ const signIn = async (email: string, password: string): Promise<object> => {
   const checkUserbyEmail = await User.findByEmail(email);
 
   if (!checkUserbyEmail) {
-    const error = new Error(`${email}_IS_NOT_FOUND`);
-    error.status = 404;
-    throw error;
+    throw { status: 404, message: `${email}_IS_NOT_FOUND` };
   }
 
   const isSame = bcrypt.compareSync(password, checkUserbyEmail.password);
   if (!isSame) {
-    const error = new Error('PASSWORD_IS_INCORRECT');
-    error.status = 401;
-    throw error;
+    throw { status: 401, message: 'PASSWORD_IS_INCORRECT' };
   }
 
   const jwtSecret = process.env.SECRET_KEY;
@@ -148,6 +138,7 @@ const findUserInfoById = async (
       ? '## PRIVATE_COMMENT ##'
       : comment.comment;
 
+    // Date타입 재가공
     comment.created_at = comment.created_at.substring(0, 19);
     comment.updated_at = comment.updated_at.substring(0, 19);
     comment.deleted_at = comment.deleted_at
@@ -248,13 +239,6 @@ const deleteUser = async (userId: number): Promise<void> => {
     }
     // feed를 모두 삭제한 후, 사용하지 않는 fileLinks를 삭제한다.
 
-    // UploadFilesService.deleteUnusedUploadFiles()함수를 사용하기 위해 Feed entity를 만들어서
-    // id만 넣어준다.
-    // const mockUserEntity = new User();
-    // mockUserEntity.id = userId;
-    // const userInfoForDeleteFileLinks = new Feed();
-    // userInfoForDeleteFileLinks.user = mockUserEntity;
-
     const unusedFileLinks = await UploadFileService.deleteUnusedUploadFiles(
       queryRunner,
       userId
@@ -289,7 +273,7 @@ const deleteUser = async (userId: number): Promise<void> => {
 // 비밀번호 찾기 기능 구현
 const resetPassword = async (email: string, resetPasswordUrl: string) => {
   const user = await UserRepository.findOneOrFail({ where: { email } }).catch(
-    err => {
+    () => {
       throw { status: 404, message: 'USER_IS_NOT_FOUND' };
     }
   );
@@ -325,6 +309,15 @@ const resetPassword = async (email: string, resetPasswordUrl: string) => {
   };
 
   await sendMail(mailOptions);
+  // 위와 같이 작성시 가독성과 코드의 간결함은 좋지만 클라이언트의 응답시간이 비동기 동작의 block으로 인해 길어짐
+  // 이에 아래와 같이 작성
+  // sendMail(mailOptions).then(r => {
+  //   return new Promise((resolve, reject) => {
+  //     resolve(r);
+  //     reject(r);
+  //   });
+  // });
+
   return;
 };
 
@@ -339,4 +332,5 @@ export default {
   updateUserInfo,
   deleteUser,
   resetPassword,
+  findUserInfoById,
 };

@@ -27,6 +27,13 @@ router.get(
   asyncWrap(usersController.getMe)
 );
 
+// 타겟 유저의 정보 조회하기
+router.get(
+  '/userinfo/:id',
+  asyncWrap(authValidateOrNext),
+  asyncWrap(usersController.getUserInfo)
+);
+
 // 유저 정보 수정하기
 router.patch(
   '/userinfo',
@@ -39,13 +46,6 @@ router.delete(
   '/userinfo',
   asyncWrap(authValidateOrReject),
   asyncWrap(usersController.deleteUser)
-);
-
-// 타겟 유저의 정보 조회하기
-router.get(
-  '/userinfo/:id',
-  asyncWrap(authValidateOrNext),
-  asyncWrap(usersController.getUserInfo)
 );
 
 // 유저 비밀번호 찾기 - 이메일로 비밀번호 재설정 링크 보내기
