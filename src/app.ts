@@ -1,8 +1,10 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { morganCustomFormat } from '../src/utils/util';
-import router from './routes';
+import { morganCustomFormat } from './utils/util';
+import router from './routes/index.route';
+import { specs, swaggerOptions } from './utils/swagger';
+import swaggerUi from 'swagger-ui-express';
 
 let corsOptions = {
   origin: '*',
@@ -13,8 +15,19 @@ const createApp = () => {
   const app: Express = express();
   app.use(cors(corsOptions));
 
-  app.use(morgan(morganCustomFormat));
+  if (process.env.NODE_ENV === 'develop') {
+    app.use(morgan(morganCustomFormat));
+    // app.use(morgan('dev'));
+  } else if (process.env.NODE_ENV === 'test') {
+    app.use(morgan('dev'));
+  } else {
+    app.use(morgan('combined'));
+  }
+
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
+
   app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
   app.use(router);
 
   app.use((err: any, req: Request, res: Response) => {
