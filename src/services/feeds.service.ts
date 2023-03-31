@@ -108,7 +108,7 @@ const updateFeed = async (
   options?: FeedOption
 ): Promise<Feed> => {
   // 수정 전 기존 feed 정보
-  const originFeed = await FeedRepository.getFeed(feedId);
+  const originFeed = await FeedRepository.getFeed(feedId, options);
 
   if (originFeed.user.id !== userId) {
     const error = new Error('ONLY_THE_AUTHOR_CAN_EDIT');
@@ -224,6 +224,7 @@ const getFeedList = async (
   return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
 };
 
+// TODO 임시게시글 삭제!!
 const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
   const feed = await FeedRepository.getFeed(feedId).catch((err: Error) => {
     if (err instanceof EntityNotFoundError) {
