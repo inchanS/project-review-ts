@@ -7,7 +7,7 @@ const uploadFiles = async (req: Request, res: Response) => {
   const files = req.files as Express.Multer.File[];
   const result = await uploadService.uploadFiles(userId, files);
   await res.status(201).send({
-    file_link: result,
+    file_links: result,
   });
 };
 
