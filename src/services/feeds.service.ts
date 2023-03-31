@@ -8,7 +8,7 @@ import {
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
-import dataSource from '../repositories/index.db';
+import dataSource from '../repositories/data-source';
 import { EntityNotFoundError } from 'typeorm';
 import uploadFileService, { DeleteUploadFiles } from './uploadFile.service';
 import { Estimation } from '../entities/estimation.entity';

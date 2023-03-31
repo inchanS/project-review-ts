@@ -1,23 +1,4 @@
-import dotenv from 'dotenv';
-import path from 'path';
-if (process.env.NODE_ENV === 'production') {
-  dotenv.config({ path: path.join(__dirname, '/../env/.env.production') });
-} else if (process.env.NODE_ENV === 'develop') {
-  dotenv.config({ path: path.join(__dirname, '/../env/.env.dev') });
-  console.log('process.env.NODE_ENV is ', process.env.NODE_ENV);
-} else if (process.env.NODE_ENV === 'test') {
-  dotenv.config({ path: path.join(__dirname, '/../env/.env.test') });
-} else {
-  throw new Error('process.env.NODE_ENV IS_NOT_SET!!');
-}
-
-// debugger 용으로 임시 사용
-// } else {
-//   dotenv.config({ path: path.join(__dirname, '/../env/.env.dev') });
-//   console.log('process.env.NODE_ENV IS_NOT_SET!! RUN_DEV_MODE!!');
-// }
-
-import dataSource from './repositories/index.db';
+import dataSource from './repositories/data-source';
 import { createApp } from './app';
 
 const startApp = async () => {

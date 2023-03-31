@@ -1,4 +1,15 @@
 import { DataSource } from 'typeorm';
+import { config } from 'dotenv';
+if (process.env.NODE_ENV === 'production') {
+  config({ path: './env/.env.production' });
+} else if (process.env.NODE_ENV === 'develop') {
+  config({ path: './env/.env.dev' });
+  console.log('process.env.NODE_ENV is ', process.env.NODE_ENV);
+} else if (process.env.NODE_ENV === 'test') {
+  config({ path: './env/.env.test' });
+} else {
+  throw new Error('process.env.NODE_ENV IS_NOT_SET!!');
+}
 
 const dataSource = new DataSource({
   type: process.env.TYPEORM_CONNECTION,
@@ -12,5 +23,7 @@ const dataSource = new DataSource({
   logging: Boolean(process.env.TYPEORM_LOGGING),
   synchronize: Boolean(process.env.TYPEORM_SYNCHRONIZE),
   charset: 'utf8mb4',
+  migrations: [__dirname + '/../migrations/*.{js,ts}'],
+  migrationsTableName: 'migrations',
 });
 export default dataSource;

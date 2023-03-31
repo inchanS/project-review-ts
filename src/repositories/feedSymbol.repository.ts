@@ -1,5 +1,5 @@
 import { FeedSymbol } from '../entities/feedSymbol.entity';
-import dataSource from './index.db';
+import dataSource from './data-source';
 
 export const FeedSymbolRepository = dataSource
   .getRepository(FeedSymbol)

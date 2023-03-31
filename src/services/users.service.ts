@@ -10,7 +10,7 @@ import {
   FeedListOptions,
   FeedListRepository,
 } from '../repositories/feed.repository';
-import dataSource from '../repositories/index.db';
+import dataSource from '../repositories/data-source';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { Comment } from '../entities/comment.entity';

@@ -1,4 +1,4 @@
-import dataSource from '../repositories/index.db';
+import dataSource from '../repositories/data-source';
 import { Category } from '../entities/category.entity';
 
 const getCategoriesList = async () => {

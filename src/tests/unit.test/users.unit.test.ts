@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import { CommentRepository } from '../../repositories/comment.repository';
 import { FeedListRepository } from '../../repositories/feed.repository';
 import { Comment } from '../../entities/comment.entity';
-import dataSource from '../../repositories/index.db';
+import dataSource from '../../repositories/data-source';
 import UploadFileService from '../../services/uploadFile.service';
 import jwt from 'jsonwebtoken';
 import * as util from '../../utils/sendMail';

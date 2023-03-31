@@ -5,7 +5,7 @@ import {
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { s3 } from '../middleware/uploadToS3';
-import dataSource from '../repositories/index.db';
+import dataSource from '../repositories/data-source';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
 import { UserRepository } from '../repositories/user.repository';

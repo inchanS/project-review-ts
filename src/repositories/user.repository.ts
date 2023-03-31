@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import dataSource from './index.db';
+import dataSource from './data-source';
 import { User } from '../entities/users.entity';
 import { UserDto } from '../entities/dto/user.dto';
 

@@ -1,4 +1,4 @@
-import dataSource from './index.db';
+import dataSource from './data-source';
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
 

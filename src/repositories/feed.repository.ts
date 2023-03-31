@@ -1,4 +1,4 @@
-import dataSource from './index.db';
+import dataSource from './data-source';
 import { Feed } from '../entities/feed.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { IsNull, Not } from 'typeorm';

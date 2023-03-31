@@ -8,10 +8,11 @@
     "build": "npx tsc",
     "api-docs": "swagger-cli bundle api-docs/swagger/index.yaml --outfile api-docs/_build/index.yaml --type yaml",
     "predev": "npm run api-docs",
-    "start": "NODE_ENV=production node dist/main.js",
+    "start": "NODE_ENV=develop node dist/main.js",
     "dev": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
     "nodemon": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
-    "distribute": "npm i --verbose && NODE_ENV=production pm2 start dist/main.js --name review -i max"
+    "distribute": "npm i --verbose && NODE_ENV=production pm2 start dist/main.js --name review -i max",
+    "typeorm": "NODE_ENV=develop ts-node ./node_modules/typeorm/cli.js migration:run -d ./src/repositories/data-source.ts"
   },
   "repository": {
     "type": "git",

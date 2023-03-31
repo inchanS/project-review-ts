@@ -1,4 +1,4 @@
-import dataSource from '../repositories/index.db';
+import dataSource from '../repositories/data-source';
 import { Symbol } from '../entities/symbol.entity';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { plainToInstance } from 'class-transformer';
