@@ -45,7 +45,9 @@ const createTempFeed = async (req: Request, res: Response) => {
   // FeedStatus id 2 is 'temporary'
   feedInfo.status = 2;
 
-  const result = await feedsService.createFeed(feedInfo, fileLinks);
+  const result = await feedsService.createFeed(feedInfo, fileLinks, {
+    isTemp: true,
+  });
 
   res
     .status(201)
@@ -71,7 +73,8 @@ const updateTempFeed = async (req: Request, res: Response) => {
     user,
     feedInfo,
     feedId,
-    fileLinks
+    fileLinks,
+    { isTemp: true }
   );
 
   res

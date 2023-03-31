@@ -629,7 +629,7 @@ describe('USERS UNIT test', () => {
     const findOneMock = jest.spyOn(UserRepository, 'findOneOrFail');
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      jest.resetAllMocks();
     });
 
     test('사용자를 찾을 수 없을 때, 에러반환', async () => {

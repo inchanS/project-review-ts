@@ -247,7 +247,8 @@ const deleteUser = async (userId: number): Promise<void> => {
       await uploadFileService.deleteUnconnectedLinks(
         queryRunner,
         unusedFileLinks.uploadFileWithoutFeedId,
-        unusedFileLinks.deleteFileLinksArray
+        unusedFileLinks.deleteFileLinksArray,
+        userId
       );
     }
 

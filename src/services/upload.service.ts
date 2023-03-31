@@ -8,11 +8,19 @@ import { s3 } from '../middleware/uploadToS3';
 import dataSource from '../repositories/index.db';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
+import { UserRepository } from '../repositories/user.repository';
 
 const uploadFiles = async (
   userId: number,
   files: Express.Multer.File[]
 ): Promise<object> => {
+  // 사용자 유효성 검사
+  await UserRepository.findOneOrFail({
+    where: { id: userId },
+  }).catch(() => {
+    throw { status: 400, message: 'INVALID_USER' };
+  });
+
   // aws S3는 동일한 이름의 파일을 업로드하면 덮어쓰기를 한다. 이에 대한 대비책으로 파일 이름을 랜덤하게 생성한다.
   let files_link: string[] = [];
 
@@ -85,7 +93,16 @@ const uploadFiles = async (
   return files_link;
 };
 
-const deleteUploadFile = async (file_links: string[]): Promise<void> => {
+const deleteUploadFile = async (
+  userId: number,
+  file_links: string[]
+): Promise<void> => {
+  await UserRepository.findOneOrFail({
+    where: { id: userId },
+  }).catch(() => {
+    throw { status: 400, message: 'INVALID_USER' };
+  });
+
   // AWS S3 Key값을 담을 배열
   let keyArray = [];
 
@@ -103,10 +120,14 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
         where: { file_link: file_link },
       })
       .catch((err: any) => {
-        const error = new Error(`NOT_FOUND_UPLOAD_FILE`);
-        error.status = 404;
-        throw error;
+        throw { status: 404, message: `NOT_FOUND_UPLOAD_FILE` };
       });
+
+    const file_userId = Number(findFile.file_link.split('/')[3]);
+
+    if (file_userId !== userId) {
+      throw { status: 403, message: `DELETE_UPLOADED_FILE_IS_NOT_YOURS` };
+    }
 
     const param = {
       Bucket: process.env.AWS_S3_BUCKET,
@@ -120,7 +141,10 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
       await s3.send(new GetObjectCommand(param));
     } catch (err: any) {
       if (err.Code === 'AccessDenied' || err.$metadata.httpStatusCode === 404) {
-        throw new Error(`DELETE_UPLOADED_FILE_IS_NOT_EXISTS: ${err}`);
+        throw {
+          status: 404,
+          message: `DELETE_UPLOADED_FILE_IS_NOT_EXISTS: ${err}`,
+        };
       }
     }
   }
@@ -141,6 +165,7 @@ const deleteUploadFile = async (file_links: string[]): Promise<void> => {
     }
   }
 
+  // file_links에 'DELETE_FROM_UPLOAD_FILES_TABLE'가 포함되어있으면 mySQL 테이블에서도 개체 삭제
   if (file_links.includes('DELETE_FROM_UPLOAD_FILES_TABLE')) {
     // mySQL에서 개체 삭제
     await dataSource.manager.softDelete(UploadFiles, uploadFileIdArray);

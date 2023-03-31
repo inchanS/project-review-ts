@@ -13,6 +13,10 @@ router.post(
   asyncWrap(uploadController.uploadFiles)
 );
 
-router.delete('', asyncWrap(uploadController.deleteUploadFile));
+router.delete(
+  '',
+  asyncWrap(authValidateOrReject),
+  asyncWrap(uploadController.deleteUploadFile)
+);
 
 export default router;

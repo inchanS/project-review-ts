@@ -9,11 +9,12 @@ import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import dataSource from '../repositories/index.db';
-import { EntityNotFoundError, QueryRunner } from 'typeorm';
+import { EntityNotFoundError } from 'typeorm';
 import uploadFileService, { DeleteUploadFiles } from './uploadFile.service';
 import { Estimation } from '../entities/estimation.entity';
 import uploadService from './upload.service';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
+import { FeedOption } from '../repositories/feed.repository';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -31,21 +32,10 @@ const getTempFeedList = async (userId: number) => {
 };
 
 // 임시저장 게시글 저장 -----------------------------------------------------------
-// 임시저장 게시글 저장간 transaction내 새 임시게시글 가져오기 -----------------------------------------------------------
-const findTempFeed = async (
-  queryRunner: QueryRunner,
-  tempFeedId: number
-): Promise<Feed> => {
-  return await queryRunner.manager
-    .withRepository(FeedRepository)
-    .getFeed(tempFeedId);
-};
-
-// -----------------------------------------------------------
-
 const createFeed = async (
   feedInfo: TempFeedDto | FeedDto,
-  fileLinks: string[]
+  fileLinks: string[],
+  options?: FeedOption
 ): Promise<Feed> => {
   if (feedInfo.status === 2) {
     feedInfo = plainToInstance(TempFeedDto, feedInfo);
@@ -88,12 +78,15 @@ const createFeed = async (
         await uploadFileService.deleteUnconnectedLinks(
           queryRunner,
           deleteUploadFiles.uploadFileWithoutFeedId,
-          deleteUploadFiles.deleteFileLinksArray
+          deleteUploadFiles.deleteFileLinksArray,
+          Number(newFeed.user)
         );
       }
     }
 
-    const result = await findTempFeed(queryRunner, newTempFeed.id);
+    const result: Feed = await queryRunner.manager
+      .withRepository(FeedRepository)
+      .getFeed(newTempFeed.id, options);
 
     await queryRunner.commitTransaction();
 
@@ -111,7 +104,8 @@ const updateFeed = async (
   userId: number,
   feedInfo: TempFeedDto | FeedDto,
   feedId: number,
-  fileLinks: string[]
+  fileLinks: string[],
+  options?: FeedOption
 ): Promise<Feed> => {
   // 수정 전 기존 feed 정보
   const originFeed = await FeedRepository.getFeed(feedId);
@@ -155,9 +149,10 @@ const updateFeed = async (
     const newFeed = await queryRunner.manager
       .withRepository(FeedRepository)
       .updateFeed(feedId, feed);
+
     const result = await queryRunner.manager
       .withRepository(FeedRepository)
-      .getFeed(newFeed.id);
+      .getFeed(newFeed.id, options);
 
     await queryRunner.commitTransaction();
 
@@ -258,9 +253,11 @@ const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
       for (const uploadFile of feed.uploadFiles) {
         deleteFileLinksArray.push(uploadFile.file_link);
       }
-      await uploadService.deleteUploadFile(deleteFileLinksArray).catch(err => {
-        throw new Error(`deleteUploadFile error: ${err}`);
-      });
+      await uploadService
+        .deleteUploadFile(userId, deleteFileLinksArray)
+        .catch(err => {
+          throw new Error(`deleteUploadFile error: ${err}`);
+        });
     }
     // feed 삭제
     await queryRunner.manager.softDelete(Feed, feedId);

@@ -3,6 +3,7 @@ import { Feed } from '../entities/feed.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { IsNull, Not } from 'typeorm';
 
+export type FeedOption = { isTemp?: boolean };
 export const FeedRepository = dataSource.getRepository(Feed).extend({
   async createFeed(feedInfo: Feed) {
     const feed = await this.create(feedInfo);
@@ -24,8 +25,8 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
     });
   },
 
-  async getFeed(feedId: number) {
-    return await this.createQueryBuilder('feed')
+  async getFeed(feedId: number, options: FeedOption = {}) {
+    const queryBuilder = this.createQueryBuilder('feed')
       .select([
         'feed.id',
         'user.id',
@@ -52,9 +53,14 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .leftJoin('feed.status', 'status')
       .leftJoin('feed.uploadFiles', 'uploadFiles')
       .where('feed.id = :feedId', { feedId: feedId })
-      .andWhere('feed.posted_at IS NOT NULL')
-      .andWhere('feed.deleted_at IS NULL')
-      .getOneOrFail();
+      .andWhere('feed.deleted_at IS NULL');
+
+    if (options.isTemp) {
+      queryBuilder.andWhere('feed.posted_at IS NULL');
+    } else {
+      queryBuilder.andWhere('feed.posted_at IS NOT NULL');
+    }
+    return await queryBuilder.getOneOrFail();
   },
 
   // 피드의 symbol id별 count 가져오기

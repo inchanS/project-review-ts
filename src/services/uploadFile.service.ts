@@ -102,11 +102,12 @@ const deleteUnusedUploadFiles = async (
 const deleteUnconnectedLinks = async (
   queryRunner: QueryRunner,
   uploadFileIdsToDelete: number[],
-  fileLinksToDelete: string[]
+  fileLinksToDelete: string[],
+  userId: number
 ) => {
   if (uploadFileIdsToDelete.length > 0) {
     await queryRunner.manager.softDelete(UploadFiles, uploadFileIdsToDelete);
-    await uploadService.deleteUploadFile(fileLinksToDelete);
+    await uploadService.deleteUploadFile(userId, fileLinksToDelete);
   }
 };
 const checkUploadFileOfFeed = async (
@@ -139,7 +140,8 @@ const checkUploadFileOfFeed = async (
   await deleteUnconnectedLinks(
     queryRunner,
     uploadFileIdsToDelete,
-    fileLinksToDelete
+    fileLinksToDelete,
+    userId
   );
 };
 
