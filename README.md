@@ -20,11 +20,12 @@
 - Communication : Slack
 - Project Management : Notion
 
-## 프로젝트간 학습 목적 및 성취
+## **프로젝트간 숙련 목적** 및 성취
 - **TypeORM** : TypeORM의 기능을 사용하여 DB와의 다양한 연동을 쉽게 할 수 있도록 학습 및 실습
 - **AWS S3** : AWS S3를 사용하여 파일을 저장하고 관리할 수 있도록 학습 및 실습
 - **open API** : open API를 사용하여 다양한 기능을 구현할 수 있도록 학습 및 실습
 - **Swagger** : Swagger를 사용하여 API 문서를 자동으로 생성할 수 있도록 학습 및 실습
+- **Test** : Test를 사용하여 코드의 안정성을 높일 수 있도록 학습 및 실습 (**진행중**)
 
 ## 프로젝트 구조
 - **api-docs** : SwaggerUI API 문서
@@ -120,17 +121,22 @@
 
 - **DB 설정**
   - **table 및 entity 생성**
-  - typeorm synchronize 옵션을 true로 설정 후, 최초 실행 (create table 코드 작성보다 간편해서 이 방법을 사용)
+  - `.env`파일에서 typeorm synchronize 옵션을 `true`로 설정 후, 최초 실행 (migration - create table 코드 작성보다 간편해서 이 방법을 사용)
+    - `npm run dev` 명령어를 통해 실행 (그 외 package.json에 정의된 script 명령어 참조)
   - 샘플 데이터 생성
-    - **DBmate**를 사용하여 샘플 데이터를 생성할 수 있음
+    - table 생성 후, **DBmate**를 사용하여 샘플 데이터를 생성할 수 있음
     - `dbmate up` 명령어를 통해 샘플 데이터 생성
 
 ## 업데이트 예정
-- **Category**
-  - **카테고리 추가** : 카테고리를 추가할 수 있음
+1. **search**
+  - **검색** : 검색을 할 수 있음
+ 
+
+2. **Category**
+  - **카테고리 추가** : 사용자가 카테고리를 추가할 수 있음
 
 
-- **Users**
+3. **Users**
   - OAuth2.0 적용
     - **카카오 로그인** : 카카오 로그인을 할 수 있음
     - **네이버 로그인** : 네이버 로그인을 할 수 있음
@@ -140,8 +146,6 @@
     - **프로필 사진 삭제** : 프로필 사진을 삭제할 수 있음
 
 
-- **search**
-  - **검색** : 검색을 할 수 있음
 
 ## License
 - MIT License
