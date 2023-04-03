@@ -5,6 +5,68 @@ import request from 'supertest';
 import { Comment } from '../../entities/comment.entity';
 import { Feed } from '../../entities/feed.entity';
 
+// 테스트간 피드생성을 위한 피드 클래스 생성
+
+//       userTempFeed.id = 2;
+//       userTempFeed.title = 'userTempFeed';
+//       userTempFeed.content = 'userTempFeed';
+//       userTempFeed.user = existUser.id;
+//       userTempFeed.status = 0;
+//       userTempFeed.category = 1;
+//       userTempFeed.estimation = 1;
+//       userTempFeed.created_at = new Date();
+//       userTempFeed.updated_at = new Date();
+//       userTempFeed.deleted_at = null;
+//       userTempFeed.postedAt = null;
+class FeedClass {
+  id: number;
+  title: string;
+  content: string;
+  user: number;
+  status: number;
+  category: number;
+  estimation: number;
+  postedAt: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+  constructor(id: number, userId: number) {
+    this.id = id;
+    this.title = 'test title';
+    this.content = 'test content';
+    this.user = userId;
+    this.status = 1;
+    this.category = 1;
+    this.estimation = 1;
+    this.postedAt = new Date();
+    this.created_at = new Date();
+    this.updated_at = new Date();
+    this.deleted_at = new Date();
+  }
+}
+
+// 테스트간 댓글생성을 위한 댓글 클래스 생성
+class CommentClass {
+  id: number;
+  comment: string;
+  feed: number;
+  user: number;
+  is_private: boolean;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+  constructor(id: number, feedId: number, userId: number, is_private: boolean) {
+    this.id = id;
+    this.comment = 'test comment';
+    this.feed = feedId;
+    this.user = userId;
+    this.is_private = is_private;
+    this.created_at = new Date();
+    this.updated_at = new Date();
+    this.deleted_at = null;
+  }
+}
+
 describe('users.service API test', () => {
   let app: any = createApp();
 
@@ -258,54 +320,31 @@ describe('users.service API test', () => {
       // 이미 존재하는 유저 생성
       await request(app).post(`/users/signup`).send(existUser);
 
-      const userFeed: any = new Feed();
-      userFeed.id = 1;
-      userFeed.title = 'userFeed';
-      userFeed.content = 'userFeed';
-      userFeed.user = existUser.id;
-      userFeed.status = 1;
-      userFeed.category = 1;
-      userFeed.estimation = 1;
-      userFeed.created_at = new Date();
-      userFeed.updated_at = new Date();
-      userFeed.deleted_at = null;
-      userFeed.postedAt = new Date();
+      const userFeed: any = new FeedClass(1, existUser.id);
 
       await dataSource.manager.save(Feed, userFeed);
 
-      const userPublicComment: any = new Comment();
-      userPublicComment.comment = 'userComment';
-      userPublicComment.user = existUser.id;
-      userPublicComment.feed = userFeed.id;
-      userPublicComment.is_private = false;
-      userPublicComment.created_at = new Date();
-      userPublicComment.updated_at = new Date();
-      userPublicComment.deleted_at = null;
+      const userPublicComment: any = new CommentClass(
+        1,
+        userFeed.id,
+        existUser.id,
+        false
+      );
 
-      const userPrivateComment: any = new Comment();
-      userPrivateComment.comment = 'userComment';
-      userPrivateComment.user = existUser.id;
-      userPrivateComment.feed = userFeed.id;
-      userPrivateComment.is_private = true;
-      userPrivateComment.created_at = new Date();
-      userPrivateComment.updated_at = new Date();
-      userPrivateComment.deleted_at = null;
+      const userPrivateComment = new CommentClass(
+        2,
+        userFeed.id,
+        existUser.id,
+        true
+      );
 
-      const userDeletedComment: any = new Comment();
-      userDeletedComment.comment = 'userComment';
-      userDeletedComment.user = existUser.id;
-      userDeletedComment.feed = userFeed.id;
-      userDeletedComment.is_private = false;
-      userDeletedComment.created_at = new Date();
-      userDeletedComment.updated_at = new Date();
+      const userDeletedComment = new CommentClass(
+        3,
+        userFeed.id,
+        existUser.id,
+        false
+      );
       userDeletedComment.deleted_at = new Date();
-
-      const otherUser = new User();
-      otherUser.id = 2;
-      otherUser.nickname = 'otherNickname';
-      otherUser.email = 'otherEmail';
-      otherUser.password = 'otherPassword@1234';
-      await dataSource.manager.save(User, otherUser);
 
       await dataSource.manager.save(Comment, [
         userPublicComment,
@@ -320,6 +359,42 @@ describe('users.service API test', () => {
       await dataSource.manager.clear(Feed);
       await dataSource.manager.clear(Comment);
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
+    });
+
+    test('getMyInfo - invalid_token', async () => {
+      const result = await request(app).get('/users/userinfo');
+
+      expect(result.status).toBe(401);
+      expect(result.body.message).toEqual('INVALID_TOKEN');
+    });
+
+    test('getMyInfo - not_found_user', async () => {
+      // 로그인 후 막 탈퇴한 회원의 유효성 검사
+      const deleteUser = new User();
+      deleteUser.nickname = 'deleteNickname';
+      deleteUser.email = 'deleteEmail@email.com';
+      deleteUser.password = 'deletePassword@1234';
+      await request(app).post(`/users/signup`).send(deleteUser);
+
+      const signInResult = await request(app).post(`/users/signin`).send({
+        email: deleteUser.email,
+        password: deleteUser.password,
+      });
+
+      await dataSource.manager.update(
+        User,
+        { nickname: 'deleteNickname' },
+        {
+          deleted_at: new Date(),
+        }
+      );
+
+      const result = await request(app)
+        .get('/users/userinfo')
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(404);
+      expect(result.body.message).toEqual('USER_IS_NOT_FOUND');
     });
 
     test('getMyInfo - success', async () => {
@@ -345,11 +420,63 @@ describe('users.service API test', () => {
       // 사용자의 public comment, private comment, deleted comment 3개가 나와야 함
       expect(Object.keys(result.body.userComments)).toHaveLength(3);
 
-      expect(result.body.userComments[0].comment).toEqual('userComment');
-      expect(result.body.userComments[1].comment).toEqual('userComment');
+      console.log('🔥users.api.test/:400- result.body = ', result.body);
+
+      expect(result.body.userComments[0].comment).toEqual('test comment');
+      expect(result.body.userComments[1].comment).toEqual('test comment');
       expect(result.body.userComments[2].comment).toEqual(
         '## DELETED_COMMENT ##'
       );
+    });
+  });
+
+  describe('getUserInfo', () => {
+    const existUser = new User();
+    existUser.id = 1;
+    existUser.nickname = 'existedNickname';
+    existUser.email = 'existedEmail@email.com';
+    existUser.password = 'existedPassword@1234';
+
+    beforeAll(async () => {
+      await request(app).post(`/users/signup`).send(existUser);
+
+      // 타겟유저의 피드 생성
+      const userFeed: any = new FeedClass(1, existUser.id);
+
+      // 타겟유저의 임시저장 피드 생성(보여지지 않아야 할 부분)
+
+      const userTempFeed: any = new FeedClass(2, existUser.id);
+      userTempFeed.status = 0;
+      userTempFeed.postedAt = null;
+
+      await dataSource.manager.save(Feed, [userFeed, userTempFeed]);
+
+      // 타겟유저의 public comment 생성
+      const userPublicComment: any = new CommentClass(
+        1,
+        userFeed.id,
+        existUser.id,
+        false
+      );
+
+      // 타겟유저의 private comment 생성
+      const userPrivateComment: any = new CommentClass(
+        2,
+        userFeed.id,
+        existUser.id,
+        true
+      );
+
+      await dataSource.manager.save(Comment, [
+        userPublicComment,
+        userPrivateComment,
+      ]);
+    });
+
+    afterAll(async () => {
+      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
+      await dataSource.manager.clear(User);
+      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
   });
 });

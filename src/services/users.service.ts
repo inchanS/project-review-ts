@@ -151,11 +151,6 @@ const findUserInfoById = async (
 
 // 로그인 유저가 자신의 정보를 불러올때 사용하는 함수
 const getMe = async (userId: number): Promise<object> => {
-  if (!userId) {
-    const error = new Error(`TOKEN'S_USERID_IS_UNDEFINED`);
-    error.status = 400;
-    throw error;
-  }
   return findUserInfoById(userId, userId);
 };
 
