@@ -38,8 +38,8 @@ const signIn = async (req: Request, res: Response): Promise<void> => {
 };
 
 const getMe = async (req: Request, res: Response): Promise<void> => {
-  const myInfo = await usersService.getMe(req.userInfo.id);
-  res.status(200).json(myInfo);
+  const result = await usersService.getMe(req.userInfo.id);
+  res.status(200).json(result);
 };
 
 // 다른 사람의 정보 가져오기
