@@ -6,18 +6,6 @@ import { Comment } from '../../entities/comment.entity';
 import { Feed } from '../../entities/feed.entity';
 
 // 테스트간 피드생성을 위한 피드 클래스 생성
-
-//       userTempFeed.id = 2;
-//       userTempFeed.title = 'userTempFeed';
-//       userTempFeed.content = 'userTempFeed';
-//       userTempFeed.user = existUser.id;
-//       userTempFeed.status = 0;
-//       userTempFeed.category = 1;
-//       userTempFeed.estimation = 1;
-//       userTempFeed.created_at = new Date();
-//       userTempFeed.updated_at = new Date();
-//       userTempFeed.deleted_at = null;
-//       userTempFeed.postedAt = null;
 class FeedClass {
   id: number;
   title: string;
@@ -419,8 +407,6 @@ describe('users.service API test', () => {
 
       // 사용자의 public comment, private comment, deleted comment 3개가 나와야 함
       expect(Object.keys(result.body.userComments)).toHaveLength(3);
-
-      console.log('🔥users.api.test/:400- result.body = ', result.body);
 
       expect(result.body.userComments[0].comment).toEqual('test comment');
       expect(result.body.userComments[1].comment).toEqual('test comment');
