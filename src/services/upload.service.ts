@@ -86,6 +86,7 @@ const uploadFiles = async (
       {
         file_link: file_link,
         is_img: isImage,
+        file_name: file.originalname,
       }
     );
     await dataSource.manager.save(newUploadFile);
