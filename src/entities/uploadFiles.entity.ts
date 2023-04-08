@@ -10,6 +10,9 @@ export class UploadFiles extends Base {
   @Column()
   file_link: string;
 
+  @Column({ nullable: true })
+  file_name: string;
+
   @ManyToOne(type => Feed, feed => feed.uploadFiles)
   @JoinColumn({ name: 'feedId' })
   feed: Feed;

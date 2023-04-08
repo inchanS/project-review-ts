@@ -3,7 +3,7 @@ import { Feed } from '../entities/feed.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { IsNull, Not } from 'typeorm';
 
-export type FeedOption = { isTemp?: boolean };
+export type FeedOption = { isTemp?: boolean; isAll?: boolean };
 export const FeedRepository = dataSource.getRepository(Feed).extend({
   async createFeed(feedInfo: Feed) {
     const feed = await this.create(feedInfo);
@@ -46,6 +46,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
         'uploadFiles.id',
         'uploadFiles.is_img',
         'uploadFiles.file_link',
+        'uploadFiles.file_name',
       ])
       .leftJoin('feed.user', 'user')
       .leftJoin('feed.category', 'category')
@@ -55,7 +56,8 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .where('feed.id = :feedId', { feedId: feedId })
       .andWhere('feed.deleted_at IS NULL');
 
-    if (options.isTemp) {
+    if (options.isAll) {
+    } else if (options.isTemp) {
       queryBuilder.andWhere('feed.posted_at IS NULL');
     } else {
       queryBuilder.andWhere('feed.posted_at IS NOT NULL');

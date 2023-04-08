@@ -36,7 +36,7 @@ router.patch(
 router.get('/estimations', asyncWrap(feedsController.getEstimations));
 
 // 게시글 리스트 가져오기
-router.get('', asyncWrap(feedsController.getFeedList));
+router.get('/post', asyncWrap(feedsController.getFeedList));
 
 // 게시글 상세보기
 router.get(

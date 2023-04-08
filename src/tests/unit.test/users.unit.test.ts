@@ -319,8 +319,8 @@ describe('USERS UNIT test', () => {
       try {
         await usersService.getMe(userId);
       } catch (error: any) {
-        expect(error.status).toEqual(400);
-        expect(error.message).toEqual(`TOKEN'S_USERID_IS_UNDEFINED`);
+        expect(error.status).toEqual(404);
+        expect(error.message).toEqual(`USER_IS_NOT_FOUND`);
       }
     });
 

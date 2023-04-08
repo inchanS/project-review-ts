@@ -17,7 +17,7 @@ const getFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const feedId: number = Number(req.params.feedId);
 
-  const result = await feedsService.getFeed(user, feedId);
+  const result = await feedsService.getFeed(user, feedId, { isAll: true });
 
   res.status(200).json({ message: `check feed success`, result });
 };

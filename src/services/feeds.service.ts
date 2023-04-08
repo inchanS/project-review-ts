@@ -31,7 +31,7 @@ const getTempFeedList = async (userId: number) => {
   return results;
 };
 
-// 임시저장 게시글 저장 -----------------------------------------------------------
+// 임시저장 및 게시글 저장 -----------------------------------------------------------
 const createFeed = async (
   feedInfo: TempFeedDto | FeedDto,
   fileLinks: string[],
@@ -55,23 +55,19 @@ const createFeed = async (
 
   try {
     // feed 저장
-    const newFeed = plainToInstance(Feed, feedInfo);
-    const newTempFeed = await queryRunner.manager
+    const newFeedInstance = plainToInstance(Feed, feedInfo);
+    const newFeed = await queryRunner.manager
       .withRepository(FeedRepository)
-      .createFeed(newFeed);
+      .createFeed(newFeedInstance);
 
     // uploadFile에 feed의 ID를 연결해주는 함수
     if (fileLinks) {
-      await uploadFileService.updateFileLinks(
-        queryRunner,
-        newTempFeed,
-        fileLinks
-      );
+      await uploadFileService.updateFileLinks(queryRunner, newFeed, fileLinks);
 
       const deleteUploadFiles: DeleteUploadFiles =
         await uploadFileService.deleteUnusedUploadFiles(
           queryRunner,
-          Number(newFeed.user)
+          Number(newFeedInstance.user)
         );
 
       if (deleteUploadFiles) {
@@ -79,14 +75,14 @@ const createFeed = async (
           queryRunner,
           deleteUploadFiles.uploadFileWithoutFeedId,
           deleteUploadFiles.deleteFileLinksArray,
-          Number(newFeed.user)
+          Number(newFeedInstance.user)
         );
       }
     }
 
     const result: Feed = await queryRunner.manager
       .withRepository(FeedRepository)
-      .getFeed(newTempFeed.id, options);
+      .getFeed(newFeed.id, options);
 
     await queryRunner.commitTransaction();
 
@@ -99,7 +95,7 @@ const createFeed = async (
   }
 };
 
-// 게시글 수정 -----------------------------------------------------------
+// 임시게시글 및 게시글 수정 -----------------------------------------------------------
 const updateFeed = async (
   userId: number,
   feedInfo: TempFeedDto | FeedDto,
@@ -166,15 +162,24 @@ const updateFeed = async (
 };
 
 // 게시글 가져오기 --------------------------------------------------------
-const getFeed = async (userId: number, feedId: number) => {
+// FIXME : 임시저장 목록에서 게시글을 가져오게 될 때, options를 넣어주지 않아서 404에러가 발생한다.
+//  수정안 1. 임시저장 목록에서 게시글을 가져오게 될 때, options를 넣어준다.(router에서 분리하여야 함)
+
+const getFeed = async (
+  userId: number,
+  feedId: number,
+  options?: FeedOption
+) => {
   // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
-  const result = await FeedRepository.getFeed(feedId).catch((err: Error) => {
-    if (err instanceof EntityNotFoundError) {
-      const error = new Error(`NOT_FOUND_FEED`);
-      error.status = 404;
-      throw error;
+  const result = await FeedRepository.getFeed(feedId, options).catch(
+    (err: Error) => {
+      if (err instanceof EntityNotFoundError) {
+        const error = new Error(`NOT_FOUND_FEED`);
+        error.status = 404;
+        throw error;
+      }
     }
-  });
+  );
 
   // feed 값 재가공
   result.created_at = result.created_at.substring(0, 19);
@@ -226,13 +231,15 @@ const getFeedList = async (
 
 // TODO 임시게시글 삭제!!
 const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
-  const feed = await FeedRepository.getFeed(feedId).catch((err: Error) => {
-    if (err instanceof EntityNotFoundError) {
-      const error = new Error(`NOT_FOUND_FEED`);
-      error.status = 404;
-      throw error;
+  const feed = await FeedRepository.getFeed(feedId, { isAll: true }).catch(
+    (err: Error) => {
+      if (err instanceof EntityNotFoundError) {
+        const error = new Error(`NOT_FOUND_FEED`);
+        error.status = 404;
+        throw error;
+      }
     }
-  });
+  );
 
   if (feed.user.id !== userId) {
     const error = new Error('ONLY_THE_AUTHOR_CAN_DELETE');
