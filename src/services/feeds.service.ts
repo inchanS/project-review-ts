@@ -226,7 +226,6 @@ const getFeedList = async (
   return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
 };
 
-// TODO 임시게시글 삭제!!
 const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
   const feed = await FeedRepository.getFeed(feedId, { isAll: true }).catch(
     (err: Error) => {
@@ -238,6 +237,7 @@ const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
     }
   );
 
+  // 사용자 유효성 검사
   if (feed.user.id !== userId) {
     const error = new Error('ONLY_THE_AUTHOR_CAN_DELETE');
     error.status = 403;
@@ -255,6 +255,7 @@ const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
       // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
       deleteFileLinksArray.push('DELETE_FROM_UPLOAD_FILES_TABLE');
 
+      // 게시물의 모든 uploadFile 삭제
       for (const uploadFile of feed.uploadFiles) {
         deleteFileLinksArray.push(uploadFile.file_link);
       }
@@ -264,8 +265,10 @@ const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
           throw new Error(`deleteUploadFile error: ${err}`);
         });
     }
+
     // feed 삭제
     await queryRunner.manager.softDelete(Feed, feedId);
+
     // feedSymbol 삭제
     await queryRunner.manager.softDelete(FeedSymbol, { feed: feedId });
 
