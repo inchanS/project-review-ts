@@ -162,9 +162,6 @@ const updateFeed = async (
 };
 
 // 게시글 가져오기 --------------------------------------------------------
-// FIXME : 임시저장 목록에서 게시글을 가져오게 될 때, options를 넣어주지 않아서 404에러가 발생한다.
-//  수정안 1. 임시저장 목록에서 게시글을 가져오게 될 때, options를 넣어준다.(router에서 분리하여야 함)
-
 const getFeed = async (
   userId: number,
   feedId: number,
