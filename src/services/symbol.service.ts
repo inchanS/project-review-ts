@@ -11,9 +11,6 @@ import {
   CheckSymbolResult,
 } from '../types/feedSymbol';
 
-// TODO statuscode 401 중 403으로 변경할거 다 찾아서 변경하고,
-//  api 문서에도 반영, README.md에도 반영
-
 const getSymbols = async () => {
   return await dataSource.getRepository(Symbol).find({
     select: ['id', 'symbol'],

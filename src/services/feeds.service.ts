@@ -162,14 +162,7 @@ const updateFeed = async (
 };
 
 // 게시글 가져오기 --------------------------------------------------------
-// FIXME : 임시저장 목록에서 게시글을 가져오게 될 때, options를 넣어주지 않아서 404에러가 발생한다.
-//  수정안 1. 임시저장 목록에서 게시글을 가져오게 될 때, options를 넣어준다.(router에서 분리하여야 함)
-
-const getFeed = async (
-  userId: number,
-  feedId: number,
-  options?: FeedOption
-) => {
+const getFeed = async (userId: number, feedId: number) => {
   // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
   const result = await FeedRepository.getFeed(feedId, options).catch(
     (err: Error) => {
@@ -229,7 +222,6 @@ const getFeedList = async (
   return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
 };
 
-// TODO 임시게시글 삭제!!
 const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
   const feed = await FeedRepository.getFeed(feedId, { isAll: true }).catch(
     (err: Error) => {
@@ -241,6 +233,7 @@ const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
     }
   );
 
+  // 사용자 유효성 검사
   if (feed.user.id !== userId) {
     const error = new Error('ONLY_THE_AUTHOR_CAN_DELETE');
     error.status = 403;
@@ -258,6 +251,7 @@ const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
       // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
       deleteFileLinksArray.push('DELETE_FROM_UPLOAD_FILES_TABLE');
 
+      // 게시물의 모든 uploadFile 삭제
       for (const uploadFile of feed.uploadFiles) {
         deleteFileLinksArray.push(uploadFile.file_link);
       }
@@ -267,8 +261,10 @@ const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
           throw new Error(`deleteUploadFile error: ${err}`);
         });
     }
+
     // feed 삭제
     await queryRunner.manager.softDelete(Feed, feedId);
+
     // feedSymbol 삭제
     await queryRunner.manager.softDelete(FeedSymbol, { feed: feedId });
 
