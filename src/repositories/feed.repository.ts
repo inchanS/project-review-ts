@@ -47,6 +47,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
         'uploadFiles.is_img',
         'uploadFiles.file_link',
         'uploadFiles.file_name',
+        'uploadFiles.file_size',
       ])
       .leftJoin('feed.user', 'user')
       .leftJoin('feed.category', 'category')
