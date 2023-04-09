@@ -104,7 +104,9 @@ const updateFeed = async (
   options?: FeedOption
 ): Promise<Feed> => {
   // 수정 전 기존 feed 정보
-  const originFeed = await FeedRepository.getFeed(feedId, options);
+  const originFeed = await FeedRepository.getFeed(feedId, options).catch(() => {
+    throw { status: 404, message: 'NOT_FOUND_FEED' };
+  });
 
   if (originFeed.user.id !== userId) {
     const error = new Error('ONLY_THE_AUTHOR_CAN_EDIT');
@@ -112,7 +114,10 @@ const updateFeed = async (
     throw error;
   }
 
-  if (originFeed.status.id === 2) {
+  if (originFeed.status.id === 2 && feedInfo.status === 1) {
+    feedInfo = plainToInstance(FeedDto, feedInfo);
+    feedInfo.posted_at = new Date();
+  } else if (originFeed.status.id === 2) {
     feedInfo = plainToInstance(TempFeedDto, feedInfo);
   } else {
     feedInfo = plainToInstance(FeedDto, feedInfo);
@@ -148,7 +153,7 @@ const updateFeed = async (
 
     const result = await queryRunner.manager
       .withRepository(FeedRepository)
-      .getFeed(newFeed.id, options);
+      .getFeed(newFeed.id, { isAll: true });
 
     await queryRunner.commitTransaction();
 
