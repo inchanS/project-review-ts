@@ -82,7 +82,7 @@ const uploadFiles = async (
     }
 
     let fileSize: string;
-    if (file.size < 1000000) {
+    if (file.size < 1024 * 1024) {
       // 파일 크기가 1MB 미만인 경우 KB 단위로 출력
       const fileSizeInKB = file.size / 1024;
       fileSize = `${fileSizeInKB.toFixed(2)}KB`;
