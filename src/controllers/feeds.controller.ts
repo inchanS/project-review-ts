@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import feedsService from '../services/feeds.service';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
+import { Feed } from '../entities/feed.entity';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -88,6 +89,7 @@ const createFeed = async (req: Request, res: Response) => {
   const user = req.userInfo.id;
   const fileLinks: string[] = req.body.fileLinks;
   const { title, content, estimation, category }: FeedDto = req.body;
+  const feedId: number = req.body.feedId;
 
   const feedInfo: FeedDto = {
     user,
@@ -100,7 +102,17 @@ const createFeed = async (req: Request, res: Response) => {
   // FeedStatus id 1 is 'posted'
   feedInfo.status = 1;
 
-  const result = await feedsService.createFeed(feedInfo, fileLinks);
+  let result: Feed;
+
+  // 임시저장 게시글을 게시글로 등록할 때
+  if (feedId) {
+    result = await feedsService.updateFeed(user, feedInfo, feedId, fileLinks, {
+      isTemp: true,
+    });
+  } else {
+    // 임시저장되지 않은 게시글을 등록할 때 (새로 작성)
+    result = await feedsService.createFeed(feedInfo, fileLinks);
+  }
 
   res.status(201).json({ message: `create feed success`, result: result });
 };
