@@ -1,7 +1,17 @@
 import { FeedRepository } from '../repositories/feed.repository';
 import { Brackets } from 'typeorm';
 
-const searchContent = async (query: string) => {
+const searchContent = async (query: string, index: number, limit: number) => {
+  // query로 전달된 limit가 0이거나 없을 경우 기본값 5으로 변경 처리
+  if (!limit || limit === 0) {
+    limit = 5;
+  }
+
+  if (!index) {
+    index = 1;
+  }
+  const startIndex: number = (index - 1) * limit;
+
   const snippetLength = 20;
 
   const result = await FeedRepository.createQueryBuilder('feed')
@@ -40,6 +50,8 @@ const searchContent = async (query: string) => {
     .setParameter('originQuery', query)
     .orderBy('feed.posted_at', 'DESC')
     .orderBy('feed.id', 'DESC')
+    .skip(startIndex)
+    .take(limit)
     .getRawMany();
 
   return result;
