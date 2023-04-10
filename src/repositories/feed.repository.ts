@@ -1,7 +1,7 @@
 import dataSource from './data-source';
 import { Feed } from '../entities/feed.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import { IsNull, Not } from 'typeorm';
+import { IsNull, Like, Not } from 'typeorm';
 
 export type FeedOption = { isTemp?: boolean; isAll?: boolean };
 export const FeedRepository = dataSource.getRepository(Feed).extend({
@@ -99,19 +99,35 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
   async getFeedList(
     categoryId: number | undefined,
     startIndex: number,
-    limit: number
+    limit: number,
+    query?: string
   ) {
+    let where: any = {
+      categoryId: categoryId,
+      postedAt: Not(IsNull()),
+      deletedAt: IsNull(),
+    };
+
+    if (query) {
+      where = [
+        {
+          ...where,
+          title: Like(`%${query}%`),
+        },
+        {
+          ...where,
+          content: Like(`%${query}%`),
+        },
+      ];
+    }
+
     return await this.find({
       order: {
         postedAt: 'DESC',
       },
       skip: startIndex,
       take: limit,
-      where: {
-        categoryId: categoryId,
-        postedAt: Not(IsNull()),
-        deletedAt: IsNull(),
-      },
+      where,
     });
   },
 
