@@ -117,39 +117,29 @@ const deleteUploadFile = async (
   });
 
   // AWS S3 Key값을 담을 배열
-  let keyArray = [];
+  let keyArray: { Key: string }[] = [];
 
   // mySQL에서 file_link를 통해 uploadFile의 ID를 담을 배열
-  let uploadFileIdArray = [];
+  let uploadFileIdArray: number[] = [];
 
   // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
   const newFileLinks = file_links.filter(
     (file_link: string) => file_link !== 'DELETE_FROM_UPLOAD_FILES_TABLE'
   );
 
-  for (const file_link of newFileLinks) {
-    const findFile = await dataSource.manager
-      .findOneOrFail<UploadFiles>(UploadFiles, {
+  // mySQL에서 file_link를 통해 uploadFile의 ID를 찾는 함수
+  const findFile = async (file_link: string) => {
+    try {
+      return await dataSource.manager.findOneOrFail<UploadFiles>(UploadFiles, {
         where: { file_link: file_link },
-      })
-      .catch((err: any) => {
-        throw { status: 404, message: `NOT_FOUND_UPLOAD_FILE` };
       });
-
-    const file_userId = Number(findFile.file_link.split('/')[3]);
-
-    if (file_userId !== userId) {
-      throw { status: 403, message: `DELETE_UPLOADED_FILE_IS_NOT_YOURS` };
+    } catch (err) {
+      throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
     }
+  };
 
-    const param = {
-      Bucket: process.env.AWS_S3_BUCKET,
-      Key: findFile.file_link.split('.com/')[1],
-    };
-
-    keyArray.push({ Key: param.Key });
-    uploadFileIdArray.push(findFile.id);
-    // 개체 확인
+  // AWS S3에서 파일의 유무를 확인하는 함수
+  const checkFileAccess = async (param: any) => {
     try {
       await s3.send(new GetObjectCommand(param));
     } catch (err: any) {
@@ -160,7 +150,35 @@ const deleteUploadFile = async (
         };
       }
     }
-  }
+  };
+
+  const deleteFiles = async (newFileLinks: string[], userId: number) => {
+    const findAndCheckPromises = newFileLinks.map(async file_link => {
+      const findFileResult = await findFile(file_link);
+      const file_userId = Number(findFileResult.file_link.split('/')[3]);
+
+      if (file_userId !== userId) {
+        throw { status: 403, message: 'DELETE_UPLOADED_FILE_IS_NOT_YOURS' };
+      }
+
+      const param = {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: findFileResult.file_link.split('.com/')[1],
+      };
+
+      keyArray.push({ Key: param.Key });
+      uploadFileIdArray.push(findFileResult.id);
+
+      await checkFileAccess(param);
+    });
+
+    await Promise.all(findAndCheckPromises);
+
+    // 이후 작업들을 수행하세요.
+  };
+
+  // 이 함수를 호출하여 파일을 삭제하세요:
+  await deleteFiles(newFileLinks, userId);
 
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
