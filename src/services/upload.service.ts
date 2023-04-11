@@ -105,6 +105,32 @@ const uploadFiles = async (
   }
   return files_link;
 };
+// uploadFiles 업로드된 파일을 삭제하는 함수 ---------------------------------------------------
+
+// mySQL에서 file_link를 통해 uploadFile의 ID를 찾는 함수
+const findFile = async (file_link: string) => {
+  try {
+    return await dataSource.manager.findOneOrFail<UploadFiles>(UploadFiles, {
+      where: { file_link: file_link },
+    });
+  } catch (err) {
+    throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
+  }
+};
+
+// AWS S3에서 파일의 유무를 확인하는 함수
+const checkFileAccess = async (param: any) => {
+  try {
+    await s3.send(new GetObjectCommand(param));
+  } catch (err: any) {
+    if (err.Code === 'AccessDenied' || err.$metadata.httpStatusCode === 404) {
+      throw {
+        status: 404,
+        message: `DELETE_UPLOADED_FILE_IS_NOT_EXISTS: ${err}`,
+      };
+    }
+  }
+};
 
 const deleteUploadFile = async (
   userId: number,
@@ -127,31 +153,6 @@ const deleteUploadFile = async (
     (file_link: string) => file_link !== 'DELETE_FROM_UPLOAD_FILES_TABLE'
   );
 
-  // mySQL에서 file_link를 통해 uploadFile의 ID를 찾는 함수
-  const findFile = async (file_link: string) => {
-    try {
-      return await dataSource.manager.findOneOrFail<UploadFiles>(UploadFiles, {
-        where: { file_link: file_link },
-      });
-    } catch (err) {
-      throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
-    }
-  };
-
-  // AWS S3에서 파일의 유무를 확인하는 함수
-  const checkFileAccess = async (param: any) => {
-    try {
-      await s3.send(new GetObjectCommand(param));
-    } catch (err: any) {
-      if (err.Code === 'AccessDenied' || err.$metadata.httpStatusCode === 404) {
-        throw {
-          status: 404,
-          message: `DELETE_UPLOADED_FILE_IS_NOT_EXISTS: ${err}`,
-        };
-      }
-    }
-  };
-
   const deleteFiles = async (newFileLinks: string[], userId: number) => {
     const findAndCheckPromises = newFileLinks.map(async file_link => {
       const findFileResult = await findFile(file_link);
@@ -173,11 +174,9 @@ const deleteUploadFile = async (
     });
 
     await Promise.all(findAndCheckPromises);
-
-    // 이후 작업들을 수행하세요.
   };
 
-  // 이 함수를 호출하여 파일을 삭제하세요:
+  // 이 함수를 호출하여 파일을 삭제
   await deleteFiles(newFileLinks, userId);
 
   const params = {
