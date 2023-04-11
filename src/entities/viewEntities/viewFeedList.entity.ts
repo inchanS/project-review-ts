@@ -14,7 +14,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
                             IN (SELECT feedId,
                                        MIN(id)
                                 FROM upload_files
-                                WHERE is_img = TRUE
+                                WHERE is_img = TRUE and deleted_at is null
                                 GROUP BY feedId)),
            t3 AS (SELECT feedId AS feedId, COUNT(id) AS files_cnt
                   FROM upload_files
