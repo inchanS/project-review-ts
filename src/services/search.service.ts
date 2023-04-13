@@ -19,6 +19,7 @@ const searchContent = async (query: string, index: number, limit: number) => {
   const titleSnippetLength = 10;
   const contentSnippetLength = 20;
 
+  // FIXME title에 검색어가 없을 때, null이 아닌 앞에서부터 titleSnippetLength만큼의 문자열을 가져오도록 수정
   const result = await FeedRepository.createQueryBuilder('feed')
     .select([
       'feed.id AS id',
