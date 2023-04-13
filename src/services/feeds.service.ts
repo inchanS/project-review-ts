@@ -236,7 +236,7 @@ const getFeed = async (
 // 게시글 리스트 --------------------------------------------------------------
 const getFeedList = async (
   categoryId: number,
-  page: number,
+  index: number,
   limit: number
 ): Promise<FeedList[]> => {
   // query로 전달된 categoryId가 0이거나 없을 경우 undefined로 변경 처리
@@ -249,10 +249,10 @@ const getFeedList = async (
     limit = 10;
   }
 
-  if (!page) {
-    page = 1;
+  if (!index) {
+    index = 1;
   }
-  const startIndex: number = (page - 1) * limit;
+  const startIndex: number = (index - 1) * limit;
   return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
 };
 

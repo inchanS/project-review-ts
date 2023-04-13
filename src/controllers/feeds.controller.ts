@@ -155,10 +155,10 @@ const deleteFeed = async (req: Request, res: Response) => {
 const getFeedList = async (req: Request, res: Response) => {
   const categoryId: number = Number(req.query.categoryId);
 
-  const page: number = Number(req.query.page);
+  const index: number = Number(req.query.index);
   const limit: number = Number(req.query.limit);
 
-  const result = await feedsService.getFeedList(categoryId, page, limit);
+  const result = await feedsService.getFeedList(categoryId, index, limit);
 
   res.status(200).json(result);
 };
