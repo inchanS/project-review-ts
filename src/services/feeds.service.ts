@@ -32,35 +32,23 @@ const getTempFeedList = async (userId: number) => {
 };
 
 // 임시저장 및 게시글 저장 -----------------------------------------------------------
-const createFeed = async (
+const maxTransactionAttempts = 3;
+const executeTransactionWithRetry = async (
+  attempt: number,
   feedInfo: TempFeedDto | FeedDto,
   fileLinks: string[],
-  options?: FeedOption
+  options: FeedOption
 ): Promise<Feed> => {
-  if (feedInfo.status === 2) {
-    feedInfo = plainToInstance(TempFeedDto, feedInfo);
-  } else {
-    feedInfo = plainToInstance(FeedDto, feedInfo);
-    feedInfo.posted_at = new Date();
-  }
-
-  await validateOrReject(feedInfo).catch(errors => {
-    throw { status: 500, message: errors[0].constraints };
-  });
-
-  // transaction으로 묶어주기
   const queryRunner = dataSource.createQueryRunner();
   await queryRunner.connect();
   await queryRunner.startTransaction();
 
   try {
-    // feed 저장
     const newFeedInstance = plainToInstance(Feed, feedInfo);
     const newFeed = await queryRunner.manager
       .withRepository(FeedRepository)
       .createFeed(newFeedInstance);
 
-    // uploadFile에 feed의 ID를 연결해주는 함수
     if (fileLinks) {
       await uploadFileService.updateFileLinks(queryRunner, newFeed, fileLinks);
 
@@ -85,14 +73,51 @@ const createFeed = async (
       .getFeed(newFeed.id, options);
 
     await queryRunner.commitTransaction();
-
     return result;
-  } catch (err) {
+  } catch (err: any) {
     await queryRunner.rollbackTransaction();
-    throw new Error(`createFeed TRANSACTION error: ${err}`);
-  } finally {
-    await queryRunner.release();
+
+    if (
+      err.message.includes('Lock wait timeout') &&
+      attempt < maxTransactionAttempts
+    ) {
+      console.log(`createFeed TRANSACTION retry: ${attempt}`);
+      return await executeTransactionWithRetry(
+        attempt + 1,
+        feedInfo,
+        fileLinks,
+        options
+      );
+    } else {
+      throw new Error(`createFeed TRANSACTION error: ${err}`);
+    }
   }
+};
+
+const createFeed = async (
+  feedInfo: TempFeedDto | FeedDto,
+  fileLinks: string[],
+  options?: FeedOption
+): Promise<Feed> => {
+  if (feedInfo.status === 2) {
+    feedInfo = plainToInstance(TempFeedDto, feedInfo);
+  } else {
+    feedInfo = plainToInstance(FeedDto, feedInfo);
+    feedInfo.posted_at = new Date();
+  }
+
+  await validateOrReject(feedInfo).catch(errors => {
+    throw { status: 500, message: errors[0].constraints };
+  });
+
+  const result = await executeTransactionWithRetry(
+    1,
+    feedInfo,
+    fileLinks,
+    options
+  );
+
+  return result;
 };
 
 // 임시게시글 및 게시글 수정 -----------------------------------------------------------
@@ -211,7 +236,7 @@ const getFeed = async (
 // 게시글 리스트 --------------------------------------------------------------
 const getFeedList = async (
   categoryId: number,
-  page: number,
+  index: number,
   limit: number
 ): Promise<FeedList[]> => {
   // query로 전달된 categoryId가 0이거나 없을 경우 undefined로 변경 처리
@@ -224,10 +249,10 @@ const getFeedList = async (
     limit = 10;
   }
 
-  if (!page) {
-    page = 1;
+  if (!index) {
+    index = 1;
   }
-  const startIndex: number = (page - 1) * limit;
+  const startIndex: number = (index - 1) * limit;
   return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
 };
 

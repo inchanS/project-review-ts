@@ -32,7 +32,7 @@ const options = {
       },
       {
         description: 'project_review AWS RDS Test API document',
-        url: 'http://15.164.86.242:8005',
+        url: 'http://3.38.6.179:8000',
       },
     ],
   },

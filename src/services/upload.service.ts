@@ -1,14 +1,38 @@
 import sharp from 'sharp';
-import {
-  DeleteObjectsCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-} from '@aws-sdk/client-s3';
+import { DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3 } from '../middleware/uploadToS3';
 import dataSource from '../repositories/data-source';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
 import { UserRepository } from '../repositories/user.repository';
+import AWS from 'aws-sdk';
+
+const lambda = new AWS.Lambda({
+  region: process.env.AWS_REGION,
+});
+
+const invokeLambda = async (param: { Bucket: string; Key: string }) => {
+  const lambdaParams = {
+    FunctionName: 'checkFileAccessLambda',
+    Payload: JSON.stringify(param),
+  };
+
+  console.log(param);
+  console.log(lambdaParams);
+
+  // FIXME : invokeLambda 함수에서 에러가 발생하면, 에러를 잡아서 처리해야 한다.(작동은 하는것 같은데 예외처리가 안된다. 확인 필요)
+
+  return new Promise((resolve, reject) => {
+    lambda.invoke(lambdaParams, function (err, data: any) {
+      if (err) {
+        reject(err);
+      } else {
+        console.log('invokeLambda data: ', data);
+        resolve(JSON.parse(data.Payload));
+      }
+    });
+  });
+};
 
 const uploadFiles = async (
   userId: number,
@@ -105,6 +129,32 @@ const uploadFiles = async (
   }
   return files_link;
 };
+// uploadFiles 업로드된 파일을 삭제하는 함수 ---------------------------------------------------
+
+// mySQL에서 file_link를 통해 uploadFile의 ID를 찾는 함수
+const findFile = async (file_link: string) => {
+  try {
+    return await dataSource.manager.findOneOrFail<UploadFiles>(UploadFiles, {
+      where: { file_link: file_link },
+    });
+  } catch (err) {
+    throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
+  }
+};
+
+// AWS S3에서 파일의 유무를 확인하는 함수
+// const checkFileAccess = async (param: any) => {
+//   try {
+//     await s3.send(new GetObjectCommand(param));
+//   } catch (err: any) {
+//     if (err.Code === 'AccessDenied' || err.$metadata.httpStatusCode === 404) {
+//       throw {
+//         status: 404,
+//         message: `DELETE_UPLOADED_FILE_IS_NOT_EXISTS: ${err}`,
+//       };
+//     }
+//   }
+// };
 
 const deleteUploadFile = async (
   userId: number,
@@ -127,31 +177,6 @@ const deleteUploadFile = async (
     (file_link: string) => file_link !== 'DELETE_FROM_UPLOAD_FILES_TABLE'
   );
 
-  // mySQL에서 file_link를 통해 uploadFile의 ID를 찾는 함수
-  const findFile = async (file_link: string) => {
-    try {
-      return await dataSource.manager.findOneOrFail<UploadFiles>(UploadFiles, {
-        where: { file_link: file_link },
-      });
-    } catch (err) {
-      throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
-    }
-  };
-
-  // AWS S3에서 파일의 유무를 확인하는 함수
-  const checkFileAccess = async (param: any) => {
-    try {
-      await s3.send(new GetObjectCommand(param));
-    } catch (err: any) {
-      if (err.Code === 'AccessDenied' || err.$metadata.httpStatusCode === 404) {
-        throw {
-          status: 404,
-          message: `DELETE_UPLOADED_FILE_IS_NOT_EXISTS: ${err}`,
-        };
-      }
-    }
-  };
-
   const deleteFiles = async (newFileLinks: string[], userId: number) => {
     const findAndCheckPromises = newFileLinks.map(async file_link => {
       const findFileResult = await findFile(file_link);
@@ -161,7 +186,7 @@ const deleteUploadFile = async (
         throw { status: 403, message: 'DELETE_UPLOADED_FILE_IS_NOT_YOURS' };
       }
 
-      const param = {
+      const param: { Bucket: string; Key: string } = {
         Bucket: process.env.AWS_S3_BUCKET,
         Key: findFileResult.file_link.split('.com/')[1],
       };
@@ -169,15 +194,14 @@ const deleteUploadFile = async (
       keyArray.push({ Key: param.Key });
       uploadFileIdArray.push(findFileResult.id);
 
-      await checkFileAccess(param);
+      // FIXME 여기가 지울 파일이 많아지면 병목현상?인지 여튼 오래걸리면서 transaction이 잠기는 현상이 발생한다.
+      // await checkFileAccess(param);
+      await invokeLambda(param);
     });
-
     await Promise.all(findAndCheckPromises);
-
-    // 이후 작업들을 수행하세요.
   };
 
-  // 이 함수를 호출하여 파일을 삭제하세요:
+  // 이 함수를 호출하여 파일을 삭제
   await deleteFiles(newFileLinks, userId);
 
   const params = {
@@ -199,7 +223,16 @@ const deleteUploadFile = async (
   // file_links에 'DELETE_FROM_UPLOAD_FILES_TABLE'가 포함되어있으면 mySQL 테이블에서도 개체 삭제
   if (file_links.includes('DELETE_FROM_UPLOAD_FILES_TABLE')) {
     // mySQL에서 개체 삭제
-    await dataSource.manager.softDelete(UploadFiles, uploadFileIdArray);
+    const queryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      await dataSource.manager.softDelete(UploadFiles, uploadFileIdArray);
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`DELETE_UPLOAD_FILE_FAIL: ${err}`);
+    }
   }
 };
 
