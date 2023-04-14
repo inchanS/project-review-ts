@@ -5,34 +5,7 @@ import dataSource from '../repositories/data-source';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
 import { UserRepository } from '../repositories/user.repository';
-import AWS from 'aws-sdk';
-
-const lambda = new AWS.Lambda({
-  region: process.env.AWS_REGION,
-});
-
-const invokeLambda = async (param: { Bucket: string; Key: string }) => {
-  const lambdaParams = {
-    FunctionName: 'checkFileAccessLambda',
-    Payload: JSON.stringify(param),
-  };
-
-  console.log(param);
-  console.log(lambdaParams);
-
-  // FIXME : invokeLambda 함수에서 에러가 발생하면, 에러를 잡아서 처리해야 한다.(작동은 하는것 같은데 예외처리가 안된다. 확인 필요)
-
-  return new Promise((resolve, reject) => {
-    lambda.invoke(lambdaParams, function (err, data: any) {
-      if (err) {
-        reject(err);
-      } else {
-        console.log('invokeLambda data: ', data);
-        resolve(JSON.parse(data.Payload));
-      }
-    });
-  });
-};
+import { invokeLambda } from '../utils/awsLambda';
 
 const uploadFiles = async (
   userId: number,
@@ -156,6 +129,7 @@ const findFile = async (file_link: string) => {
 //   }
 // };
 
+export type Params = { Bucket: string; Key: string };
 const deleteUploadFile = async (
   userId: number,
   file_links: string[]
@@ -186,7 +160,7 @@ const deleteUploadFile = async (
         throw { status: 403, message: 'DELETE_UPLOADED_FILE_IS_NOT_YOURS' };
       }
 
-      const param: { Bucket: string; Key: string } = {
+      const param: Params = {
         Bucket: process.env.AWS_S3_BUCKET,
         Key: findFileResult.file_link.split('.com/')[1],
       };
