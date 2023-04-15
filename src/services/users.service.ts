@@ -104,7 +104,9 @@ type UserInfo = {
   userInfo: User;
   userFeeds: FeedList[];
   userComments: Comment[];
+  userFeedSymbols: FeedSymbol[];
 };
+
 const findUserInfoById = async (
   targetUserId: number,
   loggedInUserId: number,
@@ -146,7 +148,21 @@ const findUserInfoById = async (
       : null;
   }
 
-  return { userInfo, userFeeds, userComments };
+  const userFeedSymbols = await dataSource.manager
+    .createQueryBuilder(FeedSymbol, 'feedSymbol')
+    .select(['feedSymbol.id', 'feedSymbol.created_at', 'feedSymbol.updated_at'])
+    .addSelect(['feed.id', 'feed.title'])
+    .addSelect(['symbol.id', 'symbol.symbol'])
+    .addSelect(['feedUser.id', 'feedUser.nickname'])
+    .leftJoin('feedSymbol.feed', 'feed')
+    .leftJoin('feed.user', 'feedUser')
+    .leftJoin('feedSymbol.user', 'user')
+    .leftJoin('feedSymbol.symbol', 'symbol')
+    .where('user.id = :userId', { userId: targetUserId })
+    .orderBy('feedSymbol.updated_at', 'DESC')
+    .getMany();
+
+  return { userInfo, userFeeds, userComments, userFeedSymbols };
 };
 
 // 로그인 유저가 자신의 정보를 불러올때 사용하는 함수

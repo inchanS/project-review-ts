@@ -8,7 +8,7 @@
     "build": "npx tsc",
     "api-docs": "swagger-cli bundle api-docs/swagger/index.yaml --outfile api-docs/_build/index.yaml --type yaml",
     "predev": "npm run api-docs",
-    "start": "NODE_ENV=develop node dist/main.js",
+    "start": "npm i --verbose && NODE_ENV=develop node dist/main.js",
     "dev": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
     "nodemon": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
     "distribute": "npm i --verbose && NODE_ENV=production pm2 start dist/main.js --name review -i max",
