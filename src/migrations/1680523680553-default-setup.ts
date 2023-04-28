@@ -27,7 +27,7 @@ export class defaultSetup1680523680553 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-        INSERT INTO categories (id, category)
+        INSERT INTO categories (id, category, description)
         VALUES (1, '음식', '식당, 카페, 디저트 등'),
                (2, '전자제품', '스마트폰, 컴퓨터, 가전제품 등'),
                (3, '의류 및 악세서리', '패션, 의류, 신발, 가방, 액세서리 등'),
