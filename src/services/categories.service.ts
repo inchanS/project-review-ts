@@ -3,7 +3,7 @@ import { Category } from '../entities/category.entity';
 
 const getCategoriesList = async () => {
   return await dataSource.manager.find<Category>('Category', {
-    select: ['id', 'category'],
+    select: ['id', 'category', 'description'],
     order: { id: 'ASC' },
   });
 };
