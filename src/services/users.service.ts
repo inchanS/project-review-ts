@@ -12,7 +12,6 @@ import {
 } from '../repositories/feed.repository';
 import dataSource from '../repositories/data-source';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
-import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { Comment } from '../entities/comment.entity';
 import UploadFileService from './uploadFile.service';
 import uploadFileService from './uploadFile.service';
@@ -100,18 +99,8 @@ const signIn = async (email: string, password: string): Promise<object> => {
   return { token };
 };
 
-type UserInfo = {
-  userInfo: User;
-  userFeeds: FeedList[];
-  userComments: Comment[];
-  userFeedSymbols: FeedSymbol[];
-};
-
-const findUserInfoById = async (
-  targetUserId: number,
-  loggedInUserId: number,
-  options?: FeedListOptions
-): Promise<UserInfo> => {
+// 유저 정보 찾기시 유저 정보의 확인
+const findUserInfoByUserId = async (targetUserId: number) => {
   const userInfo = await UserRepository.findOne({
     where: { id: targetUserId },
   });
@@ -122,10 +111,22 @@ const findUserInfoById = async (
     throw error;
   }
 
-  const userFeeds = await FeedListRepository.getFeedListByUserId(
-    targetUserId,
-    options
-  );
+  return userInfo;
+};
+
+// 유저 정보 확인시 유저의 게시글 조회
+const findUserFeedsByUserId = async (
+  targetUserId: number,
+  options?: FeedListOptions
+) => {
+  return await FeedListRepository.getFeedListByUserId(targetUserId, options);
+};
+
+// 유저 정보 확인시 유저의 댓글 조회
+const findUserCommentsByUserId = async (
+  targetUserId: number,
+  loggedInUserId: number
+) => {
   const userComments = await CommentRepository.getCommentListByUserId(
     targetUserId
   );
@@ -148,7 +149,12 @@ const findUserInfoById = async (
       : null;
   }
 
-  const userFeedSymbols = await dataSource.manager
+  return userComments;
+};
+
+// 유저 정보 확인시, 유저의 피드 심볼 조회
+const findUserFeedSymbolsByUserId = async (targetUserId: number) => {
+  return await dataSource.manager
     .createQueryBuilder(FeedSymbol, 'feedSymbol')
     .select(['feedSymbol.id', 'feedSymbol.created_at', 'feedSymbol.updated_at'])
     .addSelect(['feed.id', 'feed.title'])
@@ -161,28 +167,7 @@ const findUserInfoById = async (
     .where('user.id = :userId', { userId: targetUserId })
     .orderBy('feedSymbol.updated_at', 'DESC')
     .getMany();
-
-  return { userInfo, userFeeds, userComments, userFeedSymbols };
 };
-
-// 로그인 유저가 자신의 정보를 불러올때 사용하는 함수
-const getMe = async (userId: number): Promise<object> => {
-  return findUserInfoById(userId, userId);
-};
-
-// 로그인 유저가 다른 유저의 정보를 불러올때 사용하는 함수
-const getUserInfo = async (
-  targetUserId: number,
-  loggedInUserId: number
-): Promise<object> => {
-  if (!targetUserId) {
-    const error = new Error(`USERID_IS_UNDEFINED`);
-    error.status = 400;
-    throw error;
-  }
-  return findUserInfoById(targetUserId, loggedInUserId);
-};
-
 const updateUserInfo = async (userId: number, userInfo: UserDto) => {
   const originUserInfo = await UserRepository.findOne({
     where: { id: userId },
@@ -222,23 +207,32 @@ const updateUserInfo = async (userId: number, userInfo: UserDto) => {
 };
 
 const deleteUser = async (userId: number): Promise<void> => {
-  const userInfo = await findUserInfoById(userId, userId, {
+  // 사용자 정보의 유효성 검사 함수를 불러온다.
+  await findUserInfoByUserId(userId);
+
+  // 사용자의 모든 게시글을 불러온다.
+  const userFeedsInfo = await findUserFeedsByUserId(userId, {
     includeTempFeeds: true,
   });
+
+  // 사용자의 모든 덧글을 불러온다.
+  const userCommentsInfo = await findUserCommentsByUserId(userId, userId);
+
+  // 사용자의 모든 좋아요 정보를 불러온다.
   const userSymbols = await dataSource.manager.find<FeedSymbol>('FeedSymbol', {
     loadRelationIds: true,
     where: { user: { id: userId } },
   });
-
-  if (!userInfo) throw { status: 404, message: 'USER_IS_NOT_FOUND' };
 
   const queryRunner = dataSource.createQueryRunner();
   await queryRunner.connect();
   await queryRunner.startTransaction();
 
   try {
-    const userFeedIds = userInfo.userFeeds.map(feed => feed.id);
-    const userCommentIds = userInfo.userComments.map(comment => comment.id);
+    const userFeedIds = userFeedsInfo.map((feed: { id: number }) => feed.id);
+    const userCommentIds = userCommentsInfo.map(
+      (comment: { id: number }) => comment.id
+    );
     const userSymbolIds = userSymbols.map(symbol => symbol.id);
 
     // 사용자의 User entity를 삭제한다.
@@ -337,12 +331,13 @@ const resetPassword = async (email: string, resetPasswordUrl: string) => {
 export default {
   signUp,
   signIn,
-  getMe,
   checkDuplicateNickname,
   checkDuplicateEmail,
-  getUserInfo,
   updateUserInfo,
   deleteUser,
   resetPassword,
-  findUserInfoById,
+  findUserInfoByUserId,
+  findUserFeedsByUserId,
+  findUserCommentsByUserId,
+  findUserFeedSymbolsByUserId,
 };
