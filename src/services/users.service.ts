@@ -230,9 +230,18 @@ const deleteUser = async (userId: number): Promise<void> => {
 
   try {
     const userFeedIds = userFeedsInfo.map((feed: { id: number }) => feed.id);
+
+    console.log('🔥users.service/deleteUser:234- userFeedIds = ', userFeedIds);
+
     const userCommentIds = userCommentsInfo.map(
       (comment: { id: number }) => comment.id
     );
+
+    console.log(
+      '🔥users.service/deleteUser:240- userCommentsInfo = ',
+      userCommentsInfo
+    );
+
     const userSymbolIds = userSymbols.map(symbol => symbol.id);
 
     // 사용자의 User entity를 삭제한다.
