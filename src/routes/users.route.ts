@@ -48,19 +48,19 @@ router.get(
 
 // 유저 정보 수정하기
 router.patch(
-  '/userinfo',
+  '/signup',
   asyncWrap(authValidateOrReject),
   asyncWrap(usersController.updateUserInfo)
 );
 
 // 유저 정보 삭제하기
 router.delete(
-  '/userinfo',
+  '/signup',
   asyncWrap(authValidateOrReject),
   asyncWrap(usersController.deleteUser)
 );
 
 // 유저 비밀번호 찾기 - 이메일로 비밀번호 재설정 링크 보내기
-router.post('/password', asyncWrap(usersController.resetPassword));
+router.post('/signup/password', asyncWrap(usersController.resetPassword));
 
 export default router;
