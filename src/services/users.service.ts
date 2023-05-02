@@ -135,10 +135,16 @@ const findUserFeedsByUserId = async (
 // 유저 정보 확인시 유저의 댓글 조회
 const findUserCommentsByUserId = async (
   targetUserId: number,
-  loggedInUserId: number
+  loggedInUserId: number,
+  page?: Pagination
 ) => {
+  if (isNaN(page.startIndex) || isNaN(page.limit)) {
+    page = undefined;
+  }
+
   const userComments = await CommentRepository.getCommentListByUserId(
-    targetUserId
+    targetUserId,
+    page
   );
 
   for (const comment of userComments) {

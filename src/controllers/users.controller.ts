@@ -63,9 +63,15 @@ const getUserFeeds = async (req: Request, res: Response): Promise<void> => {
 const getUserComments = async (req: Request, res: Response): Promise<void> => {
   const targetUserId = Number(req.params.id);
   const loggedInUserId = req.userInfo.id;
+
+  const startIndex = Number(req.query.index);
+  const limit = Number(req.query.limit);
+  const page: Pagination = { startIndex, limit };
+
   const result = await usersService.findUserCommentsByUserId(
     targetUserId,
-    loggedInUserId
+    loggedInUserId,
+    page
   );
 
   res.status(200).json(result);
