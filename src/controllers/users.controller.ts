@@ -50,7 +50,7 @@ const getUserInfo = async (req: Request, res: Response): Promise<void> => {
 const getUserFeeds = async (req: Request, res: Response): Promise<void> => {
   const targetUserId = Number(req.params.id);
 
-  const startIndex = Number(req.query.index);
+  const startIndex = Number(req.query.page);
   const limit = Number(req.query.limit);
   const page: Pagination = { startIndex, limit };
 

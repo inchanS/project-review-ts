@@ -123,6 +123,8 @@ const findUserFeedsByUserId = async (
 ) => {
   if (isNaN(page.startIndex) || isNaN(page.limit)) {
     page = undefined;
+  } else if (page.startIndex < 1) {
+    throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
   }
 
   return await FeedListRepository.getFeedListByUserId(

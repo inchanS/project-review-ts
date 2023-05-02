@@ -169,8 +169,10 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
 
     let pageCondition = {};
     if (page) {
+      const startIndex: number = (page.startIndex - 1) * page.limit;
+
       pageCondition = {
-        skip: page.startIndex,
+        skip: startIndex,
         take: page.limit,
       };
     }
@@ -180,11 +182,6 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
       order: orderOption,
       ...pageCondition,
     };
-
-    console.log(
-      '🔥feed.repository/getFeedListByUserId:184- findOption = ',
-      findOption
-    );
 
     return await this.find(findOption);
 
