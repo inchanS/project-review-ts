@@ -9,6 +9,7 @@ import { CommentRepository } from '../repositories/comment.repository';
 import {
   FeedListOptions,
   FeedListRepository,
+  Pagination,
 } from '../repositories/feed.repository';
 import dataSource from '../repositories/data-source';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
@@ -117,9 +118,18 @@ const findUserInfoByUserId = async (targetUserId: number) => {
 // 유저 정보 확인시 유저의 게시글 조회
 const findUserFeedsByUserId = async (
   targetUserId: number,
+  page: Pagination,
   options?: FeedListOptions
 ) => {
-  return await FeedListRepository.getFeedListByUserId(targetUserId, options);
+  if (isNaN(page.startIndex) || isNaN(page.limit)) {
+    page = undefined;
+  }
+
+  return await FeedListRepository.getFeedListByUserId(
+    targetUserId,
+    page,
+    options
+  );
 };
 
 // 유저 정보 확인시 유저의 댓글 조회
@@ -211,7 +221,7 @@ const deleteUser = async (userId: number): Promise<void> => {
   await findUserInfoByUserId(userId);
 
   // 사용자의 모든 게시글을 불러온다.
-  const userFeedsInfo = await findUserFeedsByUserId(userId, {
+  const userFeedsInfo = await findUserFeedsByUserId(userId, undefined, {
     includeTempFeeds: true,
   });
 

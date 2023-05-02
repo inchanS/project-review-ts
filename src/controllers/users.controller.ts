@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import usersService from '../services/users.service';
 import { UserDto } from '../entities/dto/user.dto';
+import { Pagination } from '../repositories/feed.repository';
 
 const checkDuplicateNickname = async (
   req: Request,
@@ -48,7 +49,12 @@ const getUserInfo = async (req: Request, res: Response): Promise<void> => {
 // 유저의 모든 게시물 가져오기
 const getUserFeeds = async (req: Request, res: Response): Promise<void> => {
   const targetUserId = Number(req.params.id);
-  const result = await usersService.findUserFeedsByUserId(targetUserId);
+
+  const startIndex = Number(req.query.index);
+  const limit = Number(req.query.limit);
+  const page: Pagination = { startIndex, limit };
+
+  const result = await usersService.findUserFeedsByUserId(targetUserId, page);
 
   res.status(200).json(result);
 };

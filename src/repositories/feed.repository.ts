@@ -95,6 +95,11 @@ export type FeedListOptions = {
   includeTempFeeds?: boolean;
   onlyTempFeeds?: boolean;
 };
+
+export type Pagination = {
+  startIndex: number;
+  limit: number;
+};
 export const FeedListRepository = dataSource.getRepository(FeedList).extend({
   async getFeedList(
     categoryId: number | undefined,
@@ -131,10 +136,15 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
     });
   },
 
-  async getFeedListByUserId(userId: number, options: FeedListOptions = {}) {
+  async getFeedListByUserId(
+    userId: number,
+    page: Pagination,
+    options: FeedListOptions = {}
+  ) {
     const { includeTempFeeds = false, onlyTempFeeds = false } = options;
 
     let feedListCondition = {};
+    let orderOption = {};
 
     if (includeTempFeeds && onlyTempFeeds) {
       throw {
@@ -150,14 +160,33 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
     } else if (onlyTempFeeds) {
       // 사용자의 임시저장 게시글 목록만 반환
       feedListCondition = { postedAt: IsNull() };
+      orderOption = { updatedAt: 'DESC' };
     } else {
       // 사용자의 정식 게시글 목록만 반환
       feedListCondition = { postedAt: Not(IsNull()) };
+      orderOption = { postedAt: 'DESC' };
     }
 
-    return await this.find({
+    let pageCondition = {};
+    if (page) {
+      pageCondition = {
+        skip: page.startIndex,
+        take: page.limit,
+      };
+    }
+
+    const findOption = {
       where: { userId: userId, deletedAt: IsNull(), ...feedListCondition },
-    });
+      order: orderOption,
+      ...pageCondition,
+    };
+
+    console.log(
+      '🔥feed.repository/getFeedListByUserId:184- findOption = ',
+      findOption
+    );
+
+    return await this.find(findOption);
 
     // --------------------------------------------------------------------------
     // 아래의 2 코드를 위 코드로 리팩토링 함 (2023.03.24) ---------------------------------
