@@ -157,7 +157,7 @@ const deleteComment = async (commentId: number, userId: number) => {
 };
 
 const getCommentsById = async (userId: number) => {
-  return await CommentRepository.getCommentListByUserId(userId);
+  return await CommentRepository.getCommentListByUserId(userId, undefined);
 };
 export default {
   getCommentList,

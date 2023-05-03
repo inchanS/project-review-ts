@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import usersService from '../services/users.service';
 import { UserDto } from '../entities/dto/user.dto';
+import { Pagination } from '../repositories/feed.repository';
 
 const checkDuplicateNickname = async (
   req: Request,
@@ -37,16 +38,80 @@ const signIn = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ message: `SIGNIN_SUCCESS`, result });
 };
 
-const getMe = async (req: Request, res: Response): Promise<void> => {
-  const result = await usersService.getMe(req.userInfo.id);
+// 유저의 가입정보 가져오기
+const getUserInfo = async (req: Request, res: Response): Promise<void> => {
+  let targetUserId = Number(req.params.id);
+  const loggedInUserId = req.userInfo.id;
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
+  const result = await usersService.findUserInfoByUserId(targetUserId);
+
   res.status(200).json(result);
 };
 
-// 다른 사람의 정보 가져오기
-const getUserInfo = async (req: Request, res: Response): Promise<void> => {
-  const targetUserId = Number(req.params.id);
+// 유저의 모든 게시물 가져오기
+const getUserFeeds = async (req: Request, res: Response): Promise<void> => {
+  let targetUserId = Number(req.params.id);
   const loggedInUserId = req.userInfo.id;
-  const result = await usersService.getUserInfo(targetUserId, loggedInUserId);
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
+
+  const startIndex = Number(req.query.page);
+  const limit = Number(req.query.limit);
+  const page: Pagination = { startIndex, limit };
+
+  const result = await usersService.findUserFeedsByUserId(targetUserId, page);
+
+  res.status(200).json(result);
+};
+
+// 유저의 모든 덧글 가져오기
+const getUserComments = async (req: Request, res: Response): Promise<void> => {
+  let targetUserId = Number(req.params.id);
+  const loggedInUserId = req.userInfo.id;
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
+
+  const startIndex = Number(req.query.index);
+  const limit = Number(req.query.limit);
+  const page: Pagination = { startIndex, limit };
+
+  const result = await usersService.findUserCommentsByUserId(
+    targetUserId,
+    loggedInUserId,
+    page
+  );
+
+  res.status(200).json(result);
+};
+
+// 유저의 모든 좋아요 가져오기
+const getUserFeedSymbols = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  let targetUserId = Number(req.params.id);
+  const loggedInUserId = req.userInfo.id;
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
+
+  const startIndex = Number(req.query.page);
+  const limit = Number(req.query.limit);
+  const page: Pagination = { startIndex, limit };
+
+  const result = await usersService.findUserFeedSymbolsByUserId(
+    targetUserId,
+    page
+  );
+
   res.status(200).json(result);
 };
 
@@ -76,11 +141,13 @@ const resetPassword = async (req: Request, res: Response): Promise<void> => {
 export default {
   signUp,
   signIn,
-  getMe,
   checkDuplicateNickname,
   checkDuplicateEmail,
-  getUserInfo,
   updateUserInfo,
   deleteUser,
   resetPassword,
+  getUserInfo,
+  getUserFeeds,
+  getUserComments,
+  getUserFeedSymbols,
 };

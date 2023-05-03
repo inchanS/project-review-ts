@@ -1,6 +1,7 @@
 import dataSource from './data-source';
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
+import { Pagination } from './feed.repository';
 
 export const CommentRepository = dataSource.getRepository(Comment).extend({
   async getCommentList(id: number) {
@@ -45,11 +46,21 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     });
   },
 
-  async getCommentListByUserId(userId: number) {
+  async getCommentListByUserId(userId: number, page: Pagination) {
+    let pageCondition = {};
+    if (page) {
+      pageCondition = {
+        skip: page.startIndex,
+        take: page.limit,
+      };
+    }
+
     return await this.find({
       withDeleted: true,
       loadRelationIds: true,
       where: { user: { id: userId } },
+      order: { created_at: 'DESC' },
+      ...pageCondition,
     });
   },
 });
