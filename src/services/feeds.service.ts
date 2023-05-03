@@ -19,9 +19,13 @@ import { FeedOption } from '../repositories/feed.repository';
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
 const getTempFeedList = async (userId: number) => {
-  const results = await FeedListRepository.getFeedListByUserId(userId, {
-    onlyTempFeeds: true,
-  });
+  const results = await FeedListRepository.getFeedListByUserId(
+    userId,
+    undefined,
+    {
+      onlyTempFeeds: true,
+    }
+  );
   for (const result of results) {
     const updatedAt = result.updatedAt.substring(2);
     if (result.title === null) {
