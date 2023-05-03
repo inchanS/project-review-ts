@@ -83,7 +83,15 @@ const getUserFeedSymbols = async (
   res: Response
 ): Promise<void> => {
   const targetUserId = Number(req.params.id);
-  const result = await usersService.findUserFeedSymbolsByUserId(targetUserId);
+
+  const startIndex = Number(req.query.page);
+  const limit = Number(req.query.limit);
+  const page: Pagination = { startIndex, limit };
+
+  const result = await usersService.findUserFeedSymbolsByUserId(
+    targetUserId,
+    page
+  );
 
   res.status(200).json(result);
 };

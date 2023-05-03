@@ -171,8 +171,11 @@ const findUserCommentsByUserId = async (
 };
 
 // 유저 정보 확인시, 유저의 피드 심볼 조회
-const findUserFeedSymbolsByUserId = async (targetUserId: number) => {
-  return await dataSource.manager
+const findUserFeedSymbolsByUserId = async (
+  targetUserId: number,
+  page: Pagination
+) => {
+  let queryBuilder = dataSource.manager
     .createQueryBuilder(FeedSymbol, 'feedSymbol')
     .select(['feedSymbol.id', 'feedSymbol.created_at', 'feedSymbol.updated_at'])
     .addSelect(['feed.id', 'feed.title'])
@@ -183,8 +186,17 @@ const findUserFeedSymbolsByUserId = async (targetUserId: number) => {
     .leftJoin('feedSymbol.user', 'user')
     .leftJoin('feedSymbol.symbol', 'symbol')
     .where('user.id = :userId', { userId: targetUserId })
-    .orderBy('feedSymbol.updated_at', 'DESC')
-    .getMany();
+    .orderBy('feedSymbol.updated_at', 'DESC');
+
+  if (!isNaN(page.startIndex) && !isNaN(page.limit)) {
+    if (page.startIndex < 1) {
+      throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
+    }
+
+    queryBuilder = queryBuilder.skip(page.startIndex - 1).take(page.limit);
+  }
+
+  return await queryBuilder.getMany();
 };
 const updateUserInfo = async (userId: number, userInfo: UserDto) => {
   const originUserInfo = await UserRepository.findOne({
