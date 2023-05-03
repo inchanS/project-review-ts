@@ -40,7 +40,12 @@ const signIn = async (req: Request, res: Response): Promise<void> => {
 
 // 유저의 가입정보 가져오기
 const getUserInfo = async (req: Request, res: Response): Promise<void> => {
-  const targetUserId = Number(req.params.id);
+  let targetUserId = Number(req.params.id);
+  const loggedInUserId = req.userInfo.id;
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
   const result = await usersService.findUserInfoByUserId(targetUserId);
 
   res.status(200).json(result);
@@ -48,7 +53,12 @@ const getUserInfo = async (req: Request, res: Response): Promise<void> => {
 
 // 유저의 모든 게시물 가져오기
 const getUserFeeds = async (req: Request, res: Response): Promise<void> => {
-  const targetUserId = Number(req.params.id);
+  let targetUserId = Number(req.params.id);
+  const loggedInUserId = req.userInfo.id;
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
 
   const startIndex = Number(req.query.page);
   const limit = Number(req.query.limit);
@@ -61,8 +71,12 @@ const getUserFeeds = async (req: Request, res: Response): Promise<void> => {
 
 // 유저의 모든 덧글 가져오기
 const getUserComments = async (req: Request, res: Response): Promise<void> => {
-  const targetUserId = Number(req.params.id);
+  let targetUserId = Number(req.params.id);
   const loggedInUserId = req.userInfo.id;
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
 
   const startIndex = Number(req.query.index);
   const limit = Number(req.query.limit);
@@ -82,7 +96,12 @@ const getUserFeedSymbols = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const targetUserId = Number(req.params.id);
+  let targetUserId = Number(req.params.id);
+  const loggedInUserId = req.userInfo.id;
+
+  if (!targetUserId) {
+    targetUserId = loggedInUserId;
+  }
 
   const startIndex = Number(req.query.page);
   const limit = Number(req.query.limit);
