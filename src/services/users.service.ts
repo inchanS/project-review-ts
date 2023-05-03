@@ -102,6 +102,10 @@ const signIn = async (email: string, password: string): Promise<object> => {
 
 // 유저 정보 찾기시 유저 정보의 확인
 const findUserInfoByUserId = async (targetUserId: number) => {
+  if (!targetUserId) {
+    throw { status: 400, message: 'USER_ID_IS_UNDEFINED' };
+  }
+
   const userInfo = await UserRepository.findOne({
     where: { id: targetUserId },
   });
@@ -121,6 +125,10 @@ const findUserFeedsByUserId = async (
   page: Pagination,
   options?: FeedListOptions
 ) => {
+  if (!targetUserId) {
+    throw { status: 400, message: 'USER_ID_IS_UNDEFINED' };
+  }
+
   if (isNaN(page.startIndex) || isNaN(page.limit)) {
     page = undefined;
   } else if (page.startIndex < 1) {
@@ -140,6 +148,10 @@ const findUserCommentsByUserId = async (
   loggedInUserId: number,
   page?: Pagination
 ) => {
+  if (!targetUserId) {
+    throw { status: 400, message: 'USER_ID_IS_UNDEFINED' };
+  }
+
   if (isNaN(page.startIndex) || isNaN(page.limit)) {
     page = undefined;
   }
@@ -175,6 +187,10 @@ const findUserFeedSymbolsByUserId = async (
   targetUserId: number,
   page: Pagination
 ) => {
+  if (!targetUserId) {
+    throw { status: 400, message: 'USER_ID_IS_UNDEFINED' };
+  }
+
   let queryBuilder = dataSource.manager
     .createQueryBuilder(FeedSymbol, 'feedSymbol')
     .select(['feedSymbol.id', 'feedSymbol.created_at', 'feedSymbol.updated_at'])
