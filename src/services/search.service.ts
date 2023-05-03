@@ -53,7 +53,12 @@ const searchContent = async (query: string, index: number, limit: number) => {
         contentSnippetLength * 2 + query.length
       }), '...', '')
       ), 
-      null
+      CONCAT(
+        SUBSTRING(feed.content, 1, ${contentSnippetLength * 2 + query.length}),
+        IF(LENGTH(feed.content) > (GREATEST(1, LOCATE(LOWER(:originQuery), LOWER(feed.content)) - ${contentSnippetLength}) + ${
+        contentSnippetLength * 2 + query.length
+      }), '...', '')
+        )
       ) AS contentSnippet`,
     ])
     .where(
