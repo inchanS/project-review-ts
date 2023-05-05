@@ -204,7 +204,7 @@ const findUserFeedSymbolsByUserId = async (
     .where('user.id = :userId', { userId: targetUserId })
     .orderBy('feedSymbol.updated_at', 'DESC');
 
-  if (!isNaN(page.startIndex) && !isNaN(page.limit)) {
+  if (Number.isInteger(page.startIndex) && Number.isInteger(page.limit)) {
     if (page.startIndex < 1) {
       throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
     }
