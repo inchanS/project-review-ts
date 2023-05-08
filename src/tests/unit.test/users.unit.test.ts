@@ -20,6 +20,10 @@ import { FeedSymbol } from '../../entities/feedSymbol.entity';
 
 describe('USERS UNIT test', () => {
   describe('checkDuplicateNickname', () => {
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
     test('닉네임이 undefined 일 때, 에러 반환', async () => {
       const nickname: string = undefined;
 
@@ -55,6 +59,10 @@ describe('USERS UNIT test', () => {
   });
 
   describe('checkDuplicateEmail', () => {
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
     test('이메일이 undefined 일 때, 에러 반환', async () => {
       const email: string = undefined;
       await expect(
@@ -89,6 +97,10 @@ describe('USERS UNIT test', () => {
   });
 
   describe('signUp', () => {
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
     test('이메일 형식이 아닐 때, 에러 반환', async () => {
       const userInfo: UserDto = {
         email: 'email',
@@ -149,6 +161,10 @@ describe('USERS UNIT test', () => {
   });
 
   describe('signIn', () => {
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
     test('사용자 중 해당 이메일을 찾을 수 없을 때, 에러반환', async () => {
       const email: string = 'email';
       const password: string = 'password';
@@ -197,6 +213,11 @@ describe('USERS UNIT test', () => {
     beforeEach(() => {
       jest.resetAllMocks();
     });
+
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
     test('사용자를 찾을 수 없을 때, 에러반환', async () => {
       const userId: number = 1;
 
@@ -239,6 +260,10 @@ describe('USERS UNIT test', () => {
 
   describe('findUserFeedsByUserId', () => {
     beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    afterAll(() => {
       jest.resetAllMocks();
     });
 
@@ -304,6 +329,10 @@ describe('USERS UNIT test', () => {
 
   describe('findUserCommentsByUserId', () => {
     beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    afterAll(() => {
       jest.resetAllMocks();
     });
 
@@ -411,24 +440,30 @@ describe('USERS UNIT test', () => {
   });
 
   describe('findUserFeedSymbolsByUserId', () => {
+    let queryBuilder: any;
+
     beforeEach(() => {
       jest.clearAllMocks();
+
+      queryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockReturnValueOnce([]),
+      };
+
+      jest
+        .spyOn(dataSource.manager, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder);
     });
 
-    const queryBuilder = {
-      select: jest.fn().mockReturnThis(),
-      addSelect: jest.fn().mockReturnThis(),
-      leftJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockReturnValueOnce([]),
-    };
-
-    jest
-      .spyOn(dataSource.manager, 'createQueryBuilder')
-      .mockReturnValue(queryBuilder as any);
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
 
     const userId: number = 1;
 
@@ -474,6 +509,10 @@ describe('USERS UNIT test', () => {
 
   describe('updateUserInfo', () => {
     beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    afterAll(() => {
       jest.resetAllMocks();
     });
 
@@ -550,6 +589,10 @@ describe('USERS UNIT test', () => {
   });
 
   describe('deleteUser', () => {
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
     test('사용자를 찾을 수 없을 때, 에러반환', async () => {
       const userId: number = 1;
 
@@ -740,6 +783,10 @@ describe('USERS UNIT test', () => {
     const findOneMock = jest.spyOn(UserRepository, 'findOneOrFail');
 
     beforeEach(() => {
+      jest.resetAllMocks();
+    });
+
+    afterAll(() => {
       jest.resetAllMocks();
     });
 
