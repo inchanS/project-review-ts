@@ -450,10 +450,25 @@ describe('USERS UNIT test', () => {
         message: 'PAGE_START_INDEX_IS_INVALID',
       });
     });
-  });
-  //
 
-  //
+    test('findUserFeedSymbolsByUserId 성공', async () => {
+      const pageParam: Pagination = { startIndex: 1, limit: 10 };
+
+      const result = await usersService.findUserFeedSymbolsByUserId(
+        userId,
+        pageParam
+      );
+
+      expect(result).toBeDefined();
+      expect(queryBuilder.select).toBeCalledTimes(1);
+      expect(queryBuilder.where).toBeCalledWith('user.id = :userId', {
+        userId,
+      });
+      expect(queryBuilder.skip).toBeCalledWith(pageParam.startIndex - 1);
+      expect(queryBuilder.take).toBeCalledWith(pageParam.limit);
+    });
+  });
+
   describe('updateUserInfo', () => {
     beforeEach(() => {
       jest.resetAllMocks();
