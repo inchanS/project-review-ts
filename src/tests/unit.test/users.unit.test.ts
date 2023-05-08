@@ -12,8 +12,11 @@ import { Comment } from '../../entities/comment.entity';
 import { CommentRepository } from '../../repositories/comment.repository';
 import jwt from 'jsonwebtoken';
 import dataSource from '../../repositories/data-source';
-import UploadFileService from '../../services/uploadFile.service';
+import UploadFileService, {
+  DeleteUploadFiles,
+} from '../../services/uploadFile.service';
 import * as util from '../../utils/sendMail';
+import { FeedSymbol } from '../../entities/feedSymbol.entity';
 
 describe('USERS UNIT test', () => {
   describe('checkDuplicateNickname', () => {
@@ -611,6 +614,11 @@ describe('USERS UNIT test', () => {
         },
       ];
 
+      const mockUserUploadFiles: DeleteUploadFiles = {
+        uploadFileWithoutFeedId: [1, 2, 3],
+        deleteFileLinksArray: ['123', '456', '789'],
+      };
+
       let queryRunnerMock: any;
 
       beforeEach(() => {
@@ -643,7 +651,7 @@ describe('USERS UNIT test', () => {
 
         jest
           .spyOn(UploadFileService, 'deleteUnusedUploadFiles')
-          .mockResolvedValue(null);
+          .mockResolvedValue(mockUserUploadFiles);
         jest
           .spyOn(UploadFileService, 'deleteUnconnectedLinks')
           .mockResolvedValue(null);
@@ -669,6 +677,36 @@ describe('USERS UNIT test', () => {
         );
 
         expect(result).toBeUndefined();
+        // user 삭제 과정의 함수 확인
+        expect(queryRunnerMock().manager.softDelete).toBeCalledWith(User, 1);
+        // feed 삭제 과정의 함수 확인
+        expect(queryRunnerMock().manager.softDelete).toBeCalledWith(
+          Feed,
+          [1, 2]
+        );
+        // feed의 uploadFile 삭제 과정의 함수 확인
+        expect(UploadFileService.deleteUnusedUploadFiles).toBeCalledTimes(1);
+        expect(UploadFileService.deleteUnusedUploadFiles).toBeCalledWith(
+          queryRunnerMock(),
+          userId
+        );
+        expect(UploadFileService.deleteUnconnectedLinks).toBeCalledTimes(1);
+        expect(UploadFileService.deleteUnconnectedLinks).toBeCalledWith(
+          queryRunnerMock(),
+          mockUserUploadFiles.uploadFileWithoutFeedId,
+          mockUserUploadFiles.deleteFileLinksArray,
+          userId
+        );
+        // comment 삭제 과정의 함수 확인
+        expect(queryRunnerMock().manager.softDelete).toBeCalledWith(
+          Comment,
+          [1, 2]
+        );
+        // symbol 삭제 과정의 함수 확인
+        expect(queryRunnerMock().manager.softDelete).toBeCalledWith(
+          FeedSymbol,
+          [1, 2]
+        );
       });
 
       test('사용자의 comment 정보가 없을때', async () => {

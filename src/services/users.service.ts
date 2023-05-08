@@ -256,13 +256,15 @@ const deleteUser = async (userId: number): Promise<void> => {
   // 사용자 정보의 유효성 검사 함수를 불러온다.
   await findUserInfoByUserId(userId);
 
+  const page: Pagination = { startIndex: undefined, limit: undefined };
+
   // 사용자의 모든 게시글을 불러온다.
-  const userFeedsInfo = await findUserFeedsByUserId(userId, undefined, {
+  const userFeedsInfo = await findUserFeedsByUserId(userId, page, {
     includeTempFeeds: true,
   });
 
   // 사용자의 모든 덧글을 불러온다.
-  const userCommentsInfo = await findUserCommentsByUserId(userId, userId);
+  const userCommentsInfo = await findUserCommentsByUserId(userId, userId, page);
 
   // 사용자의 모든 좋아요 정보를 불러온다.
   const userSymbols = await dataSource.manager.find<FeedSymbol>('FeedSymbol', {
