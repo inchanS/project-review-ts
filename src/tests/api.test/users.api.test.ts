@@ -66,34 +66,54 @@ describe('users.service API test', () => {
       }
     });
 
-    await dataSource.manager.query(`
-        INSERT INTO feed_status (id, is_status)
-        VALUES (1, 'published'),
-               (2, 'temporary'),
-               (3, 'deleted');
-    `);
+    try {
+      // migration은 한번 실행 이후, 재 실행시 작동하지않고 패스됨으로 다시 복귀시켜줘야 한다.
+      // 1번 방법 : 마지막으로 실행된 migration 파일 롤백
+      // await dataSource.undoLastMigration();
 
-    await dataSource.manager.query(`
-        INSERT INTO estimation (id, estimation)
-        VALUES (1, 'double like'),
-               (2, 'like'),
-               (3, 'dislike');
-    `);
+      // 2번 방법 : migration 파일 실행 전, schema 초기화
+      await dataSource.synchronize(true);
+    } catch (error) {
+      // 1번 방법시,
+      // console.log('Migration rollback failed:', error);
 
-    await dataSource.manager.query(`
-        INSERT INTO symbol (id, symbol)
-        VALUES (1, 'like'),
-               (2, 'I have this too');
-    `);
+      // 2번 방법시,
+      console.log('Migration sync failed:', error);
+    }
 
-    await dataSource.manager.query(`
-        INSERT INTO categories(id, category)
-        VALUES (1, '1 Category'),
-               (2, '2 Category'),
-               (3, '3 Category'),
-               (4, '4 Category'),
-               (5, '5 Category');
-    `);
+    await dataSource.runMigrations().then(() => {
+      console.log('💥TEST Data Source has been runMigrations!');
+    });
+
+    // runMigrations()를 실행하기 전 수동(?)으로 입력했던 기본 테이블 값
+    // await dataSource.manager.query(`
+    //     INSERT INTO feed_status (id, is_status)
+    //     VALUES (1, 'published'),
+    //            (2, 'temporary'),
+    //            (3, 'deleted');
+    // `);
+    //
+    // await dataSource.manager.query(`
+    //     INSERT INTO estimation (id, estimation)
+    //     VALUES (1, 'double like'),
+    //            (2, 'like'),
+    //            (3, 'dislike');
+    // `);
+    //
+    // await dataSource.manager.query(`
+    //     INSERT INTO symbol (id, symbol)
+    //     VALUES (1, 'like'),
+    //            (2, 'I have this too');
+    // `);
+    //
+    // await dataSource.manager.query(`
+    //     INSERT INTO categories(id, category)
+    //     VALUES (1, '1 Category'),
+    //            (2, '2 Category'),
+    //            (3, '3 Category'),
+    //            (4, '4 Category'),
+    //            (5, '5 Category');
+    // `);
   });
 
   afterAll(async () => {
@@ -297,7 +317,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('getMyInfo', () => {
+  describe('로그인 사용자의 정보 조회 (api endpoint에서 사용자 ID가 없을 때)', () => {
     const existUser = new User();
     existUser.id = 1;
     existUser.nickname = 'existedNickname';
