@@ -4,6 +4,7 @@ import { createApp } from '../../app';
 import request from 'supertest';
 import { Comment } from '../../entities/comment.entity';
 import { Feed } from '../../entities/feed.entity';
+import { FeedSymbol } from '../../entities/feedSymbol.entity';
 
 // 테스트간 피드생성을 위한 피드 클래스 생성
 class FeedClass {
@@ -14,10 +15,11 @@ class FeedClass {
   status: number;
   category: number;
   estimation: number;
-  postedAt: Date | null;
+  posted_at: Date | null;
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
+  viewCnt: number;
   constructor(id: number, userId: number) {
     this.id = id;
     this.title = 'test title';
@@ -26,10 +28,11 @@ class FeedClass {
     this.status = 1;
     this.category = 1;
     this.estimation = 1;
-    this.postedAt = new Date();
+    this.posted_at = new Date();
     this.created_at = new Date();
     this.updated_at = new Date();
-    this.deleted_at = new Date();
+    this.deleted_at = null;
+    this.viewCnt = 0;
   }
 }
 
@@ -52,6 +55,26 @@ class CommentClass {
     this.created_at = new Date();
     this.updated_at = new Date();
     this.deleted_at = null;
+  }
+}
+
+// 테스트간 게시물공감 데이터 생성을 위한 클래스 생성
+class FeedSymbolClass {
+  id: number;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+  feed: number;
+  user: number;
+  symbol: number;
+  constructor(id: number, feedId: number, userId: number) {
+    this.id = id;
+    this.created_at = new Date();
+    this.updated_at = new Date();
+    this.deleted_at = null;
+    this.feed = feedId;
+    this.user = userId;
+    this.symbol = 1;
   }
 }
 
@@ -152,7 +175,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('checkDuplicateEmail', () => {
+  describe('checkDuplicateEmail or checkDuplicateNickname', () => {
     // 이미 존재하는 유저
     const existUser = new User();
     existUser.nickname = 'existedNickname';
@@ -296,13 +319,38 @@ describe('users.service API test', () => {
     existUser.email = 'existedEmail@email.com';
     existUser.password = 'existedPassword@1234';
 
+    const newUser = {
+      email: existUser.email,
+      password: existUser.password,
+    };
+
+    const otherUser = new User();
+    otherUser.id = 2;
+    otherUser.nickname = 'otherNickname';
+    otherUser.email = 'otherUser@email.com';
+    otherUser.password = 'otherPassword@1234';
+
+    // 반복되는 로그인 함수
+    const signInResultFn = async (user: {
+      email: string;
+      password: string;
+    }) => {
+      const result = await request(app).post(`/users/signin`).send(user);
+
+      return result;
+    };
+
     beforeAll(async () => {
       // 이미 존재하는 유저 생성
       await request(app).post(`/users/signup`).send(existUser);
 
       const userFeed: any = new FeedClass(1, existUser.id);
-
       await dataSource.manager.save(Feed, userFeed);
+
+      await dataSource.manager.save(User, otherUser);
+
+      const otherUserFeed: any = new FeedClass(2, otherUser.id);
+      await dataSource.manager.save(Feed, otherUserFeed);
 
       const userPublicComment: any = new CommentClass(
         1,
@@ -311,14 +359,14 @@ describe('users.service API test', () => {
         false
       );
 
-      const userPrivateComment = new CommentClass(
+      const userPrivateComment: any = new CommentClass(
         2,
         userFeed.id,
         existUser.id,
         true
       );
 
-      const userDeletedComment = new CommentClass(
+      const userDeletedComment: any = new CommentClass(
         3,
         userFeed.id,
         existUser.id,
@@ -331,6 +379,9 @@ describe('users.service API test', () => {
         userPrivateComment,
         userDeletedComment,
       ]);
+
+      const userFeedSymbol: any = new FeedSymbolClass(1, 2, existUser.id);
+      await dataSource.manager.save(FeedSymbol, userFeedSymbol);
     });
 
     afterAll(async () => {
@@ -341,11 +392,11 @@ describe('users.service API test', () => {
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
 
-    test('getMyInfo - invalid_token', async () => {
+    test('getMyInfo - user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
       const result = await request(app).get('/users/userinfo');
 
-      expect(result.status).toBe(401);
-      expect(result.body.message).toEqual('INVALID_TOKEN');
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
     });
 
     test('getMyInfo - not_found_user', async () => {
@@ -356,7 +407,7 @@ describe('users.service API test', () => {
       deleteUser.password = 'deletePassword@1234';
       await request(app).post(`/users/signup`).send(deleteUser);
 
-      const signInResult = await request(app).post(`/users/signin`).send({
+      const signInResult = await signInResultFn({
         email: deleteUser.email,
         password: deleteUser.password,
       });
@@ -378,37 +429,67 @@ describe('users.service API test', () => {
     });
 
     test('getMyInfo - success', async () => {
-      const newUser = {
-        email: existUser.email,
-        password: existUser.password,
-      };
-
-      const signInResult = await request(app)
-        .post(`/users/signin`)
-        .send(newUser);
+      const signInResult = await signInResultFn(newUser);
 
       const result = await request(app)
         .get(`/users/userinfo`)
         .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
       expect(result.status).toBe(200);
-      expect(Object.keys(result.body)).toHaveLength(3);
-      expect(result.body).toHaveProperty('userInfo');
-      expect(result.body).toHaveProperty('userFeeds');
-      expect(result.body).toHaveProperty('userComments');
+      expect(Object.keys(result.body)).toHaveLength(6);
+      expect(result.body.id).toEqual(existUser.id);
+      expect(result.body.email).toEqual(existUser.email);
+    });
 
-      // 사용자의 public comment, private comment, deleted comment 3개가 나와야 함
-      expect(Object.keys(result.body.userComments)).toHaveLength(3);
+    test('getMyFeedList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
 
-      expect(result.body.userComments[0].comment).toEqual('test comment');
-      expect(result.body.userComments[1].comment).toEqual('test comment');
-      expect(result.body.userComments[2].comment).toEqual(
-        '## DELETED_COMMENT ##'
-      );
+      const result = await request(app)
+        .get(`/users/userinfo/feeds`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(1);
+      expect(result.body[0].userId).toEqual(existUser.id);
+      expect(result.body[0].title).toEqual('test title');
+    });
+
+    test('getMyCommentList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
+
+      const result = await request(app)
+        .get(`/users/userinfo/comments`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(3);
+      // 로그인 사용자의 공개 덧글
+      expect(result.body[0].comment).toEqual('test comment');
+      // 로그인 사용자의 비공개 덧글
+      expect(result.body[1].comment).toEqual('test comment');
+      // 로그인 사용자의 삭제 덧글
+      expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
+    });
+
+    test('getMyFeedSymbolList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
+
+      const result = await request(app)
+        .get(`/users/userinfo/symbols`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(1);
+      expect(result.body[0].feed.id).toEqual(2);
+      expect(result.body[0].symbol.id).toEqual(1);
+      expect(result.body[0].symbol.symbol).toEqual('like');
     });
   });
 
-  describe('getUserInfo', () => {
+  describe('타겟 유저의 정보 조회', () => {
     const existUser = new User();
     existUser.id = 1;
     existUser.nickname = 'existedNickname';
