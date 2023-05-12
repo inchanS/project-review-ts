@@ -455,6 +455,25 @@ describe('users.service API test', () => {
       expect(result.body[0].title).toEqual('test title');
     });
 
+    test('getMyFeedList - Fail (not found user)', async () => {
+      const result = await request(app).get(`/users/userinfo/feeds`);
+
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
+    });
+
+    test('getMyFeedList - Fail (query error)', async () => {
+      const signInResult = await signInResultFn(newUser);
+
+      const result = await request(app)
+        .get(`/users/userinfo/feeds`)
+        .query({ page: 0, limit: 10 })
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('PAGE_START_INDEX_IS_INVALID');
+    });
+
     test('getMyCommentList - success', async () => {
       const signInResult = await signInResultFn(newUser);
 
@@ -473,6 +492,13 @@ describe('users.service API test', () => {
       expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
     });
 
+    test('getMyCommentList - Fail (not found user)', async () => {
+      const result = await request(app).get(`/users/userinfo/comments`);
+
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
+    });
+
     test('getMyFeedSymbolList - success', async () => {
       const signInResult = await signInResultFn(newUser);
 
@@ -486,6 +512,25 @@ describe('users.service API test', () => {
       expect(result.body[0].feed.id).toEqual(2);
       expect(result.body[0].symbol.id).toEqual(1);
       expect(result.body[0].symbol.symbol).toEqual('like');
+    });
+
+    test('getMySymbolList - Fail (not found user)', async () => {
+      const result = await request(app).get(`/users/userinfo/symbol`);
+
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
+    });
+
+    test('getMySymbolList - Fail (query error)', async () => {
+      const signInResult = await signInResultFn(newUser);
+
+      const result = await request(app)
+        .get(`/users/userinfo/symbols`)
+        .query({ page: 0, limit: 10 })
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('PAGE_START_INDEX_IS_INVALID');
     });
   });
 
