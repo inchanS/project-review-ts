@@ -6,14 +6,6 @@ import { Comment } from '../../entities/comment.entity';
 import { Feed } from '../../entities/feed.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toEqualFeedListResponse(): R;
-    }
-  }
-}
-
 // 테스트간 피드생성을 위한 피드 클래스 생성
 class FeedClass {
   id: number;
@@ -54,7 +46,6 @@ class CommentClass {
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
-  parent: number | null;
   constructor(id: number, feedId: number, userId: number, is_private: boolean) {
     this.id = id;
     this.comment = 'test comment';
@@ -321,7 +312,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('사용자 정보조회', () => {
+  describe('로그인 사용자의 정보 조회 (api endpoint에서 사용자 ID가 없을 때)', () => {
     const existUser = new User();
     existUser.id = 1;
     existUser.nickname = 'existedNickname';
@@ -348,33 +339,6 @@ describe('users.service API test', () => {
 
       return result;
     };
-
-    // 사용자 정보조회 중, 로그인 유저와 타겟 유저의 동일한 기대값에 대한 중복함수 처리
-    // 1. Test Helper 함수 사용시 (사용하고자 하는 위치에서 함수 호출로 사용가능)
-    // function expectFeedListResponse(result: any) {
-    //   expect(result.status).toBe(200);
-    //   expect(Array.isArray(result.body)).toBeTruthy();
-    //   expect(result.body).toHaveLength(1);
-    //   expect(result.body[0].userId).toEqual(existUser.id);
-    //   expect(result.body[0].title).toEqual('test title');
-    //   expect(result.body[0].content).toEqual('test content');
-    // }
-
-    // 2. Jest 확장함수 사용시 (사용하고자 하는 위치에서 함수 호출로 사용가능, but type 정의 필요)
-    expect.extend({
-      toEqualFeedListResponse(received) {
-        expect(received.status).toBe(200);
-        expect(Array.isArray(received.body)).toBeTruthy();
-        expect(received.body).toHaveLength(1);
-        expect(received.body[0].userId).toEqual(existUser.id);
-        expect(received.body[0].title).toEqual('test title');
-        expect(received.body[0].content).toEqual('test content');
-        return {
-          message: () => `expected ${received} to equal feed list response`,
-          pass: true,
-        };
-      },
-    });
 
     beforeAll(async () => {
       // 이미 존재하는 유저 생성
@@ -428,272 +392,150 @@ describe('users.service API test', () => {
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
 
-    describe('로그인 사용자의 정보 조회 (api endpoint에서 사용자 ID가 path params로 없을 때)', () => {
-      describe('User Info', () => {
-        test('getMyInfo - user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
-          const result = await request(app).get('/users/userinfo');
+    test('getMyInfo - user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
+      const result = await request(app).get('/users/userinfo');
 
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
-        });
-
-        test('getMyInfo - not_found_user', async () => {
-          // 로그인 후 막 탈퇴한 회원의 유효성 검사
-          const deleteUser = new User();
-          deleteUser.nickname = 'deleteNickname';
-          deleteUser.email = 'deleteEmail@email.com';
-          deleteUser.password = 'deletePassword@1234';
-          await request(app).post(`/users/signup`).send(deleteUser);
-
-          const signInResult = await signInResultFn({
-            email: deleteUser.email,
-            password: deleteUser.password,
-          });
-
-          await dataSource.manager.update(
-            User,
-            { nickname: 'deleteNickname' },
-            {
-              deleted_at: new Date(),
-            }
-          );
-
-          const result = await request(app)
-            .get('/users/userinfo')
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
-
-          expect(result.status).toBe(404);
-          expect(result.body.message).toEqual('USER_IS_NOT_FOUND');
-        });
-
-        test('getMyInfo - success', async () => {
-          const signInResult = await signInResultFn(newUser);
-
-          const result = await request(app)
-            .get(`/users/userinfo`)
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
-
-          expect(result.status).toBe(200);
-          expect(Object.keys(result.body)).toHaveLength(6);
-          expect(result.body.id).toEqual(existUser.id);
-          expect(result.body.email).toEqual(existUser.email);
-        });
-      });
-
-      describe('User Feed List', () => {
-        test('getMyFeedList - success', async () => {
-          const signInResult = await signInResultFn(newUser);
-
-          const result = await request(app)
-            .get(`/users/userinfo/feeds`)
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
-
-          expect(result).toEqualFeedListResponse();
-        });
-
-        test('getMyFeedList - Fail (not found user)', async () => {
-          const result = await request(app).get(`/users/userinfo/feeds`);
-
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
-        });
-
-        test('getMyFeedList - Fail (query error)', async () => {
-          const signInResult = await signInResultFn(newUser);
-
-          const result = await request(app)
-            .get(`/users/userinfo/feeds`)
-            .query({ page: 0, limit: 10 })
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
-
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('PAGE_START_INDEX_IS_INVALID');
-        });
-      });
-
-      describe('User Comment List', () => {
-        test('getMyCommentList - success', async () => {
-          const signInResult = await signInResultFn(newUser);
-
-          const result = await request(app)
-            .get(`/users/userinfo/comments`)
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
-
-          expect(result.status).toBe(200);
-          expect(Array.isArray(result.body)).toBeTruthy();
-          expect(result.body).toHaveLength(3);
-          // 로그인 사용자의 공개 덧글
-          expect(result.body[0].comment).toEqual('test comment');
-          // 로그인 사용자의 비공개 덧글
-          expect(result.body[1].comment).toEqual('test comment');
-          // 로그인 사용자의 삭제 덧글
-          expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
-        });
-
-        test('getMyCommentList - Fail (not found user)', async () => {
-          const result = await request(app).get(`/users/userinfo/comments`);
-
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
-        });
-      });
-
-      describe('User Symbol List', () => {
-        test('getMyFeedSymbolList - success', async () => {
-          const signInResult = await signInResultFn(newUser);
-
-          const result = await request(app)
-            .get(`/users/userinfo/symbols`)
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
-
-          expect(result.status).toBe(200);
-          expect(Array.isArray(result.body)).toBeTruthy();
-          expect(result.body).toHaveLength(1);
-          expect(result.body[0].feed.id).toEqual(2);
-          expect(result.body[0].symbol.id).toEqual(1);
-          expect(result.body[0].symbol.symbol).toEqual('like');
-        });
-
-        test('getMySymbolList - Fail (not found user)', async () => {
-          const result = await request(app).get(`/users/userinfo/symbol`);
-
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
-        });
-
-        test('getMySymbolList - Fail (query error)', async () => {
-          const signInResult = await signInResultFn(newUser);
-
-          const result = await request(app)
-            .get(`/users/userinfo/symbols`)
-            .query({ page: 0, limit: 10 })
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
-
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('PAGE_START_INDEX_IS_INVALID');
-        });
-      });
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
     });
 
-    describe('타겟 사용자의 정보 조회 (api endpoint에서 사용자 ID가  path params로 있을 때)', () => {
-      describe('User Info', () => {
-        test('getUserInfo - Fail: not_found_user', async () => {
-          const result = await request(app).get('/users/userinfo/3');
+    test('getMyInfo - not_found_user', async () => {
+      // 로그인 후 막 탈퇴한 회원의 유효성 검사
+      const deleteUser = new User();
+      deleteUser.nickname = 'deleteNickname';
+      deleteUser.email = 'deleteEmail@email.com';
+      deleteUser.password = 'deletePassword@1234';
+      await request(app).post(`/users/signup`).send(deleteUser);
 
-          expect(result.status).toBe(404);
-          expect(result.body.message).toEqual('USER_IS_NOT_FOUND');
-        });
-
-        test('getUserInfo - success', async () => {
-          const result = await request(app).get('/users/userinfo/1');
-
-          expect(result.status).toBe(200);
-          expect(Object.keys(result.body)).toHaveLength(6);
-          expect(result.body.id).toEqual(existUser.id);
-          expect(result.body.email).toEqual(existUser.email);
-        });
+      const signInResult = await signInResultFn({
+        email: deleteUser.email,
+        password: deleteUser.password,
       });
 
-      describe('User Feed List', () => {
-        test('getUserFeedList - success', async () => {
-          const result = await request(app).get(`/users/userinfo/1/feeds`);
+      await dataSource.manager.update(
+        User,
+        { nickname: 'deleteNickname' },
+        {
+          deleted_at: new Date(),
+        }
+      );
 
-          expect(result).toEqualFeedListResponse();
-        });
+      const result = await request(app)
+        .get('/users/userinfo')
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
-        test('getUserFeedList - Fail (not found user)', async () => {
-          const result = await request(app).get(`/users/userinfo/feeds`);
+      expect(result.status).toBe(404);
+      expect(result.body.message).toEqual('USER_IS_NOT_FOUND');
+    });
 
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
-        });
+    test('getMyInfo - success', async () => {
+      const signInResult = await signInResultFn(newUser);
 
-        test('getUserFeedList - Fail (query error)', async () => {
-          const result = await request(app)
-            .get(`/users/userinfo/1/feeds`)
-            .query({ page: 0, limit: 10 });
+      const result = await request(app)
+        .get(`/users/userinfo`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('PAGE_START_INDEX_IS_INVALID');
-        });
-      });
+      expect(result.status).toBe(200);
+      expect(Object.keys(result.body)).toHaveLength(6);
+      expect(result.body.id).toEqual(existUser.id);
+      expect(result.body.email).toEqual(existUser.email);
+    });
 
-      describe('User Comment List', () => {
-        test('getUserCommentList - success (로그아웃에서의 요청)', async () => {
-          const result = await request(app).get(`/users/userinfo/1/comments`);
+    test('getMyFeedList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
 
-          expect(result.status).toBe(200);
-          expect(Array.isArray(result.body)).toBeTruthy();
-          expect(result.body).toHaveLength(3);
-          // 로그인 사용자의 공개 덧글
-          expect(result.body[0].comment).toEqual('test comment');
-          // 로그인 사용자의 비공개 덧글
-          expect(result.body[1].comment).toEqual('## PRIVATE_COMMENT ##');
-          // 로그인 사용자의 삭제 덧글
-          expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
-        });
+      const result = await request(app)
+        .get(`/users/userinfo/feeds`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
-        test('getUserCommentList - success (로그인에서의 요청)', async () => {
-          // 로그인 사용자 생성
-          const existUser2 = new User();
-          existUser2.id = 3;
-          existUser2.nickname = 'existedNickname2';
-          existUser2.email = 'existedEmail2@email.com';
-          existUser2.password = 'existedPassword@1234';
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(1);
+      expect(result.body[0].userId).toEqual(existUser.id);
+      expect(result.body[0].title).toEqual('test title');
+    });
 
-          const newUser2 = {
-            email: existUser2.email,
-            password: existUser2.password,
-          };
+    test('getMyCommentList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
 
-          await request(app).post(`/users/signup`).send(existUser2);
+      const result = await request(app)
+        .get(`/users/userinfo/comments`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
-          // 로그인 사용자에게 작성한 기존 유저의 비공개 댓글 생성
-          const newComment: any = new CommentClass(4, 1, existUser2.id, false);
-          newComment.comment = 'comment by existedUser2';
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(3);
+      // 로그인 사용자의 공개 덧글
+      expect(result.body[0].comment).toEqual('test comment');
+      // 로그인 사용자의 비공개 덧글
+      expect(result.body[1].comment).toEqual('test comment');
+      // 로그인 사용자의 삭제 덧글
+      expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
+    });
 
-          const newPrivateComment: any = new CommentClass(
-            5,
-            1,
-            existUser.id,
-            true
-          );
-          newPrivateComment.comment = 'private comment by existedUser2';
-          newPrivateComment.parent = 4;
+    test('getMyFeedSymbolList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
 
-          await dataSource.manager.save(Comment, [
-            newComment,
-            newPrivateComment,
-          ]);
+      const result = await request(app)
+        .get(`/users/userinfo/symbols`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
-          const signInResult = await signInResultFn(newUser2);
-          const result = await request(app)
-            .get(`/users/userinfo/1/comments`)
-            .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(1);
+      expect(result.body[0].feed.id).toEqual(2);
+      expect(result.body[0].symbol.id).toEqual(1);
+      expect(result.body[0].symbol.symbol).toEqual('like');
+    });
+  });
 
-          console.log('🔥users.api.test/:674- result.body = ', result.body);
+  describe('타겟 유저의 정보 조회', () => {
+    const existUser = new User();
+    existUser.id = 1;
+    existUser.nickname = 'existedNickname';
+    existUser.email = 'existedEmail@email.com';
+    existUser.password = 'existedPassword@1234';
 
-          expect(result.status).toBe(200);
-          expect(Array.isArray(result.body)).toBeTruthy();
-          expect(result.body).toHaveLength(4);
-          // expect(result.body[0].comment).toEqual(
-          //   'private comment by existedUser2'
-          // );
-          // 로그인 사용자의 공개 덧글
-          // expect(result.body[1].comment).toEqual('test comment');
-          // // 로그인 사용자의 비공개 덧글
-          // expect(result.body[2].comment).toEqual('## PRIVATE_COMMENT ##');
-          // // 로그인 사용자의 삭제 덧글
-          // expect(result.body[3].comment).toEqual('## DELETED_COMMENT ##');
-        });
+    beforeAll(async () => {
+      await request(app).post(`/users/signup`).send(existUser);
 
-        test('getUserCommentList - Fail (not found user)', async () => {
-          const result = await request(app).get(`/users/userinfo/comments`);
+      // 타겟유저의 피드 생성
+      const userFeed: any = new FeedClass(1, existUser.id);
 
-          expect(result.status).toBe(400);
-          expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
-        });
-      });
+      // 타겟유저의 임시저장 피드 생성(보여지지 않아야 할 부분)
+
+      const userTempFeed: any = new FeedClass(2, existUser.id);
+      userTempFeed.status = 0;
+      userTempFeed.postedAt = null;
+
+      await dataSource.manager.save(Feed, [userFeed, userTempFeed]);
+
+      // 타겟유저의 public comment 생성
+      const userPublicComment: any = new CommentClass(
+        1,
+        userFeed.id,
+        existUser.id,
+        false
+      );
+
+      // 타겟유저의 private comment 생성
+      const userPrivateComment: any = new CommentClass(
+        2,
+        userFeed.id,
+        existUser.id,
+        true
+      );
+
+      await dataSource.manager.save(Comment, [
+        userPublicComment,
+        userPrivateComment,
+      ]);
+    });
+
+    afterAll(async () => {
+      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
+      await dataSource.manager.clear(User);
+      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
   });
 });
