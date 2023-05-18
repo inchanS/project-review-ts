@@ -4,6 +4,7 @@ import { createApp } from '../../app';
 import request from 'supertest';
 import { Comment } from '../../entities/comment.entity';
 import { Feed } from '../../entities/feed.entity';
+import { FeedSymbol } from '../../entities/feedSymbol.entity';
 
 // 테스트간 피드생성을 위한 피드 클래스 생성
 class FeedClass {
@@ -14,10 +15,11 @@ class FeedClass {
   status: number;
   category: number;
   estimation: number;
-  postedAt: Date | null;
+  posted_at: Date | null;
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
+  viewCnt: number;
   constructor(id: number, userId: number) {
     this.id = id;
     this.title = 'test title';
@@ -26,10 +28,11 @@ class FeedClass {
     this.status = 1;
     this.category = 1;
     this.estimation = 1;
-    this.postedAt = new Date();
+    this.posted_at = new Date();
     this.created_at = new Date();
     this.updated_at = new Date();
-    this.deleted_at = new Date();
+    this.deleted_at = null;
+    this.viewCnt = 0;
   }
 }
 
@@ -55,6 +58,26 @@ class CommentClass {
   }
 }
 
+// 테스트간 게시물공감 데이터 생성을 위한 클래스 생성
+class FeedSymbolClass {
+  id: number;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+  feed: number;
+  user: number;
+  symbol: number;
+  constructor(id: number, feedId: number, userId: number) {
+    this.id = id;
+    this.created_at = new Date();
+    this.updated_at = new Date();
+    this.deleted_at = null;
+    this.feed = feedId;
+    this.user = userId;
+    this.symbol = 1;
+  }
+}
+
 describe('users.service API test', () => {
   let app: any = createApp();
 
@@ -66,34 +89,26 @@ describe('users.service API test', () => {
       }
     });
 
-    await dataSource.manager.query(`
-        INSERT INTO feed_status (id, is_status)
-        VALUES (1, 'published'),
-               (2, 'temporary'),
-               (3, 'deleted');
-    `);
+    try {
+      // migration은 한번 실행 이후, 재 실행시 작동하지않고 패스됨으로 다시 복귀시켜줘야 한다.
+      // 1번 방법 : 마지막으로 실행된 migration 파일 롤백
+      // await dataSource.undoLastMigration();
 
-    await dataSource.manager.query(`
-        INSERT INTO estimation (id, estimation)
-        VALUES (1, 'double like'),
-               (2, 'like'),
-               (3, 'dislike');
-    `);
+      // 2번 방법 : migration 파일 실행 전, schema 초기화
+      await dataSource.synchronize(true).then(() => {
+        console.log('💥TEST Data Source has been synchronized!');
+      });
+    } catch (error) {
+      // 1번 방법시,
+      // console.log('Migration rollback failed:', error);
 
-    await dataSource.manager.query(`
-        INSERT INTO symbol (id, symbol)
-        VALUES (1, 'like'),
-               (2, 'I have this too');
-    `);
+      // 2번 방법시,
+      console.log('Migration sync failed:', error);
+    }
 
-    await dataSource.manager.query(`
-        INSERT INTO categories(id, category)
-        VALUES (1, '1 Category'),
-               (2, '2 Category'),
-               (3, '3 Category'),
-               (4, '4 Category'),
-               (5, '5 Category');
-    `);
+    await dataSource.runMigrations().then(() => {
+      console.log('💥TEST Data Source has been runMigrations!');
+    });
   });
 
   afterAll(async () => {
@@ -160,7 +175,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('checkDuplicateEmail', () => {
+  describe('checkDuplicateEmail or checkDuplicateNickname', () => {
     // 이미 존재하는 유저
     const existUser = new User();
     existUser.nickname = 'existedNickname';
@@ -297,20 +312,45 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('getMyInfo', () => {
+  describe('로그인 사용자의 정보 조회 (api endpoint에서 사용자 ID가 없을 때)', () => {
     const existUser = new User();
     existUser.id = 1;
     existUser.nickname = 'existedNickname';
     existUser.email = 'existedEmail@email.com';
     existUser.password = 'existedPassword@1234';
 
+    const newUser = {
+      email: existUser.email,
+      password: existUser.password,
+    };
+
+    const otherUser = new User();
+    otherUser.id = 2;
+    otherUser.nickname = 'otherNickname';
+    otherUser.email = 'otherUser@email.com';
+    otherUser.password = 'otherPassword@1234';
+
+    // 반복되는 로그인 함수
+    const signInResultFn = async (user: {
+      email: string;
+      password: string;
+    }) => {
+      const result = await request(app).post(`/users/signin`).send(user);
+
+      return result;
+    };
+
     beforeAll(async () => {
       // 이미 존재하는 유저 생성
       await request(app).post(`/users/signup`).send(existUser);
 
       const userFeed: any = new FeedClass(1, existUser.id);
-
       await dataSource.manager.save(Feed, userFeed);
+
+      await dataSource.manager.save(User, otherUser);
+
+      const otherUserFeed: any = new FeedClass(2, otherUser.id);
+      await dataSource.manager.save(Feed, otherUserFeed);
 
       const userPublicComment: any = new CommentClass(
         1,
@@ -319,14 +359,14 @@ describe('users.service API test', () => {
         false
       );
 
-      const userPrivateComment = new CommentClass(
+      const userPrivateComment: any = new CommentClass(
         2,
         userFeed.id,
         existUser.id,
         true
       );
 
-      const userDeletedComment = new CommentClass(
+      const userDeletedComment: any = new CommentClass(
         3,
         userFeed.id,
         existUser.id,
@@ -339,6 +379,9 @@ describe('users.service API test', () => {
         userPrivateComment,
         userDeletedComment,
       ]);
+
+      const userFeedSymbol: any = new FeedSymbolClass(1, 2, existUser.id);
+      await dataSource.manager.save(FeedSymbol, userFeedSymbol);
     });
 
     afterAll(async () => {
@@ -349,11 +392,11 @@ describe('users.service API test', () => {
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
 
-    test('getMyInfo - invalid_token', async () => {
+    test('getMyInfo - user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
       const result = await request(app).get('/users/userinfo');
 
-      expect(result.status).toBe(401);
-      expect(result.body.message).toEqual('INVALID_TOKEN');
+      expect(result.status).toBe(400);
+      expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
     });
 
     test('getMyInfo - not_found_user', async () => {
@@ -364,7 +407,7 @@ describe('users.service API test', () => {
       deleteUser.password = 'deletePassword@1234';
       await request(app).post(`/users/signup`).send(deleteUser);
 
-      const signInResult = await request(app).post(`/users/signin`).send({
+      const signInResult = await signInResultFn({
         email: deleteUser.email,
         password: deleteUser.password,
       });
@@ -386,37 +429,67 @@ describe('users.service API test', () => {
     });
 
     test('getMyInfo - success', async () => {
-      const newUser = {
-        email: existUser.email,
-        password: existUser.password,
-      };
-
-      const signInResult = await request(app)
-        .post(`/users/signin`)
-        .send(newUser);
+      const signInResult = await signInResultFn(newUser);
 
       const result = await request(app)
         .get(`/users/userinfo`)
         .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
       expect(result.status).toBe(200);
-      expect(Object.keys(result.body)).toHaveLength(3);
-      expect(result.body).toHaveProperty('userInfo');
-      expect(result.body).toHaveProperty('userFeeds');
-      expect(result.body).toHaveProperty('userComments');
+      expect(Object.keys(result.body)).toHaveLength(6);
+      expect(result.body.id).toEqual(existUser.id);
+      expect(result.body.email).toEqual(existUser.email);
+    });
 
-      // 사용자의 public comment, private comment, deleted comment 3개가 나와야 함
-      expect(Object.keys(result.body.userComments)).toHaveLength(3);
+    test('getMyFeedList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
 
-      expect(result.body.userComments[0].comment).toEqual('test comment');
-      expect(result.body.userComments[1].comment).toEqual('test comment');
-      expect(result.body.userComments[2].comment).toEqual(
-        '## DELETED_COMMENT ##'
-      );
+      const result = await request(app)
+        .get(`/users/userinfo/feeds`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(1);
+      expect(result.body[0].userId).toEqual(existUser.id);
+      expect(result.body[0].title).toEqual('test title');
+    });
+
+    test('getMyCommentList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
+
+      const result = await request(app)
+        .get(`/users/userinfo/comments`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(3);
+      // 로그인 사용자의 공개 덧글
+      expect(result.body[0].comment).toEqual('test comment');
+      // 로그인 사용자의 비공개 덧글
+      expect(result.body[1].comment).toEqual('test comment');
+      // 로그인 사용자의 삭제 덧글
+      expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
+    });
+
+    test('getMyFeedSymbolList - success', async () => {
+      const signInResult = await signInResultFn(newUser);
+
+      const result = await request(app)
+        .get(`/users/userinfo/symbols`)
+        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+
+      expect(result.status).toBe(200);
+      expect(Array.isArray(result.body)).toBeTruthy();
+      expect(result.body).toHaveLength(1);
+      expect(result.body[0].feed.id).toEqual(2);
+      expect(result.body[0].symbol.id).toEqual(1);
+      expect(result.body[0].symbol.symbol).toEqual('like');
     });
   });
 
-  describe('getUserInfo', () => {
+  describe('타겟 유저의 정보 조회', () => {
     const existUser = new User();
     existUser.id = 1;
     existUser.nickname = 'existedNickname';

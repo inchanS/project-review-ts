@@ -162,9 +162,13 @@ const findUserCommentsByUserId = async (
   );
 
   for (const comment of userComments) {
-    const isPrivate =
-      comment.is_private === true && comment.user !== loggedInUserId;
-    const isDeleted = comment.deleted_at !== null;
+    const isPrivate: boolean =
+      comment.is_private === true &&
+      comment.user.id !== loggedInUserId &&
+      (comment.parent
+        ? comment.parent.user.id !== loggedInUserId
+        : comment.feed.user.id !== loggedInUserId);
+    const isDeleted: boolean = comment.deleted_at !== null;
     comment.comment = isDeleted
       ? '## DELETED_COMMENT ##'
       : isPrivate
@@ -204,7 +208,7 @@ const findUserFeedSymbolsByUserId = async (
     .where('user.id = :userId', { userId: targetUserId })
     .orderBy('feedSymbol.updated_at', 'DESC');
 
-  if (!isNaN(page.startIndex) && !isNaN(page.limit)) {
+  if (Number.isInteger(page.startIndex) && Number.isInteger(page.limit)) {
     if (page.startIndex < 1) {
       throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
     }
@@ -256,13 +260,15 @@ const deleteUser = async (userId: number): Promise<void> => {
   // 사용자 정보의 유효성 검사 함수를 불러온다.
   await findUserInfoByUserId(userId);
 
+  const page: Pagination = { startIndex: undefined, limit: undefined };
+
   // 사용자의 모든 게시글을 불러온다.
-  const userFeedsInfo = await findUserFeedsByUserId(userId, undefined, {
+  const userFeedsInfo = await findUserFeedsByUserId(userId, page, {
     includeTempFeeds: true,
   });
 
   // 사용자의 모든 덧글을 불러온다.
-  const userCommentsInfo = await findUserCommentsByUserId(userId, userId);
+  const userCommentsInfo = await findUserCommentsByUserId(userId, userId, page);
 
   // 사용자의 모든 좋아요 정보를 불러온다.
   const userSymbols = await dataSource.manager.find<FeedSymbol>('FeedSymbol', {
