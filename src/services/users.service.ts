@@ -162,9 +162,13 @@ const findUserCommentsByUserId = async (
   );
 
   for (const comment of userComments) {
-    const isPrivate =
-      comment.is_private === true && comment.user !== loggedInUserId;
-    const isDeleted = comment.deleted_at !== null;
+    const isPrivate: boolean =
+      comment.is_private === true &&
+      comment.user.id !== loggedInUserId &&
+      (comment.parent
+        ? comment.parent.user.id !== loggedInUserId
+        : comment.feed.user.id !== loggedInUserId);
+    const isDeleted: boolean = comment.deleted_at !== null;
     comment.comment = isDeleted
       ? '## DELETED_COMMENT ##'
       : isPrivate
