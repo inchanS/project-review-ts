@@ -254,10 +254,10 @@ const getFeedList = async (
   }
 
   if (!index) {
-    index = 1;
+    index = 0;
   }
-  const startIndex: number = (index - 1) * limit;
-  return await FeedListRepository.getFeedList(categoryId, startIndex, limit);
+
+  return await FeedListRepository.getFeedList(categoryId, index, limit);
 };
 
 const deleteFeed = async (userId: number, feedId: number): Promise<void> => {
