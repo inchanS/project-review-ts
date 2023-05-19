@@ -137,7 +137,7 @@ const findUserFeedsByUserId = async (
   }
 
   // 유저의 게시글 수 조회
-  const feedCountByUserId = await FeedRepository.getFeedCountByUser(
+  const feedCountByUserId = await FeedRepository.getFeedCountByUserId(
     targetUserId
   ).then(result => {
     // mySQL에서 string으로 보내준 count를 number로 변환
@@ -172,6 +172,18 @@ const findUserCommentsByUserId = async (
     page = undefined;
   }
 
+  const commentCountByUserId = await CommentRepository.getCommentCountByUserId(
+    targetUserId
+  ).then(result => {
+    // mySQL에서 string으로 보내준 count를 number로 변환
+    result.commentCnt = Number(result.commentCnt);
+
+    // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
+    result.totalScrollCnt = Math.ceil(result.commentCnt / page.limit);
+
+    return result;
+  });
+
   const userComments = await CommentRepository.getCommentListByUserId(
     targetUserId,
     page
@@ -199,7 +211,7 @@ const findUserCommentsByUserId = async (
       : null;
   }
 
-  return userComments;
+  return { commentCountByUserId, userComments };
 };
 
 // 유저 정보 확인시, 유저의 피드 심볼 조회
@@ -300,7 +312,7 @@ const deleteUser = async (userId: number): Promise<void> => {
     const userFeedIds = userFeedsInfo.feedListByUserId.map(
       (feed: { id: number }) => feed.id
     );
-    const userCommentIds = userCommentsInfo.map(
+    const userCommentIds = userCommentsInfo.userComments.map(
       (comment: { id: number }) => comment.id
     );
     const userSymbolIds = userSymbols.map(symbol => symbol.id);
