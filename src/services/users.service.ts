@@ -19,6 +19,7 @@ import UploadFileService from './uploadFile.service';
 import uploadFileService from './uploadFile.service';
 import { Feed } from '../entities/feed.entity';
 import { sendMail } from '../utils/sendMail';
+import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
 
 const checkDuplicateNickname = async (nickname: string): Promise<object> => {
   if (!nickname) {
@@ -223,6 +224,12 @@ const findUserFeedSymbolsByUserId = async (
     throw { status: 400, message: 'USER_ID_IS_UNDEFINED' };
   }
 
+  const feedSymbolCountByUserId =
+    await FeedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);
+
+  // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
+  const totalPage = Math.ceil(feedSymbolCountByUserId / page.limit);
+
   let queryBuilder = dataSource.manager
     .createQueryBuilder(FeedSymbol, 'feedSymbol')
     .select(['feedSymbol.id', 'feedSymbol.created_at', 'feedSymbol.updated_at'])
@@ -244,7 +251,9 @@ const findUserFeedSymbolsByUserId = async (
     queryBuilder = queryBuilder.skip(page.startIndex - 1).take(page.limit);
   }
 
-  return await queryBuilder.getMany();
+  const feedSymbolListByUserId = await queryBuilder.getMany();
+
+  return { feedSymbolCountByUserId, totalPage, feedSymbolListByUserId };
 };
 const updateUserInfo = async (userId: number, userInfo: UserDto) => {
   const originUserInfo = await UserRepository.findOne({

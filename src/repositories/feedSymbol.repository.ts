@@ -14,6 +14,13 @@ export const FeedSymbolRepository = dataSource
       });
     },
 
+    // 사용자별 좋아요 총 개수 가져오기
+    async getFeedSymbolCountByUserId(userId: number) {
+      return await this.countBy({
+        user: { id: userId },
+      });
+    },
+
     async upsertFeedSymbol(feedSymbolInfo: FeedSymbol) {
       await this.upsert(feedSymbolInfo, ['feed', 'user']).catch(
         (err: Error) => {
