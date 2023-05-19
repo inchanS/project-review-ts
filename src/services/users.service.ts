@@ -140,15 +140,10 @@ const findUserFeedsByUserId = async (
   // 유저의 게시글 수 조회
   const feedCountByUserId = await FeedRepository.getFeedCountByUserId(
     targetUserId
-  ).then(result => {
-    // mySQL에서 string으로 보내준 count를 number로 변환
-    result.feedCnt = Number(result.feedCnt);
+  );
 
-    // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
-    result.totalPage = Math.ceil(result.feedCnt / page.limit);
-
-    return result;
-  });
+  // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
+  const totalPage = Math.ceil(feedCountByUserId / page.limit);
 
   const feedListByUserId = await FeedListRepository.getFeedListByUserId(
     targetUserId,
@@ -156,7 +151,7 @@ const findUserFeedsByUserId = async (
     options
   );
 
-  return { feedCountByUserId, feedListByUserId };
+  return { feedCountByUserId, totalPage, feedListByUserId };
 };
 
 // 유저 정보 확인시 유저의 댓글 조회
@@ -175,15 +170,10 @@ const findUserCommentsByUserId = async (
 
   const commentCountByUserId = await CommentRepository.getCommentCountByUserId(
     targetUserId
-  ).then(result => {
-    // mySQL에서 string으로 보내준 count를 number로 변환
-    result.commentCnt = Number(result.commentCnt);
+  );
 
-    // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
-    result.totalScrollCnt = Math.ceil(result.commentCnt / page.limit);
-
-    return result;
-  });
+  // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
+  const totalScrollCnt = Math.ceil(commentCountByUserId / page.limit);
 
   const userComments = await CommentRepository.getCommentListByUserId(
     targetUserId,
@@ -212,7 +202,7 @@ const findUserCommentsByUserId = async (
       : null;
   }
 
-  return { commentCountByUserId, userComments };
+  return { commentCountByUserId, totalScrollCnt, userComments };
 };
 
 // 유저 정보 확인시, 유저의 피드 심볼 조회
@@ -230,28 +220,14 @@ const findUserFeedSymbolsByUserId = async (
   // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
   const totalPage = Math.ceil(feedSymbolCountByUserId / page.limit);
 
-  let queryBuilder = dataSource.manager
-    .createQueryBuilder(FeedSymbol, 'feedSymbol')
-    .select(['feedSymbol.id', 'feedSymbol.created_at', 'feedSymbol.updated_at'])
-    .addSelect(['feed.id', 'feed.title'])
-    .addSelect(['symbol.id', 'symbol.symbol'])
-    .addSelect(['feedUser.id', 'feedUser.nickname'])
-    .leftJoin('feedSymbol.feed', 'feed')
-    .leftJoin('feed.user', 'feedUser')
-    .leftJoin('feedSymbol.user', 'user')
-    .leftJoin('feedSymbol.symbol', 'symbol')
-    .where('user.id = :userId', { userId: targetUserId })
-    .orderBy('feedSymbol.updated_at', 'DESC');
-
   if (Number.isInteger(page.startIndex) && Number.isInteger(page.limit)) {
     if (page.startIndex < 1) {
       throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
     }
-
-    queryBuilder = queryBuilder.skip(page.startIndex - 1).take(page.limit);
   }
 
-  const feedSymbolListByUserId = await queryBuilder.getMany();
+  const feedSymbolListByUserId =
+    await FeedSymbolRepository.getFeedSymbolsByUserId(targetUserId, page);
 
   return { feedSymbolCountByUserId, totalPage, feedSymbolListByUserId };
 };
