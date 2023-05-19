@@ -9,6 +9,7 @@ import { CommentRepository } from '../repositories/comment.repository';
 import {
   FeedListOptions,
   FeedListRepository,
+  FeedRepository,
   Pagination,
 } from '../repositories/feed.repository';
 import dataSource from '../repositories/data-source';
@@ -135,11 +136,26 @@ const findUserFeedsByUserId = async (
     throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
   }
 
-  return await FeedListRepository.getFeedListByUserId(
+  // 유저의 게시글 수 조회
+  const feedCountByUserId = await FeedRepository.getFeedCountByUser(
+    targetUserId
+  ).then(result => {
+    // mySQL에서 string으로 보내준 count를 number로 변환
+    result.feedCnt = Number(result.feedCnt);
+
+    // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
+    result.totalPage = Math.ceil(result.feedCnt / page.limit);
+
+    return result;
+  });
+
+  const feedListByUserId = await FeedListRepository.getFeedListByUserId(
     targetUserId,
     page,
     options
   );
+
+  return { feedCountByUserId, feedListByUserId };
 };
 
 // 유저 정보 확인시 유저의 댓글 조회
@@ -281,7 +297,9 @@ const deleteUser = async (userId: number): Promise<void> => {
   await queryRunner.startTransaction();
 
   try {
-    const userFeedIds = userFeedsInfo.map((feed: { id: number }) => feed.id);
+    const userFeedIds = userFeedsInfo.feedListByUserId.map(
+      (feed: { id: number }) => feed.id
+    );
     const userCommentIds = userCommentsInfo.map(
       (comment: { id: number }) => comment.id
     );

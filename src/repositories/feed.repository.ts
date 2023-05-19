@@ -66,6 +66,16 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
     return await queryBuilder.getOneOrFail();
   },
 
+  // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
+  async getFeedCountByUser(userId: number) {
+    return await this.createQueryBuilder('feed')
+      .select(['COUNT(feed.id) as feedCnt', 'feed.user'])
+      .where('feed.user = :userId', { userId: userId })
+      .andWhere('feed.posted_at IS NOT NULL')
+      .andWhere('feed.deleted_at IS NULL')
+      .getRawOne();
+  },
+
   // 피드의 symbol id별 count 가져오기
   async getFeedSymbolCount(feedId: number) {
     return await this.createQueryBuilder('feed')
