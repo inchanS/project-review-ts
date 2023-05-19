@@ -1,5 +1,6 @@
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import dataSource from './data-source';
+import { Pagination } from './feed.repository';
 
 export const FeedSymbolRepository = dataSource
   .getRepository(FeedSymbol)
@@ -19,6 +20,30 @@ export const FeedSymbolRepository = dataSource
       return await this.countBy({
         user: { id: userId },
       });
+    },
+
+    async getFeedSymbolsByUserId(userId: number, page: Pagination) {
+      let queryBuilder = this.createQueryBuilder('feedSymbol')
+        .select([
+          'feedSymbol.id',
+          'feedSymbol.created_at',
+          'feedSymbol.updated_at',
+        ])
+        .addSelect(['feed.id', 'feed.title'])
+        .addSelect(['symbol.id', 'symbol.symbol'])
+        .addSelect(['feedUser.id', 'feedUser.nickname'])
+        .leftJoin('feedSymbol.feed', 'feed')
+        .leftJoin('feed.user', 'feedUser')
+        .leftJoin('feedSymbol.user', 'user')
+        .leftJoin('feedSymbol.symbol', 'symbol')
+        .where('user.id = :userId', { userId: userId })
+        .orderBy('feedSymbol.updated_at', 'DESC');
+
+      if (Number.isInteger(page.startIndex) && Number.isInteger(page.limit)) {
+        queryBuilder = queryBuilder.skip(page.startIndex - 1).take(page.limit);
+      }
+
+      return await queryBuilder.getMany();
     },
 
     async upsertFeedSymbol(feedSymbolInfo: FeedSymbol) {
