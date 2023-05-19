@@ -67,7 +67,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
   },
 
   // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
-  async getFeedCountByUser(userId: number) {
+  async getFeedCountByUserId(userId: number) {
     return await this.createQueryBuilder('feed')
       .select(['COUNT(feed.id) as feedCnt', 'feed.user'])
       .where('feed.user = :userId', { userId: userId })
