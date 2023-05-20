@@ -138,12 +138,12 @@ const findUserFeedsByUserId = async (
   }
 
   // 유저의 게시글 수 조회
-  const feedCountByUserId = await FeedRepository.getFeedCountByUserId(
+  const feedCntByUserId = await FeedRepository.getFeedCountByUserId(
     targetUserId
   );
 
   // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
-  const totalPage = Math.ceil(feedCountByUserId / page.limit);
+  const totalPage = Math.ceil(feedCntByUserId / page.limit);
 
   const feedListByUserId = await FeedListRepository.getFeedListByUserId(
     targetUserId,
@@ -151,7 +151,7 @@ const findUserFeedsByUserId = async (
     options
   );
 
-  return { feedCountByUserId, totalPage, feedListByUserId };
+  return { feedCntByUserId, totalPage, feedListByUserId };
 };
 
 // 유저 정보 확인시 유저의 댓글 조회
@@ -168,19 +168,19 @@ const findUserCommentsByUserId = async (
     page = undefined;
   }
 
-  const commentCountByUserId = await CommentRepository.getCommentCountByUserId(
+  const commentCntByUserId = await CommentRepository.getCommentCountByUserId(
     targetUserId
   );
 
   // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
-  const totalScrollCnt = Math.ceil(commentCountByUserId / page.limit);
+  const totalScrollCnt = Math.ceil(commentCntByUserId / page.limit);
 
-  const userComments = await CommentRepository.getCommentListByUserId(
+  const commentListByUserId = await CommentRepository.getCommentListByUserId(
     targetUserId,
     page
   );
 
-  for (const comment of userComments) {
+  for (const comment of commentListByUserId) {
     const isPrivate: boolean =
       comment.is_private === true &&
       comment.user.id !== loggedInUserId &&
@@ -202,7 +202,7 @@ const findUserCommentsByUserId = async (
       : null;
   }
 
-  return { commentCountByUserId, totalScrollCnt, userComments };
+  return { commentCntByUserId, totalScrollCnt, commentListByUserId };
 };
 
 // 유저 정보 확인시, 유저의 피드 심볼 조회
@@ -214,11 +214,11 @@ const findUserFeedSymbolsByUserId = async (
     throw { status: 400, message: 'USER_ID_IS_UNDEFINED' };
   }
 
-  const feedSymbolCountByUserId =
+  const symbolCntByUserId =
     await FeedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);
 
   // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
-  const totalPage = Math.ceil(feedSymbolCountByUserId / page.limit);
+  const totalPage = Math.ceil(symbolCntByUserId / page.limit);
 
   if (Number.isInteger(page.startIndex) && Number.isInteger(page.limit)) {
     if (page.startIndex < 1) {
@@ -226,10 +226,12 @@ const findUserFeedSymbolsByUserId = async (
     }
   }
 
-  const feedSymbolListByUserId =
-    await FeedSymbolRepository.getFeedSymbolsByUserId(targetUserId, page);
+  const symbolListByUserId = await FeedSymbolRepository.getFeedSymbolsByUserId(
+    targetUserId,
+    page
+  );
 
-  return { feedSymbolCountByUserId, totalPage, feedSymbolListByUserId };
+  return { symbolCntByUserId, totalPage, symbolListByUserId };
 };
 const updateUserInfo = async (userId: number, userInfo: UserDto) => {
   const originUserInfo = await UserRepository.findOne({
@@ -297,7 +299,7 @@ const deleteUser = async (userId: number): Promise<void> => {
     const userFeedIds = userFeedsInfo.feedListByUserId.map(
       (feed: { id: number }) => feed.id
     );
-    const userCommentIds = userCommentsInfo.userComments.map(
+    const userCommentIds = userCommentsInfo.commentListByUserId.map(
       (comment: { id: number }) => comment.id
     );
     const userSymbolIds = userSymbols.map(symbol => symbol.id);
