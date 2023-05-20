@@ -46,6 +46,19 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     });
   },
 
+  async getCommentCountByUserId(userId: number) {
+    return await this.count({
+      where: { user: { id: userId } },
+      withDeleted: true,
+    });
+
+    // return await this.createQueryBuilder('comment')
+    //   .select(['COUNT(comment.id) as commentCnt', 'comment.user'])
+    //   .where('comment.user = :userId', { userId: userId })
+    //   .withDeleted()
+    //   .getRawOne();
+  },
+
   async getCommentListByUserId(userId: number, page: Pagination) {
     let pageCondition: {
       skip: number;
