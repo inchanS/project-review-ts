@@ -95,8 +95,8 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
       .where('comment.user = :id', { userId })
       .orderBy('comment.id', 'DESC')
       .setParameter('id', userId)
-      .skip(pageCondition.skip)
-      .take(pageCondition.take)
+      .skip(pageCondition?.skip)
+      .take(pageCondition?.take)
       .getMany();
 
     // version 3 : version 2에서 응답값을 다중객체가 아닌 하나의 객체로 응답받기 위해 getRawMany() 사용
