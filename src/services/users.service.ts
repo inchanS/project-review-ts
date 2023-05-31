@@ -143,7 +143,12 @@ const findUserFeedsByUserId = async (
   );
 
   // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
-  const totalPage = Math.ceil(feedCntByUserId / page.limit);
+  let totalPage: number;
+  if (!page?.limit) {
+    totalPage = 1;
+  } else {
+    totalPage = Math.ceil(feedCntByUserId / page.limit);
+  }
 
   const feedListByUserId = await FeedListRepository.getFeedListByUserId(
     targetUserId,
@@ -173,7 +178,12 @@ const findUserCommentsByUserId = async (
   );
 
   // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
-  const totalScrollCnt = Math.ceil(commentCntByUserId / page.limit);
+  let totalScrollCnt: number;
+  if (!page?.limit) {
+    totalScrollCnt = 1;
+  } else {
+    totalScrollCnt = Math.ceil(commentCntByUserId / page.limit);
+  }
 
   const commentListByUserId = await CommentRepository.getCommentListByUserId(
     targetUserId,
@@ -218,8 +228,12 @@ const findUserFeedSymbolsByUserId = async (
     await FeedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);
 
   // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
-  const totalPage = Math.ceil(symbolCntByUserId / page.limit);
-
+  let totalPage: number;
+  if (!page?.limit) {
+    totalPage = 1;
+  } else {
+    totalPage = Math.ceil(symbolCntByUserId / page.limit);
+  }
   if (Number.isInteger(page.startIndex) && Number.isInteger(page.limit)) {
     if (page.startIndex < 1) {
       throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
