@@ -87,7 +87,7 @@ const signIn = async (email: string, password: string): Promise<object> => {
   // typeORM 문법으로 삭제된 유저, 즉 deleted_at이 not null인 유저는 제외하고 리턴한다.
   const checkUserbyEmail = await User.findByEmail(email);
 
-  if (!checkUserbyEmail) {
+  if (!checkUserbyEmail || checkUserbyEmail.deleted_at) {
     throw { status: 404, message: `${email}_IS_NOT_FOUND` };
   }
 
