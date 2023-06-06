@@ -370,7 +370,7 @@ const resetPassword = async (email: string, resetPasswordUrl: string) => {
   const jwtSecret = process.env.SECRET_KEY;
   const token = jwt.sign({ id: user.id }, jwtSecret, { expiresIn: '10m' });
 
-  const url = `${resetPasswordUrl}/${token}`;
+  const url = `${resetPasswordUrl}?token=${token}`;
 
   const mailOptions = {
     from: process.env.EMAIL,
