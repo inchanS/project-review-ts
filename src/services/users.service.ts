@@ -287,7 +287,7 @@ const updateUserInfo = async (userId: number, userInfo: UserDto) => {
 
 const deleteUser = async (userId: number): Promise<void> => {
   // 사용자 정보의 유효성 검사 함수를 불러온다.
-  await findUserInfoByUserId(userId);
+  const userInfo = await findUserInfoByUserId(userId);
 
   const page: Pagination = { startIndex: undefined, limit: undefined };
 
@@ -305,6 +305,7 @@ const deleteUser = async (userId: number): Promise<void> => {
     where: { user: { id: userId } },
   });
 
+  // transaction을 시작한다.
   const queryRunner = dataSource.createQueryRunner();
   await queryRunner.connect();
   await queryRunner.startTransaction();
@@ -317,6 +318,11 @@ const deleteUser = async (userId: number): Promise<void> => {
       (comment: { id: number }) => comment.id
     );
     const userSymbolIds = userSymbols.map(symbol => symbol.id);
+
+    // 사용자의 email을 변경한다. 추후 해당 email의 재사용을 위한 고민중 230607 수정
+    const email = `${userInfo.email}.deleted.${Date.now()}`;
+    // 객체 리터럴 단축구문으로 email의 변경내용을 간략하게 표현한다. 230607 수정
+    await queryRunner.manager.update(User, userId, { email });
 
     // 사용자의 User entity를 삭제한다.
     await queryRunner.manager.softDelete(User, userId);
