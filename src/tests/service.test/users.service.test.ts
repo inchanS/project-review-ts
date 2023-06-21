@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { Feed } from '../../entities/feed.entity';
 import {
   FeedListRepository,
+  FeedRepository,
   Pagination,
 } from '../../repositories/feed.repository';
 import { Comment } from '../../entities/comment.entity';
@@ -281,10 +282,16 @@ describe('USERS UNIT test', () => {
 
     const feedList: Feed[] = [feed];
 
-    test('사용자의 게시물 반환 성공', async () => {
+    test('사용자의 게시물리스트  반환 성공', async () => {
       jest
         .spyOn(FeedListRepository, 'getFeedListByUserId')
         .mockResolvedValueOnce(feedList);
+
+      const mockFeedCnt: number = 4;
+
+      jest
+        .spyOn(FeedRepository, 'getFeedCountByUserId')
+        .mockResolvedValue(mockFeedCnt);
 
       const pageParam: Pagination = { startIndex: 1, limit: 10 };
 
@@ -303,7 +310,9 @@ describe('USERS UNIT test', () => {
 
       // 함수 결과물 형식 확인
       expect(result).toBeDefined();
-      expect(result).toEqual(feedList);
+      expect(result.feedCntByUserId).toEqual(mockFeedCnt);
+      expect(result.totalPage).toEqual(1);
+      expect(result.feedListByUserId).toEqual(feedList);
     });
 
     test('userId가 전달되지 않았을 때, 에러메세지 반환', async () => {
