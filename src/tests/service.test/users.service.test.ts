@@ -343,48 +343,61 @@ describe('USERS UNIT test', () => {
     const dateToString: string = '2021-01-01T00:00:00.000Z';
 
     const userId: number = 1;
+
+    // 본인 아이디
     const user = new User();
     user.id = userId;
+
+    const mockFeedUser = new User();
+    mockFeedUser.id = 10;
+
+    const mockFeed = new Feed();
+    mockFeed.id = 1;
+    mockFeed.user = mockFeedUser;
 
     const privateMyComment: any = new Comment();
     privateMyComment.id = 1;
     privateMyComment.comment = 'content';
-    privateMyComment.user = user.id;
+    privateMyComment.user = user;
     privateMyComment.is_private = true;
     privateMyComment.created_at = dateToString;
     privateMyComment.updated_at = dateToString;
     privateMyComment.deleted_at = null;
+    privateMyComment.feed = mockFeed;
 
     const user2 = new User();
     user2.id = 2;
     const publicOtherComment: any = new Comment();
     publicOtherComment.id = 2;
     publicOtherComment.comment = 'content';
-    publicOtherComment.user = user2.id;
+    publicOtherComment.user = user2;
     publicOtherComment.is_private = false;
     publicOtherComment.created_at = dateToString;
     publicOtherComment.updated_at = dateToString;
     publicOtherComment.deleted_at = null;
+    publicOtherComment.feed = mockFeed;
 
     const user3 = new User();
     user3.id = 3;
     const privateOtherComment: any = new Comment();
     privateOtherComment.id = 3;
     privateOtherComment.comment = 'content';
-    privateOtherComment.user = user3.id;
+    privateOtherComment.user = user3;
     privateOtherComment.is_private = true;
     privateOtherComment.created_at = dateToString;
     privateOtherComment.updated_at = dateToString;
     privateOtherComment.deleted_at = null;
+    privateOtherComment.feed = mockFeed;
 
     const deletedMyComment: any = new Comment();
     deletedMyComment.id = 4;
     deletedMyComment.comment = 'content';
-    deletedMyComment.user = user.id;
+    deletedMyComment.user = user;
     deletedMyComment.is_private = false;
     deletedMyComment.created_at = dateToString;
     deletedMyComment.updated_at = dateToString;
     deletedMyComment.deleted_at = dateToString;
+    deletedMyComment.feed = mockFeed;
 
     mockGetCommentListByUserId.push(
       privateMyComment,
@@ -409,9 +422,15 @@ describe('USERS UNIT test', () => {
 
       const pageParam: Pagination = { startIndex: 0, limit: 10 };
 
-      const result = await usersService.findUserCommentsByUserId(
+      const mockCommentCnt: number = 4;
+
+      jest
+        .spyOn(CommentRepository, 'getCommentCountByUserId')
+        .mockResolvedValue(mockCommentCnt);
+
+      const result: any = await usersService.findUserCommentsByUserId(
         userId,
-        3,
+        userId,
         pageParam
       );
 
@@ -424,18 +443,31 @@ describe('USERS UNIT test', () => {
 
       // 함수 결과물 형식 확인
       expect(result).toBeDefined();
-      expect(result).toHaveLength(4);
-      // 다른 사람의 비공개 댓글은 반환하지 않음
-      expect(result[0].comment).toEqual('## PRIVATE_COMMENT ##');
-      // 다른 사람의 공개 댓글은 반환
-      expect(result[1].comment).toEqual('content');
+      expect(result.totalScrollCnt).toEqual(1);
+      expect(result.commentListByUserId).toHaveLength(4);
+
       // 본인의 비공개 댓글은 반환
-      expect(result[2].comment).toEqual('content');
+      expect(result.commentListByUserId[0].comment).toEqual('content');
+
+      // 다른 사람의 공개 댓글은 반환
+      expect(result.commentListByUserId[1].comment).toEqual('content');
+
+      // 다른 사람의 비공개 댓글은 반환하지 않음
+      expect(result.commentListByUserId[2].comment).toEqual(
+        '## PRIVATE_COMMENT ##'
+      );
+
       // 본인의 삭제 댓글은 반환하지 않음
-      expect(result[3].comment).toEqual('## DELETED_COMMENT ##');
+      expect(result.commentListByUserId[3].comment).toEqual(
+        '## DELETED_COMMENT ##'
+      );
       // Date 타입 재가공 확인
-      expect(result[0].created_at).toEqual(dateToString.substring(0, 19));
-      expect(result[0].updated_at).toEqual(dateToString.substring(0, 19));
+      expect(result.commentListByUserId[0].created_at).toEqual(
+        dateToString.substring(0, 19)
+      );
+      expect(result.commentListByUserId[0].updated_at).toEqual(
+        dateToString.substring(0, 19)
+      );
     });
   });
 
