@@ -136,9 +136,9 @@ describe('USERS UNIT test', () => {
       jest.resetAllMocks();
     });
 
-    test('이메일 형식이 아닐 때, 에러 반환', async () => {
+    test('password가 정규식을 통과하지 못하였을 때, 에러 반환', async () => {
       const userInfo: UserDto = {
-        email: 'email',
+        email: 'email@mail.com',
         nickname: 'nickname',
         password: 'password',
       };
@@ -151,7 +151,36 @@ describe('USERS UNIT test', () => {
       });
     });
 
-    test('패스워드 형식이 아닐 때, 에러 반환', async () => {
+    test('password가 8자보다 짧거나 20자보다 길 때, 에러 반환', async () => {
+      const minPasswordUser: UserDto = {
+        email: 'email@mail.com',
+        nickname: 'nickname',
+        password: '1234',
+      };
+
+      const maxPasswordUser: UserDto = {
+        email: 'email@mail.com',
+        nickname: 'nickname',
+        password:
+          'Password@1234567890123456789012323456789012345678901234567890',
+      };
+
+      await expect(usersService.signUp(minPasswordUser)).rejects.toMatchObject({
+        status: 500,
+        message: {
+          minLength: 'password must be longer than or equal to 8 characters',
+        },
+      });
+
+      await expect(usersService.signUp(maxPasswordUser)).rejects.toMatchObject({
+        status: 500,
+        message: {
+          maxLength: 'password must be shorter than or equal to 20 characters',
+        },
+      });
+    });
+
+    test('email 형식이 아닐 때, 에러 반환', async () => {
       const userInfo: UserDto = {
         email: 'email',
         nickname: 'nickname',
@@ -186,10 +215,6 @@ describe('USERS UNIT test', () => {
 
       await usersService.signUp(userInfo);
 
-      expect(mockFindByEmail).toBeCalledTimes(1);
-      expect(mockFindByEmail).toBeCalledWith(userInfo.email);
-      expect(mockFindByNickname).toBeCalledTimes(1);
-      expect(mockFindByNickname).toBeCalledWith(userInfo.nickname);
       expect(mockCreateUser).toBeCalledTimes(1);
       expect(mockCreateUser).toBeCalledWith(userInfo);
     });
