@@ -79,15 +79,27 @@ describe('USERS UNIT test', () => {
   });
 
   describe('checkDuplicateEmail', () => {
-    afterAll(() => {
-      jest.resetAllMocks();
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     test('이메일이 undefined 일 때, 에러 반환', async () => {
-      const email: string = undefined;
+      const errorObject = {
+        status: 400,
+        message: 'EMAIL_IS_UNDEFINED',
+      };
+
       await expect(
-        usersService.checkDuplicateEmail(email)
-      ).rejects.toThrowError('EMAIL_IS_UNDEFINED');
+        usersService.checkDuplicateEmail(undefined)
+      ).rejects.toMatchObject(errorObject);
+
+      await expect(
+        usersService.checkDuplicateEmail(null)
+      ).rejects.toMatchObject(errorObject);
+
+      await expect(usersService.checkDuplicateEmail('')).rejects.toMatchObject(
+        errorObject
+      );
     });
 
     test('이메일 중복이 아닐 때, 성공', async () => {
@@ -105,14 +117,17 @@ describe('USERS UNIT test', () => {
     test('이메일 중복일 때, 에러 반환', async () => {
       const email: string = 'email';
 
-      const user = new User();
-      user.email = 'email';
+      const mockUser = new User();
+      mockUser.email = 'email';
 
-      jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(user);
+      jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(mockUser);
 
       await expect(
         usersService.checkDuplicateEmail(email)
-      ).rejects.toThrowError('email_IS_EMAIL_THAT_ALREADY_EXSITS');
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'email_IS_EMAIL_THAT_ALREADY_EXSITS',
+      });
     });
   });
 
