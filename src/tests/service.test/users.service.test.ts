@@ -18,6 +18,7 @@ import UploadFileService, {
 } from '../../services/uploadFile.service';
 import * as util from '../../utils/sendMail';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
+import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 
 describe('USERS UNIT test', () => {
   describe('checkDuplicateNickname', () => {
@@ -481,70 +482,45 @@ describe('USERS UNIT test', () => {
   });
 
   describe('findUserFeedSymbolsByUserId', () => {
-    let queryBuilder: any;
+    jest.mock('../../repositories/feedSymbol.repository', () => ({
+      getFeedSymbolCountByUserId: jest.fn(),
+      getFeedSymbolsByUserId: jest.fn(),
+    }));
 
     beforeEach(() => {
       jest.clearAllMocks();
-
-      queryBuilder = {
-        select: jest.fn().mockReturnThis(),
-        addSelect: jest.fn().mockReturnThis(),
-        leftJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        take: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockReturnValueOnce([]),
-      };
-
-      jest
-        .spyOn(dataSource.manager, 'createQueryBuilder')
-        .mockReturnValue(queryBuilder);
     });
 
-    afterAll(() => {
-      jest.resetAllMocks();
-    });
+    test('should return symbols of the user', async () => {
+      const fakeCount = 10;
+      const fakeSymbols = [{ id: 1 }, { id: 2 }];
+      const fakeUserId = 123;
+      const fakePage = { startIndex: 1, limit: 10 };
 
-    const userId: number = 1;
+      FeedSymbolRepository.getFeedSymbolCountByUserId = jest
+        .fn()
+        .mockResolvedValue(fakeCount);
 
-    test('userId 전달이 없을 때, 에러 반환', async () => {
-      const pageParam: Pagination = { startIndex: 0, limit: 10 };
-
-      await expect(
-        usersService.findUserFeedSymbolsByUserId(undefined, pageParam)
-      ).rejects.toEqual({
-        status: 400,
-        message: 'USER_ID_IS_UNDEFINED',
-      });
-    });
-
-    test('잘못된 startIndex query 전달시 에러 반환 ', async () => {
-      const pageParam: Pagination = { startIndex: 0, limit: 1 };
-
-      await expect(
-        usersService.findUserFeedSymbolsByUserId(userId, pageParam)
-      ).rejects.toEqual({
-        status: 400,
-        message: 'PAGE_START_INDEX_IS_INVALID',
-      });
-    });
-
-    test('findUserFeedSymbolsByUserId 성공', async () => {
-      const pageParam: Pagination = { startIndex: 1, limit: 10 };
+      FeedSymbolRepository.getFeedSymbolsByUserId = jest
+        .fn()
+        .mockResolvedValue(fakeSymbols);
 
       const result = await usersService.findUserFeedSymbolsByUserId(
-        userId,
-        pageParam
+        fakeUserId,
+        fakePage
       );
 
-      expect(result).toBeDefined();
-      expect(queryBuilder.select).toBeCalledTimes(1);
-      expect(queryBuilder.where).toBeCalledWith('user.id = :userId', {
-        userId,
-      });
-      expect(queryBuilder.skip).toBeCalledWith(pageParam.startIndex - 1);
-      expect(queryBuilder.take).toBeCalledWith(pageParam.limit);
+      expect(result.symbolCntByUserId).toBe(fakeCount);
+      expect(result.totalPage).toBe(1);
+      expect(result.symbolListByUserId).toEqual(fakeSymbols);
+
+      expect(FeedSymbolRepository.getFeedSymbolCountByUserId).toBeCalledWith(
+        fakeUserId
+      );
+      expect(FeedSymbolRepository.getFeedSymbolsByUserId).toBeCalledWith(
+        fakeUserId,
+        fakePage
+      );
     });
   });
 
