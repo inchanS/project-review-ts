@@ -22,19 +22,34 @@ import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 
 describe('USERS UNIT test', () => {
   describe('checkDuplicateNickname', () => {
-    afterAll(() => {
-      jest.resetAllMocks();
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
-    test('닉네임이 undefined 일 때, 에러 반환', async () => {
-      const nickname: string = undefined;
+    test('닉네임이 잘못된 parameter로 전달되었을 때, 에러 반환', async () => {
+      // version1. 에러메세지만 확인하고자 할 때, 'toThrow' 사용
+      // await expect(
+      //   usersService.checkDuplicateNickname(undefined)
+      // ).rejects.toThrow('NICKNAME_IS_UNDEFINED');
+
+      // version2. 에러메세지와 에러코드를 확인하고자 할 때, 'toMatchObject' 사용
+      const errorObject = {
+        status: 400,
+        message: 'NICKNAME_IS_UNDEFINED',
+      };
 
       await expect(
-        usersService.checkDuplicateNickname(nickname)
-      ).rejects.toThrowError('NICKNAME_IS_UNDEFINED');
+        usersService.checkDuplicateNickname(undefined)
+      ).rejects.toMatchObject(errorObject);
+      await expect(
+        usersService.checkDuplicateNickname(null)
+      ).rejects.toMatchObject(errorObject);
+      await expect(
+        usersService.checkDuplicateNickname('')
+      ).rejects.toMatchObject(errorObject);
     });
 
-    test('닉네임 중복이 아닐 때, 성공', async () => {
+    test('중복이 아닌 닉네임이 전달되었을 때, 성공 반환', async () => {
       const nickname: string = 'newNickname';
 
       jest.spyOn(User, 'findByNickname').mockResolvedValueOnce(null);
@@ -46,17 +61,20 @@ describe('USERS UNIT test', () => {
       expect(User.findByNickname).toBeCalledWith(nickname);
     });
 
-    test('닉네임이 중복일 때, 에러 반환', async () => {
+    test('전달된 닉네임이 중복일 때, 에러 반환', async () => {
       const nickname: string = 'nickname';
 
-      const user = new User();
-      user.nickname = 'nickname';
+      const mockUser = new User();
+      mockUser.nickname = 'nickname';
 
-      jest.spyOn(User, 'findByNickname').mockResolvedValueOnce(user);
+      jest.spyOn(User, 'findByNickname').mockResolvedValueOnce(mockUser);
 
       await expect(
         usersService.checkDuplicateNickname(nickname)
-      ).rejects.toThrowError('nickname_IS_NICKNAME_THAT_ALREADY_EXSITS');
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'nickname_IS_NICKNAME_THAT_ALREADY_EXSITS',
+      });
     });
   });
 
@@ -491,7 +509,7 @@ describe('USERS UNIT test', () => {
       jest.clearAllMocks();
     });
 
-    test('should return symbols of the user', async () => {
+    test('사용자의 게시물좋아요 표시 반환 - 성공', async () => {
       const fakeCount = 10;
       const fakeSymbols = [{ id: 1 }, { id: 2 }];
       const fakeUserId = 123;
