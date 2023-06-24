@@ -221,14 +221,21 @@ describe('USERS UNIT test', () => {
   });
 
   describe('signIn', () => {
-    afterAll(() => {
-      jest.resetAllMocks();
+    const email: string = 'email';
+    const password: string = 'password';
+    const fakeToken = 'fake_token';
+
+    const salt = bcrypt.genSaltSync();
+    const hashedPassword = bcrypt.hashSync(password, salt);
+
+    const user = new User();
+    user.password = hashedPassword;
+
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     test('사용자 중 해당 이메일을 찾을 수 없을 때, 에러반환', async () => {
-      const email: string = 'email';
-      const password: string = 'password';
-
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(null);
 
       await expect(usersService.signIn(email, password)).rejects.toEqual({
@@ -237,35 +244,34 @@ describe('USERS UNIT test', () => {
       });
     });
 
+    test('사용자 중 해당 이메일이 삭제된 사용자일 때, 에러반환', async () => {
+      const deletedUser = new User();
+      deletedUser.deleted_at = new Date();
+
+      jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(deletedUser);
+    });
+
     test('비밀번호가 일치하지 않을 때, 에러반환', async () => {
-      const email: string = 'email';
-      const password: string = 'password';
-
-      const user = new User();
-      user.password = 'password2';
-
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(user);
 
-      await expect(usersService.signIn(email, password)).rejects.toEqual({
+      await expect(
+        usersService.signIn(email, 'wrong_password')
+      ).rejects.toEqual({
         status: 401,
         message: 'PASSWORD_IS_INCORRECT',
       });
     });
 
     test('로그인 성공', async () => {
-      const email: string = 'email';
-      const password: string = 'password';
-
-      const genSalt = await bcrypt.genSalt();
-      const hashedPassword = await bcrypt.hash(password, genSalt);
-
-      const user = new User();
-      user.password = hashedPassword;
-
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(user);
 
+      jwt.sign = jest.fn().mockImplementation(() => fakeToken);
+
       const result = await usersService.signIn(email, password);
-      expect(result).toHaveProperty('token');
+
+      expect(result).toEqual({
+        token: fakeToken,
+      });
     });
   });
 
