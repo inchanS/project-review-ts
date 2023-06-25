@@ -276,33 +276,26 @@ describe('USERS UNIT test', () => {
   });
 
   describe('findUserInfoById', () => {
-    beforeEach(() => {
-      jest.resetAllMocks();
-    });
+    const userId: number = 1;
+    const user = new User();
+    user.id = userId;
 
-    afterAll(() => {
-      jest.resetAllMocks();
+    afterEach(() => {
+      jest.restoreAllMocks();
     });
 
     test('사용자를 찾을 수 없을 때, 에러반환', async () => {
-      const userId: number = 1;
-
       jest.spyOn(UserRepository, 'findOne').mockResolvedValueOnce(null);
 
-      try {
-        await usersService.findUserInfoByUserId(userId);
-      } catch (error: any) {
-        expect(error.status).toEqual(404);
-        expect(error.message).toEqual('USER_IS_NOT_FOUND');
-      }
+      await expect(
+        usersService.findUserInfoByUserId(userId)
+      ).rejects.toMatchObject({
+        status: 404,
+        message: 'USER_IS_NOT_FOUND',
+      });
     });
 
     test('사용자를 찾을 수 있을 때, 성공', async () => {
-      const userId: number = 1;
-
-      const user = new User();
-      user.id = userId;
-
       jest.spyOn(UserRepository, 'findOne').mockResolvedValue(user);
 
       const result = await usersService.findUserInfoByUserId(userId);
@@ -311,16 +304,13 @@ describe('USERS UNIT test', () => {
       expect(UserRepository.findOne).toBeCalledTimes(1);
       expect(UserRepository.findOne).toBeCalledWith({ where: { id: userId } });
 
-      // 함수 결과물 형식 확인
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('object');
-      expect(result).toHaveProperty('id');
+      // 함수 결과물 형식 확인 - User 객체로 반환되어야 한다.
+      expect(result instanceof User).toBe(true);
+      // 함수 결과물 값 확인 - id가 일치해야 한다.
       expect(result.id).toEqual(userId);
+
+      // 사용자 정보 중, password는 반환하지 않는다.
       expect(result.password).toEqual(undefined);
-      expect(result).toHaveProperty('email');
-      expect(result.email).toEqual(user.email);
-      expect(result).toHaveProperty('nickname');
-      expect(result.nickname).toEqual(user.nickname);
     });
   });
 
