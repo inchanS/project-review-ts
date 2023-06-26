@@ -316,59 +316,36 @@ describe('USERS UNIT test', () => {
 
   describe('findUserFeedsByUserId', () => {
     beforeEach(() => {
-      jest.resetAllMocks();
-    });
-
-    afterAll(() => {
-      jest.resetAllMocks();
+      jest.clearAllMocks();
     });
 
     const userId: number = 1;
     const user = new User();
     user.id = userId;
 
-    const feed = new Feed();
-    feed.id = 1;
-    feed.user = user;
-    feed.title = 'title';
-    feed.content = 'content';
-    feed.created_at = new Date();
-    feed.updated_at = new Date();
+    // 사용자의 피드는 3개라고 가정한다.
+    const userFeedCount: number = 3;
+    const userFeedList: Feed[] = Array(userFeedCount)
+      .fill(null)
+      .map((_, index) => {
+        const userFeed = new Feed();
+        userFeed.id = index + 1;
+        userFeed.user = user;
+        userFeed.title = 'title';
+        userFeed.content = 'content';
+        userFeed.created_at = new Date();
+        userFeed.updated_at = new Date();
 
-    const feedList: Feed[] = [feed];
+        return userFeed;
+      });
 
-    test('사용자의 게시물리스트  반환 성공', async () => {
-      jest
-        .spyOn(FeedListRepository, 'getFeedListByUserId')
-        .mockResolvedValueOnce(feedList);
+    jest
+      .spyOn(FeedRepository, 'getFeedCountByUserId')
+      .mockResolvedValue(userFeedCount);
 
-      const mockFeedCnt: number = 4;
-
-      jest
-        .spyOn(FeedRepository, 'getFeedCountByUserId')
-        .mockResolvedValue(mockFeedCnt);
-
-      const pageParam: Pagination = { startIndex: 1, limit: 10 };
-
-      const result = await usersService.findUserFeedsByUserId(
-        userId,
-        pageParam
-      );
-
-      // 함수 과정 확인
-      expect(FeedListRepository.getFeedListByUserId).toBeCalledTimes(1);
-      expect(FeedListRepository.getFeedListByUserId).toBeCalledWith(
-        userId,
-        pageParam,
-        undefined
-      );
-
-      // 함수 결과물 형식 확인
-      expect(result).toBeDefined();
-      expect(result.feedCntByUserId).toEqual(mockFeedCnt);
-      expect(result.totalPage).toEqual(1);
-      expect(result.feedListByUserId).toEqual(feedList);
-    });
+    jest
+      .spyOn(FeedListRepository, 'getFeedListByUserId')
+      .mockResolvedValue(userFeedList);
 
     test('userId가 전달되지 않았을 때, 에러메세지 반환', async () => {
       try {
@@ -379,16 +356,66 @@ describe('USERS UNIT test', () => {
       }
     });
 
-    test('잘못된 startIndex query가 전달되었을 때, 에러메세지 반환', async () => {
-      const pageParam: Pagination = { startIndex: 0, limit: 10 };
+    test.each([
+      { startIndex: undefined, limit: undefined },
+      { startIndex: 1, limit: undefined },
+      { startIndex: undefined, limit: 10 },
+    ])(
+      'page객체의 key중 하나라도 Number가 아닌 type으로 전달되었을 때, page = undefiend로 변환',
+      async page => {
+        await expect(
+          usersService.findUserFeedsByUserId(userId, page)
+        ).toBeDefined();
 
-      try {
-        await usersService.findUserFeedsByUserId(userId, pageParam);
-      } catch (error: any) {
-        expect(error.status).toEqual(400);
-        expect(error.message).toEqual('PAGE_START_INDEX_IS_INVALID');
+        expect(FeedListRepository.getFeedListByUserId).toHaveBeenCalledWith(
+          userId,
+          undefined,
+          undefined
+        );
       }
-    });
+    );
+
+    test.each([
+      { startIndex: 0, limit: 10 },
+      { startIndex: -1, limit: 10 },
+    ])(
+      '페이지의 startIndex 파라미터가 1보다 작은 수로 전달되었을 때, 에러메세지 반환',
+      async wrongPage => {
+        await expect(
+          usersService.findUserFeedsByUserId(userId, wrongPage)
+        ).rejects.toEqual({
+          status: 400,
+          message: 'PAGE_START_INDEX_IS_INVALID',
+        });
+      }
+    );
+
+    test.each([
+      { input: { startIndex: 1, limit: 4 }, expectedTotalPage: 1 },
+      { input: { startIndex: 2, limit: 2 }, expectedTotalPage: 2 },
+    ])(
+      '사용자의 게시물리스트  반환 성공',
+      async ({ input, expectedTotalPage }) => {
+        const result = await usersService.findUserFeedsByUserId(userId, input);
+
+        // 함수 과정 확인
+        expect(FeedRepository.getFeedCountByUserId).toBeCalledTimes(1);
+        expect(FeedRepository.getFeedCountByUserId).toBeCalledWith(userId);
+        expect(FeedListRepository.getFeedListByUserId).toBeCalledTimes(1);
+        expect(FeedListRepository.getFeedListByUserId).toBeCalledWith(
+          userId,
+          input,
+          undefined
+        );
+
+        // 함수 결과물 확인
+        expect(result).toBeDefined();
+        expect(result.feedCntByUserId).toEqual(userFeedCount);
+        // limit값에 따른 totalPage 반환 확인
+        expect(result.totalPage).toEqual(expectedTotalPage);
+        expect(result.feedListByUserId).toEqual(userFeedList);
+      }
+    );
   });
 
   describe('findUserCommentsByUserId', () => {
