@@ -394,28 +394,35 @@ describe('USERS UNIT test', () => {
       { input: { startIndex: 1, limit: 4 }, expectedTotalPage: 1 },
       { input: { startIndex: 2, limit: 2 }, expectedTotalPage: 2 },
     ])(
-      '사용자의 게시물리스트  반환 성공',
+      'limit 값에 따른 totalPage 반환 확인',
       async ({ input, expectedTotalPage }) => {
         const result = await usersService.findUserFeedsByUserId(userId, input);
 
-        // 함수 과정 확인
-        expect(FeedRepository.getFeedCountByUserId).toBeCalledTimes(1);
-        expect(FeedRepository.getFeedCountByUserId).toBeCalledWith(userId);
-        expect(FeedListRepository.getFeedListByUserId).toBeCalledTimes(1);
-        expect(FeedListRepository.getFeedListByUserId).toBeCalledWith(
-          userId,
-          input,
-          undefined
-        );
-
-        // 함수 결과물 확인
         expect(result).toBeDefined();
-        expect(result.feedCntByUserId).toEqual(userFeedCount);
-        // limit값에 따른 totalPage 반환 확인
         expect(result.totalPage).toEqual(expectedTotalPage);
-        expect(result.feedListByUserId).toEqual(userFeedList);
       }
     );
+
+    test('사용자의 게시물리스트  반환 성공', async () => {
+      const page = { startIndex: 2, limit: 2 };
+      const result = await usersService.findUserFeedsByUserId(userId, page);
+
+      // 함수 과정 확인
+      expect(FeedRepository.getFeedCountByUserId).toBeCalledTimes(1);
+      expect(FeedRepository.getFeedCountByUserId).toBeCalledWith(userId);
+      expect(FeedListRepository.getFeedListByUserId).toBeCalledTimes(1);
+      expect(FeedListRepository.getFeedListByUserId).toBeCalledWith(
+        userId,
+        page,
+        undefined
+      );
+
+      // 함수 결과물 확인
+      expect(result).toBeDefined();
+      expect(result.feedCntByUserId).toEqual(userFeedCount);
+      expect(result.totalPage).toEqual(2);
+      expect(result.feedListByUserId).toEqual(userFeedList);
+    });
   });
 
   describe('findUserCommentsByUserId', () => {
