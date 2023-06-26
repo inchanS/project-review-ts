@@ -314,10 +314,6 @@ describe('USERS UNIT test', () => {
   });
 
   describe('findUserFeedsByUserId', () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
     const userId: number = 1;
     const user = new User();
     user.id = userId;
@@ -338,13 +334,17 @@ describe('USERS UNIT test', () => {
         return userFeed;
       });
 
-    jest
-      .spyOn(FeedRepository, 'getFeedCountByUserId')
-      .mockResolvedValue(userFeedCount);
+    beforeEach(() => {
+      jest.restoreAllMocks();
 
-    jest
-      .spyOn(FeedListRepository, 'getFeedListByUserId')
-      .mockResolvedValue(userFeedList);
+      jest
+        .spyOn(FeedRepository, 'getFeedCountByUserId')
+        .mockResolvedValue(userFeedCount);
+
+      jest
+        .spyOn(FeedListRepository, 'getFeedListByUserId')
+        .mockResolvedValue(userFeedList);
+    });
 
     test('userId가 전달되지 않았을 때, 에러메세지 반환', async () => {
       try {
@@ -402,6 +402,16 @@ describe('USERS UNIT test', () => {
       }
     );
 
+    test('limit 값이 undefined일 때, totalPage = 1 반환 확인', async () => {
+      const result = await usersService.findUserFeedsByUserId(userId, {
+        startIndex: 0,
+        limit: undefined,
+      });
+
+      expect(result).toBeDefined();
+      expect(result.totalPage).toEqual(1);
+    });
+
     test('사용자의 게시물리스트  반환 성공', async () => {
       const page = { startIndex: 2, limit: 2 };
       const result = await usersService.findUserFeedsByUserId(userId, page);
@@ -447,16 +457,16 @@ describe('USERS UNIT test', () => {
       });
 
     beforeEach(() => {
-      jest.clearAllMocks();
+      jest.restoreAllMocks();
+
+      jest
+        .spyOn(CommentRepository, 'getCommentCountByUserId')
+        .mockResolvedValue(userCommentCount);
+
+      jest
+        .spyOn(CommentRepository, 'getCommentListByUserId')
+        .mockResolvedValue(userCommentList);
     });
-
-    jest
-      .spyOn(CommentRepository, 'getCommentCountByUserId')
-      .mockResolvedValue(userCommentCount);
-
-    jest
-      .spyOn(CommentRepository, 'getCommentListByUserId')
-      .mockResolvedValue(userCommentList);
 
     test('사용자 정보가 전달되지 않았을 때, 에러메세지 반환', async () => {
       await expect(
@@ -655,6 +665,15 @@ describe('USERS UNIT test', () => {
     });
 
     test('성공: 모든 요소를 반환하는지 확인', async () => {
+      const comment: any = new Comment();
+      comment.created_at = dateToString;
+      comment.updated_at = dateToString;
+      comment.deleted_at = null;
+
+      CommentRepository.getCommentListByUserId = jest
+        .fn()
+        .mockResolvedValue([comment]);
+
       const result = await usersService.findUserCommentsByUserId(
         userId,
         undefined,
