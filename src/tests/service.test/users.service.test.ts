@@ -7,7 +7,6 @@ import { Feed } from '../../entities/feed.entity';
 import {
   FeedListRepository,
   FeedRepository,
-  Pagination,
 } from '../../repositories/feed.repository';
 import { Comment } from '../../entities/comment.entity';
 import { CommentRepository } from '../../repositories/comment.repository';
@@ -426,146 +425,246 @@ describe('USERS UNIT test', () => {
   });
 
   describe('findUserCommentsByUserId', () => {
-    beforeEach(() => {
-      jest.resetAllMocks();
-    });
-
-    afterAll(() => {
-      jest.resetAllMocks();
-    });
-
-    let mockGetCommentListByUserId: Comment[] = [];
-
-    // 비공개 및 삭제 댓글의 내용을 걸러주는지 확인하기 위한 mock data
-    // mySQL에서 출력되는 Date타입의 String 형식
-    const dateToString: string = '2021-01-01T00:00:00.000Z';
-
     const userId: number = 1;
-
-    // 본인 아이디
     const user = new User();
     user.id = userId;
 
-    const mockFeedUser = new User();
-    mockFeedUser.id = 10;
+    // 사용자의 댓글은 3개라고 가정한다.
+    const userCommentCount: number = 3;
+    //   // mySQL에서 출력되는 Date타입의 String 형식
+    const dateToString: string = '2021-01-01T00:00:00.000Z';
+    const userCommentList: Comment[] = Array(userCommentCount)
+      .fill(null)
+      .map((_, index) => {
+        const userComment: any = new Comment();
+        userComment.id = index + 1;
+        userComment.user = user;
+        userComment.comment = 'comment';
+        userComment.created_at = dateToString;
+        userComment.updated_at = dateToString;
 
-    const mockFeed = new Feed();
-    mockFeed.id = 1;
-    mockFeed.user = mockFeedUser;
+        return userComment;
+      });
 
-    const privateMyComment: any = new Comment();
-    privateMyComment.id = 1;
-    privateMyComment.comment = 'content';
-    privateMyComment.user = user;
-    privateMyComment.is_private = true;
-    privateMyComment.created_at = dateToString;
-    privateMyComment.updated_at = dateToString;
-    privateMyComment.deleted_at = null;
-    privateMyComment.feed = mockFeed;
-
-    const user2 = new User();
-    user2.id = 2;
-    const publicOtherComment: any = new Comment();
-    publicOtherComment.id = 2;
-    publicOtherComment.comment = 'content';
-    publicOtherComment.user = user2;
-    publicOtherComment.is_private = false;
-    publicOtherComment.created_at = dateToString;
-    publicOtherComment.updated_at = dateToString;
-    publicOtherComment.deleted_at = null;
-    publicOtherComment.feed = mockFeed;
-
-    const user3 = new User();
-    user3.id = 3;
-    const privateOtherComment: any = new Comment();
-    privateOtherComment.id = 3;
-    privateOtherComment.comment = 'content';
-    privateOtherComment.user = user3;
-    privateOtherComment.is_private = true;
-    privateOtherComment.created_at = dateToString;
-    privateOtherComment.updated_at = dateToString;
-    privateOtherComment.deleted_at = null;
-    privateOtherComment.feed = mockFeed;
-
-    const deletedMyComment: any = new Comment();
-    deletedMyComment.id = 4;
-    deletedMyComment.comment = 'content';
-    deletedMyComment.user = user;
-    deletedMyComment.is_private = false;
-    deletedMyComment.created_at = dateToString;
-    deletedMyComment.updated_at = dateToString;
-    deletedMyComment.deleted_at = dateToString;
-    deletedMyComment.feed = mockFeed;
-
-    mockGetCommentListByUserId.push(
-      privateMyComment,
-      publicOtherComment,
-      privateOtherComment,
-      deletedMyComment
-    );
-
-    test('userId 전달이 없을 때, 에러 반환', async () => {
-      try {
-        await usersService.findUserCommentsByUserId(undefined, undefined);
-      } catch (error: any) {
-        expect(error.status).toEqual(400);
-        expect(error.message).toEqual('USER_ID_IS_UNDEFINED');
-      }
+    beforeEach(() => {
+      jest.clearAllMocks();
     });
 
-    test('사용자의 덧글 목록 반환 성공', async () => {
-      jest
-        .spyOn(CommentRepository, 'getCommentListByUserId')
-        .mockResolvedValueOnce(mockGetCommentListByUserId);
+    jest
+      .spyOn(CommentRepository, 'getCommentCountByUserId')
+      .mockResolvedValue(userCommentCount);
 
-      const pageParam: Pagination = { startIndex: 0, limit: 10 };
+    jest
+      .spyOn(CommentRepository, 'getCommentListByUserId')
+      .mockResolvedValue(userCommentList);
 
-      const mockCommentCnt: number = 4;
+    test('사용자 정보가 전달되지 않았을 때, 에러메세지 반환', async () => {
+      await expect(
+        usersService.findUserCommentsByUserId(undefined, undefined)
+      ).rejects.toEqual({
+        status: 400,
+        message: 'USER_ID_IS_UNDEFINED',
+      });
+    });
 
-      jest
-        .spyOn(CommentRepository, 'getCommentCountByUserId')
-        .mockResolvedValue(mockCommentCnt);
+    test.each([
+      { startIndex: undefined, limit: undefined },
+      { startIndex: 1, limit: undefined },
+      { startIndex: undefined, limit: 10 },
+    ])(
+      'page객체의 key중 하나라도 Number가 아닌 type으로 전달되었을 때, page = undefiend로 변환',
+      async page => {
+        await expect(
+          usersService.findUserCommentsByUserId(userId, undefined, page)
+        ).toBeDefined();
 
-      const result: any = await usersService.findUserCommentsByUserId(
+        expect(CommentRepository.getCommentListByUserId).toHaveBeenCalledWith(
+          userId,
+          undefined
+        );
+      }
+    );
+
+    test.each([
+      { input: { startIndex: 1, limit: 4 }, expectedTotalPage: 1 },
+      { input: { startIndex: 2, limit: 2 }, expectedTotalPage: 2 },
+    ])(
+      'limit 값에 따른 totalScrollCnt 반환 확인',
+      async ({ input, expectedTotalPage }) => {
+        const result = await usersService.findUserCommentsByUserId(
+          userId,
+          undefined,
+          input
+        );
+
+        expect(result).toBeDefined();
+        expect(result.totalScrollCnt).toEqual(expectedTotalPage);
+      }
+    );
+
+    test('limit 값이 undefined일 때, totalScrollCnt = 1 반환 확인', async () => {
+      const result = await usersService.findUserCommentsByUserId(
         userId,
-        userId,
-        pageParam
+        undefined,
+        { startIndex: 0, limit: undefined }
       );
 
-      // 함수 과정 확인
-      expect(CommentRepository.getCommentListByUserId).toBeCalledTimes(1);
-      expect(CommentRepository.getCommentListByUserId).toBeCalledWith(
-        userId,
-        pageParam
-      );
-
-      // 함수 결과물 형식 확인
       expect(result).toBeDefined();
       expect(result.totalScrollCnt).toEqual(1);
-      expect(result.commentListByUserId).toHaveLength(4);
+    });
 
-      // 본인의 비공개 댓글은 반환
-      expect(result.commentListByUserId[0].comment).toEqual('content');
+    test('댓글의 날짜 정보들이 제대로 변환되어 반환되는지 확인', async () => {
+      const result = await usersService.findUserCommentsByUserId(
+        userId,
+        undefined,
+        { startIndex: 0, limit: undefined }
+      );
 
-      // 다른 사람의 공개 댓글은 반환
-      expect(result.commentListByUserId[1].comment).toEqual('content');
+      expect(result).toBeDefined();
+      expect(result.commentListByUserId).toEqual(
+        userCommentList.map(comment => {
+          comment.created_at = new Date(dateToString);
+          comment.updated_at = new Date(dateToString);
 
-      // 다른 사람의 비공개 댓글은 반환하지 않음
-      expect(result.commentListByUserId[2].comment).toEqual(
+          return comment;
+        })
+      );
+    });
+
+    test('성공: 비공개 댓글과 날짜 형식이 정상적으로 동작하는지 확인', async () => {
+      const loggedInUserId = 2;
+      const otherUserid = 3;
+
+      // 다른 사용자의 비공개 댓글
+      const comment1: any = {
+        is_private: true,
+        user: { id: userId },
+        comment: 'Original Comment',
+        created_at: dateToString,
+        updated_at: dateToString,
+        deleted_at: null,
+        feed: { user: { id: otherUserid } },
+      };
+
+      // 다른 사용자의 삭제된 댓글
+      const comment2: any = {
+        is_private: false,
+        user: { id: userId },
+        comment: 'Original Comment',
+        created_at: dateToString,
+        updated_at: dateToString,
+        deleted_at: dateToString,
+        feed: { user: { id: otherUserid } },
+      };
+
+      // 다른 사용자의 공개 댓글
+      const comment3: any = {
+        is_private: false,
+        user: { id: userId },
+        comment: 'Original Comment',
+        created_at: dateToString,
+        updated_at: dateToString,
+        deleted_at: null,
+        feed: { user: { id: otherUserid } },
+      };
+
+      // 본인의 댓글에 대한 다른 사용자의 비공개 '대댓글'
+      const comment4: any = {
+        is_private: true,
+        user: { id: userId },
+        comment: 'Original Comment',
+        parent: { user: { id: loggedInUserId } },
+        created_at: dateToString,
+        updated_at: dateToString,
+        deleted_at: null,
+        feed: { user: { id: otherUserid } },
+      };
+
+      // 본인의 게시글에 달린 다른 사용자의 비공개 댓글
+      const comment5: any = {
+        is_private: true,
+        user: { id: userId },
+        comment: 'Original Comment',
+        created_at: dateToString,
+        updated_at: dateToString,
+        deleted_at: null,
+        feed: { user: { id: loggedInUserId } },
+      };
+
+      // 본인의 비공개 댓글
+      const comment6: any = {
+        is_private: true,
+        user: { id: loggedInUserId },
+        comment: 'Original Comment',
+        created_at: dateToString,
+        updated_at: dateToString,
+        deleted_at: null,
+        feed: { user: { id: otherUserid } },
+      };
+
+      CommentRepository.getCommentListByUserId = jest
+        .fn()
+        .mockResolvedValue([
+          comment1,
+          comment2,
+          comment3,
+          comment4,
+          comment5,
+          comment6,
+        ]);
+
+      // 아래 함수는 위 함수와 같이 작동, but, jest.spyOn을 사용하면, 과정 추적도 가능하다.
+      // 현재의 테스트에서는 단순 반환값만 모의하면 되기에 위 jest.fn()을 사용
+
+      // jest
+      //   .spyOn(CommentRepository, 'getCommentListByUserId')
+      //   .mockResolvedValue([
+      //     comment1,
+      //     comment2,
+      //     comment3,
+      //     comment4,
+      //     comment5,
+      //     comment6,
+      //   ]);
+
+      const result = await usersService.findUserCommentsByUserId(
+        userId,
+        loggedInUserId,
+        { startIndex: undefined, limit: undefined }
+      );
+
+      expect(result).toBeDefined();
+      // 다른 사용자의 비공개 댓글
+      expect(result.commentListByUserId[0].comment).toBe(
         '## PRIVATE_COMMENT ##'
       );
-
-      // 본인의 삭제 댓글은 반환하지 않음
-      expect(result.commentListByUserId[3].comment).toEqual(
+      // 다른 사용자의 삭제된 댓글
+      expect(result.commentListByUserId[1].comment).toBe(
         '## DELETED_COMMENT ##'
       );
-      // Date 타입 재가공 확인
-      expect(result.commentListByUserId[0].created_at).toEqual(
-        dateToString.substring(0, 19)
+      // 다른 사용자의 공개 댓글
+      expect(result.commentListByUserId[2].comment).toBe('Original Comment');
+      // 본인의 댓글에 대한 다른 사용자의 비공개 '대댓글'
+      expect(result.commentListByUserId[3].comment).toBe('Original Comment');
+      // 본인의 게시글에 달린 다른 사용자의 비공개 댓글
+      expect(result.commentListByUserId[4].comment).toBe('Original Comment');
+      // 본인의 비공개 댓글
+      expect(result.commentListByUserId[5].comment).toBe('Original Comment');
+      // 모든 댓글이 반환되는지 확인
+      expect(result.commentListByUserId.length).toBe(6);
+    });
+
+    test('성공: 모든 요소를 반환하는지 확인', async () => {
+      const result = await usersService.findUserCommentsByUserId(
+        userId,
+        undefined,
+        { startIndex: 0, limit: undefined }
       );
-      expect(result.commentListByUserId[0].updated_at).toEqual(
-        dateToString.substring(0, 19)
-      );
+
+      expect(result).toBeDefined();
+      expect(result.commentListByUserId).toBeDefined();
+      expect(result.commentCntByUserId).toBeDefined();
+      expect(result.commentListByUserId).toBeDefined();
     });
   });
 
