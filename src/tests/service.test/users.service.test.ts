@@ -25,7 +25,7 @@ describe('USERS UNIT test', () => {
       jest.restoreAllMocks();
     });
 
-    test('닉네임이 잘못된 parameter로 전달되었을 때, 에러 반환', async () => {
+    test('닉네임 중복확인 - 실패: 네임이 잘못된 parameter로 전달되었을 때, 에러 반환', async () => {
       // version1. 에러메세지만 확인하고자 할 때, 'toThrow' 사용
       // await expect(
       //   usersService.checkDuplicateNickname(undefined)
@@ -48,7 +48,7 @@ describe('USERS UNIT test', () => {
       ).rejects.toMatchObject(errorObject);
     });
 
-    test('중복이 아닌 닉네임이 전달되었을 때, 성공 반환', async () => {
+    test('닉네임 중복확인 - 성공: 중복이 아닌 닉네임이 전달되었을 때', async () => {
       const nickname: string = 'newNickname';
 
       jest.spyOn(User, 'findByNickname').mockResolvedValueOnce(null);
@@ -82,7 +82,7 @@ describe('USERS UNIT test', () => {
       jest.restoreAllMocks();
     });
 
-    test('이메일이 undefined 일 때, 에러 반환', async () => {
+    test('이메일 중복확인 - 실패: 이메일이 undefined 일 때, 에러 반환', async () => {
       const errorObject = {
         status: 400,
         message: 'EMAIL_IS_UNDEFINED',
@@ -101,7 +101,7 @@ describe('USERS UNIT test', () => {
       );
     });
 
-    test('이메일 중복이 아닐 때, 성공', async () => {
+    test('이메일 중복확인 - 성공: 이메일 중복이 아닐 때', async () => {
       const email: string = 'newEmail';
 
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(null);
@@ -113,7 +113,7 @@ describe('USERS UNIT test', () => {
       expect(User.findByEmail).toBeCalledWith(email);
     });
 
-    test('이메일 중복일 때, 에러 반환', async () => {
+    test('이메일 중복확인 - 실패: 이메일 중복일 때, 에러 반환', async () => {
       const email: string = 'email';
 
       const mockUser = new User();
@@ -135,7 +135,7 @@ describe('USERS UNIT test', () => {
       jest.resetAllMocks();
     });
 
-    test('password가 정규식을 통과하지 못하였을 때, 에러 반환', async () => {
+    test('회원가입 - 실패: password가 정규식을 통과하지 못하였을 때, 에러 반환', async () => {
       const userInfo: UserDto = {
         email: 'email@mail.com',
         nickname: 'nickname',
@@ -150,7 +150,7 @@ describe('USERS UNIT test', () => {
       });
     });
 
-    test('password가 8자보다 짧거나 20자보다 길 때, 에러 반환', async () => {
+    test('회원가입 - 실패: password가 8자보다 짧거나 20자보다 길 때, 에러 반환', async () => {
       const minPasswordUser: UserDto = {
         email: 'email@mail.com',
         nickname: 'nickname',
@@ -179,7 +179,7 @@ describe('USERS UNIT test', () => {
       });
     });
 
-    test('email 형식이 아닐 때, 에러 반환', async () => {
+    test('회원가입 - 실패: email 형식이 아닐 때, 에러 반환', async () => {
       const userInfo: UserDto = {
         email: 'email',
         nickname: 'nickname',
@@ -194,7 +194,7 @@ describe('USERS UNIT test', () => {
       });
     });
 
-    test('회원가입 성공', async () => {
+    test('회원가입 - 성공', async () => {
       const userInfo: UserDto = {
         email: '123@test.com',
         nickname: 'nickname',
@@ -234,7 +234,7 @@ describe('USERS UNIT test', () => {
       jest.restoreAllMocks();
     });
 
-    test('사용자 중 해당 이메일을 찾을 수 없을 때, 에러반환', async () => {
+    test('로그인 - 실패: 사용자 중 해당 이메일을 찾을 수 없을 때, 에러반환', async () => {
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(null);
 
       await expect(usersService.signIn(email, password)).rejects.toEqual({
@@ -243,14 +243,14 @@ describe('USERS UNIT test', () => {
       });
     });
 
-    test('사용자 중 해당 이메일이 삭제된 사용자일 때, 에러반환', async () => {
+    test('로그인 - 실패: 사용자 중 해당 이메일이 삭제된 사용자일 때, 에러반환', async () => {
       const deletedUser = new User();
       deletedUser.deleted_at = new Date();
 
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(deletedUser);
     });
 
-    test('비밀번호가 일치하지 않을 때, 에러반환', async () => {
+    test('로그인 - 실패: 비밀번호가 일치하지 않을 때, 에러반환', async () => {
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(user);
 
       await expect(
@@ -261,7 +261,7 @@ describe('USERS UNIT test', () => {
       });
     });
 
-    test('로그인 성공', async () => {
+    test('로그인 - 성공', async () => {
       jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(user);
 
       jwt.sign = jest.fn().mockImplementation(() => fakeToken);
@@ -283,7 +283,7 @@ describe('USERS UNIT test', () => {
       jest.restoreAllMocks();
     });
 
-    test('사용자를 찾을 수 없을 때, 에러반환', async () => {
+    test('사용자 정보 조회 - 실패: 사용자를 찾을 수 없을 때, 에러반환', async () => {
       jest.spyOn(UserRepository, 'findOne').mockResolvedValueOnce(null);
 
       await expect(
@@ -294,7 +294,7 @@ describe('USERS UNIT test', () => {
       });
     });
 
-    test('사용자를 찾을 수 있을 때, 성공', async () => {
+    test('사용자 정보 조회 - 성공', async () => {
       jest.spyOn(UserRepository, 'findOne').mockResolvedValue(user);
 
       const result = await usersService.findUserInfoByUserId(userId);
@@ -346,7 +346,7 @@ describe('USERS UNIT test', () => {
         .mockResolvedValue(userFeedList);
     });
 
-    test('userId가 전달되지 않았을 때, 에러메세지 반환', async () => {
+    test('사용자 게시물 조회 - 실패: userId가 전달되지 않았을 때, 에러메세지 반환', async () => {
       try {
         await usersService.findUserFeedsByUserId(undefined, undefined);
       } catch (error: any) {
@@ -378,7 +378,7 @@ describe('USERS UNIT test', () => {
       { startIndex: 0, limit: 10 },
       { startIndex: -1, limit: 10 },
     ])(
-      '페이지의 startIndex 파라미터가 1보다 작은 수로 전달되었을 때, 에러메세지 반환',
+      '사용자 게시물 조회 - 실패: 페이지의 startIndex 파라미터가 1보다 작은 수로 전달되었을 때, 에러메세지 반환',
       async wrongPage => {
         await expect(
           usersService.findUserFeedsByUserId(userId, wrongPage)
@@ -393,7 +393,7 @@ describe('USERS UNIT test', () => {
       { input: { startIndex: 1, limit: 4 }, expectedTotalPage: 1 },
       { input: { startIndex: 2, limit: 2 }, expectedTotalPage: 2 },
     ])(
-      'limit 값에 따른 totalPage 반환 확인',
+      '사용자 게시물 조회 - 성공: limit 값에 따른 totalPage 반환 확인',
       async ({ input, expectedTotalPage }) => {
         const result = await usersService.findUserFeedsByUserId(userId, input);
 
@@ -402,7 +402,7 @@ describe('USERS UNIT test', () => {
       }
     );
 
-    test('limit 값이 undefined일 때, totalPage = 1 반환 확인', async () => {
+    test('사용자 게시물 조회 - 성공: limit 값이 undefined일 때, totalPage = 1 반환 확인', async () => {
       const result = await usersService.findUserFeedsByUserId(userId, {
         startIndex: 0,
         limit: undefined,
@@ -412,7 +412,7 @@ describe('USERS UNIT test', () => {
       expect(result.totalPage).toEqual(1);
     });
 
-    test('사용자의 게시물리스트  반환 성공', async () => {
+    test('사용자 게시물 조회 - 성공', async () => {
       const page = { startIndex: 2, limit: 2 };
       const result = await usersService.findUserFeedsByUserId(userId, page);
 
@@ -468,7 +468,7 @@ describe('USERS UNIT test', () => {
         .mockResolvedValue(userCommentList);
     });
 
-    test('사용자 정보가 전달되지 않았을 때, 에러메세지 반환', async () => {
+    test('사용자 덧글 조회 - 실패: 사용자 정보가 전달되지 않았을 때, 에러메세지 반환', async () => {
       await expect(
         usersService.findUserCommentsByUserId(undefined, undefined)
       ).rejects.toEqual({
@@ -482,7 +482,7 @@ describe('USERS UNIT test', () => {
       { startIndex: 1, limit: undefined },
       { startIndex: undefined, limit: 10 },
     ])(
-      'page객체의 key중 하나라도 Number가 아닌 type으로 전달되었을 때, page = undefiend로 변환',
+      '사용자 덧글 조회 - 성공: page객체의 key중 하나라도 Number가 아닌 type으로 전달되었을 때, page = undefiend로 변환',
       async page => {
         await expect(
           usersService.findUserCommentsByUserId(userId, undefined, page)
@@ -499,7 +499,7 @@ describe('USERS UNIT test', () => {
       { input: { startIndex: 1, limit: 4 }, expectedTotalPage: 1 },
       { input: { startIndex: 2, limit: 2 }, expectedTotalPage: 2 },
     ])(
-      'limit 값에 따른 totalScrollCnt 반환 확인',
+      '사용자 덧글 조회 - 성공: limit 값에 따른 totalScrollCnt 반환 확인',
       async ({ input, expectedTotalPage }) => {
         const result = await usersService.findUserCommentsByUserId(
           userId,
@@ -512,7 +512,7 @@ describe('USERS UNIT test', () => {
       }
     );
 
-    test('limit 값이 undefined일 때, totalScrollCnt = 1 반환 확인', async () => {
+    test('사용자 덧글 조회 - 성공: limit 값이 undefined일 때, totalScrollCnt = 1 반환 확인', async () => {
       const result = await usersService.findUserCommentsByUserId(
         userId,
         undefined,
@@ -523,7 +523,7 @@ describe('USERS UNIT test', () => {
       expect(result.totalScrollCnt).toEqual(1);
     });
 
-    test('댓글의 날짜 정보들이 제대로 변환되어 반환되는지 확인', async () => {
+    test('사용자 덧글 조회 - 성공: 댓글의 날짜 정보들이 제대로 변환되어 반환되는지 확인', async () => {
       const result = await usersService.findUserCommentsByUserId(
         userId,
         undefined,
@@ -541,7 +541,7 @@ describe('USERS UNIT test', () => {
       );
     });
 
-    test('성공: 비공개 댓글과 날짜 형식이 정상적으로 동작하는지 확인', async () => {
+    test('사용자 덧글 조회 - 성공: 비공개 댓글과 날짜 형식이 정상적으로 동작하는지 확인', async () => {
       const loggedInUserId = 2;
       const otherUserid = 3;
 
@@ -664,7 +664,7 @@ describe('USERS UNIT test', () => {
       expect(result.commentListByUserId.length).toBe(6);
     });
 
-    test('성공: 모든 요소를 반환하는지 확인', async () => {
+    test('사용자 덧글 조회 - 성공: 모든 요소를 반환하는지 확인', async () => {
       const comment: any = new Comment();
       comment.created_at = dateToString;
       comment.updated_at = dateToString;
@@ -722,7 +722,7 @@ describe('USERS UNIT test', () => {
       { startIndex: 1, limit: undefined },
       { startIndex: 1, limit: null },
     ])(
-      '사용자의 게시물좋아요 표시 반환 - limit 값이 없을 경우, totalPage는 1이다.',
+      '사용자의 게시물좋아요 표시 반환 - 성공: limit 값이 없을 경우, totalPage는 1이다.',
       async page => {
         const result = await usersService.findUserFeedSymbolsByUserId(
           userId,
