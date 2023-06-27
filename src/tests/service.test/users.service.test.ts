@@ -688,44 +688,101 @@ describe('USERS UNIT test', () => {
   });
 
   describe('findUserFeedSymbolsByUserId', () => {
-    jest.mock('../../repositories/feedSymbol.repository', () => ({
-      getFeedSymbolCountByUserId: jest.fn(),
-      getFeedSymbolsByUserId: jest.fn(),
-    }));
+    const feedSymbolCnt = 10;
+    const feedSymbols = [{ id: 1 }, { id: 2 }];
+    const userId = 123;
 
     beforeEach(() => {
-      jest.clearAllMocks();
-    });
-
-    test('사용자의 게시물좋아요 표시 반환 - 성공', async () => {
-      const fakeCount = 10;
-      const fakeSymbols = [{ id: 1 }, { id: 2 }];
-      const fakeUserId = 123;
-      const fakePage = { startIndex: 1, limit: 10 };
+      jest.restoreAllMocks();
 
       FeedSymbolRepository.getFeedSymbolCountByUserId = jest
         .fn()
-        .mockResolvedValue(fakeCount);
+        .mockResolvedValue(feedSymbolCnt);
 
       FeedSymbolRepository.getFeedSymbolsByUserId = jest
         .fn()
-        .mockResolvedValue(fakeSymbols);
+        .mockResolvedValue(feedSymbols);
+    });
+
+    test('사용자의 게시물좋아요 표시 반환 - 실패: 사용자가 존재하지 않음', async () => {
+      const error = {
+        status: 400,
+        message: 'USER_ID_IS_UNDEFINED',
+      };
+
+      await expect(
+        usersService.findUserFeedSymbolsByUserId(undefined, undefined)
+      ).rejects.toMatchObject(error);
+      await expect(
+        usersService.findUserFeedSymbolsByUserId(null, undefined)
+      ).rejects.toMatchObject(error);
+    });
+
+    test.each([
+      { startIndex: 1, limit: undefined },
+      { startIndex: 1, limit: null },
+    ])(
+      '사용자의 게시물좋아요 표시 반환 - limit 값이 없을 경우, totalPage는 1이다.',
+      async page => {
+        const result = await usersService.findUserFeedSymbolsByUserId(
+          userId,
+          page
+        );
+
+        expect(result.totalPage).toBe(1);
+      }
+    );
+
+    test.each([
+      { input: { startIndex: 1, limit: 10 }, output: 1 },
+      { input: { startIndex: 1, limit: 5 }, output: 2 },
+      { input: { startIndex: 1, limit: 2 }, output: 5 },
+      { input: { startIndex: 1, limit: 1 }, output: 10 },
+    ])(
+      '사용자의 게시물좋아요 표시 반환 - limit에 따른 totalPage 반환',
+      async ({ input, output }) => {
+        const result = await usersService.findUserFeedSymbolsByUserId(
+          userId,
+          input
+        );
+
+        expect(result.totalPage).toBe(output);
+      }
+    );
+
+    test.each([
+      { startIndex: 0, limit: 10 },
+      { startIndex: -1, limit: 10 },
+    ])(
+      '사용자의 게시물좋아요 표시 반환 - 실패: page parameter가 정수일 때, startIndex가 1보다 작으면 에러 반환',
+      async page => {
+        await expect(
+          usersService.findUserFeedSymbolsByUserId(userId, page)
+        ).rejects.toMatchObject({
+          status: 400,
+          message: 'PAGE_START_INDEX_IS_INVALID',
+        });
+      }
+    );
+
+    test('사용자의 게시물좋아요 표시 반환 - 성공', async () => {
+      const page = { startIndex: 1, limit: 10 };
 
       const result = await usersService.findUserFeedSymbolsByUserId(
-        fakeUserId,
-        fakePage
+        userId,
+        page
       );
 
-      expect(result.symbolCntByUserId).toBe(fakeCount);
+      expect(result.symbolCntByUserId).toBe(feedSymbolCnt);
       expect(result.totalPage).toBe(1);
-      expect(result.symbolListByUserId).toEqual(fakeSymbols);
+      expect(result.symbolListByUserId).toEqual(feedSymbols);
 
       expect(FeedSymbolRepository.getFeedSymbolCountByUserId).toBeCalledWith(
-        fakeUserId
+        userId
       );
       expect(FeedSymbolRepository.getFeedSymbolsByUserId).toBeCalledWith(
-        fakeUserId,
-        fakePage
+        userId,
+        page
       );
     });
   });
