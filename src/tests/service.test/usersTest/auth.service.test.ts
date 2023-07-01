@@ -1,11 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserDto } from '../../../entities/dto/user.dto';
-import authService from '../../../services/users/auth.service';
 import { User } from '../../../entities/users.entity';
 import { UserRepository } from '../../../repositories/user.repository';
-import * as util from '../../../utils/sendMail';
+import { SendMail } from '../../../utils/sendMail';
+import { AuthService } from '../../../services/users/auth.service';
+import Mail from 'nodemailer/lib/mailer';
 
+const authService = new AuthService();
 describe('signUp', () => {
   afterAll(() => {
     jest.resetAllMocks();
@@ -77,13 +79,19 @@ describe('signUp', () => {
     };
 
     const mockFindByEmail = jest.fn();
-    jest.spyOn(User, 'findByEmail').mockImplementation(mockFindByEmail);
+    jest
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockImplementation(mockFindByEmail);
 
     const mockFindByNickname = jest.fn();
-    jest.spyOn(User, 'findByNickname').mockImplementation(mockFindByNickname);
+    jest
+      .spyOn(UserRepository.prototype, 'findByNickname')
+      .mockImplementation(mockFindByNickname);
 
     const mockCreateUser = jest.fn();
-    jest.spyOn(UserRepository, 'createUser').mockImplementation(mockCreateUser);
+    jest
+      .spyOn(UserRepository.prototype, 'createUser')
+      .mockImplementation(mockCreateUser);
 
     await authService.signUp(userInfo);
 
@@ -108,7 +116,9 @@ describe('signIn', () => {
   });
 
   test('로그인 - 실패: 사용자 중 해당 이메일을 찾을 수 없을 때, 에러반환', async () => {
-    jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(null);
+    jest
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockResolvedValueOnce(null);
 
     await expect(authService.signIn(email, password)).rejects.toEqual({
       status: 404,
@@ -120,11 +130,15 @@ describe('signIn', () => {
     const deletedUser = new User();
     deletedUser.deleted_at = new Date();
 
-    jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(deletedUser);
+    jest
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockResolvedValueOnce(deletedUser);
   });
 
   test('로그인 - 실패: 비밀번호가 일치하지 않을 때, 에러반환', async () => {
-    jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(user);
+    jest
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockResolvedValueOnce(user);
 
     await expect(authService.signIn(email, 'wrong_password')).rejects.toEqual({
       status: 401,
@@ -133,7 +147,9 @@ describe('signIn', () => {
   });
 
   test('로그인 - 성공', async () => {
-    jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(user);
+    jest
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockResolvedValueOnce(user);
 
     jwt.sign = jest.fn().mockImplementation(() => fakeToken);
 
@@ -149,7 +165,7 @@ describe('resetPassword', () => {
   const email = 'creseeds@gmail.com';
   const resetPasswordUrl = 'http://localhost:3000/reset-password';
 
-  const findOneMock = jest.spyOn(UserRepository, 'findOneOrFail');
+  const findOneMock = jest.spyOn(UserRepository.prototype, 'findOneOrFail');
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -161,7 +177,7 @@ describe('resetPassword', () => {
 
   test('사용자를 찾을 수 없을 때, 에러반환', async () => {
     findOneMock.mockRejectedValueOnce(new Error('USER_IS_NOT_FOUND'));
-    jest.spyOn(UserRepository, 'findOneOrFail');
+    jest.spyOn(UserRepository.prototype, 'findOneOrFail');
 
     await expect(
       authService.resetPassword(email, resetPasswordUrl)
@@ -180,7 +196,9 @@ describe('resetPassword', () => {
 
     findOneMock.mockResolvedValue(user);
 
-    const sendMailSpy = jest.spyOn(util, 'sendMail').mockResolvedValue(null);
+    const sendMailSpy = jest
+      .spyOn(SendMail.prototype, 'execute')
+      .mockResolvedValue(null);
 
     jest.spyOn(jwt, 'sign').mockImplementation(() => 'testToken');
 
@@ -189,7 +207,7 @@ describe('resetPassword', () => {
     expect(findOneMock).toBeCalledTimes(1);
     expect(findOneMock).toBeCalledWith({ where: { email } });
 
-    const mailOptions = {
+    const mailOptions: Mail.Options = {
       from: process.env.EMAIL,
       to: email,
       subject: '비밀번호를 재설정해주세요 - review site',

@@ -1,7 +1,9 @@
 import { User } from '../../../entities/users.entity';
 import { ValidatorService } from '../../../services/users/validator.service';
+import { UserRepository } from '../../../repositories/user.repository';
 
 const validatorService: ValidatorService = new ValidatorService();
+
 describe('unit test - checkDuplicateNickname ', () => {
   afterEach(() => {
     jest.restoreAllMocks();
@@ -33,13 +35,15 @@ describe('unit test - checkDuplicateNickname ', () => {
   test('닉네임 중복확인 - 성공: 중복이 아닌 닉네임이 전달되었을 때', async () => {
     const nickname: string = 'newNickname';
 
-    jest.spyOn(User, 'findByNickname').mockResolvedValueOnce(null);
+    jest
+      .spyOn(UserRepository.prototype, 'findByNickname')
+      .mockResolvedValueOnce(null);
 
     const result = await validatorService.checkDuplicateNickname(nickname);
 
     expect(result).toEqual({ message: 'AVAILABLE_NICKNAME' });
-    expect(User.findByNickname).toBeCalledTimes(1);
-    expect(User.findByNickname).toBeCalledWith(nickname);
+    expect(UserRepository.prototype.findByNickname).toBeCalledTimes(1);
+    expect(UserRepository.prototype.findByNickname).toBeCalledWith(nickname);
   });
 
   test('전달된 닉네임이 중복일 때, 에러 반환', async () => {
@@ -48,7 +52,9 @@ describe('unit test - checkDuplicateNickname ', () => {
     const mockUser = new User();
     mockUser.nickname = 'nickname';
 
-    jest.spyOn(User, 'findByNickname').mockResolvedValueOnce(mockUser);
+    jest
+      .spyOn(UserRepository.prototype, 'findByNickname')
+      .mockResolvedValueOnce(mockUser);
 
     await expect(
       validatorService.checkDuplicateNickname(nickname)
@@ -86,13 +92,15 @@ describe('unit test - checkDuplicateEmail', () => {
   test('이메일 중복확인 - 성공: 이메일 중복이 아닐 때', async () => {
     const email: string = 'newEmail';
 
-    jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(null);
+    jest
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockResolvedValueOnce(null);
 
     const result = await validatorService.checkDuplicateEmail(email);
 
     expect(result).toEqual({ message: 'AVAILABLE_EMAIL' });
-    expect(User.findByEmail).toBeCalledTimes(1);
-    expect(User.findByEmail).toBeCalledWith(email);
+    expect(UserRepository.prototype.findByEmail).toBeCalledTimes(1);
+    expect(UserRepository.prototype.findByEmail).toBeCalledWith(email);
   });
 
   test('이메일 중복확인 - 실패: 이메일 중복일 때, 에러 반환', async () => {
@@ -101,7 +109,9 @@ describe('unit test - checkDuplicateEmail', () => {
     const mockUser = new User();
     mockUser.email = 'email';
 
-    jest.spyOn(User, 'findByEmail').mockResolvedValueOnce(mockUser);
+    jest
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockResolvedValueOnce(mockUser);
 
     await expect(
       validatorService.checkDuplicateEmail(email)

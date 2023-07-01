@@ -1,14 +1,19 @@
-import { User } from '../../entities/users.entity';
+import { UserRepository } from '../../repositories/user.repository';
 
 export class ValidatorService {
-  async checkDuplicateNickname(nickname: string): Promise<object> {
+  private userRepository: UserRepository;
+
+  constructor() {
+    this.userRepository = new UserRepository();
+  }
+  checkDuplicateNickname = async (nickname: string): Promise<object> => {
     if (!nickname) {
       const error = new Error(`NICKNAME_IS_UNDEFINED`);
       error.status = 400;
       throw error;
     }
     // const checkData = await userRepository.findOneBy({ nickname: nickname });
-    const checkData = await User.findByNickname(nickname);
+    const checkData = await this.userRepository.findByNickname(nickname);
 
     if (!checkData) {
       return { message: 'AVAILABLE_NICKNAME' };
@@ -21,15 +26,15 @@ export class ValidatorService {
       err.status = 409;
       throw err;
     }
-  }
+  };
 
-  async checkDuplicateEmail(email: string): Promise<object> {
+  checkDuplicateEmail = async (email: string): Promise<object> => {
     if (!email) {
       const error = new Error(`EMAIL_IS_UNDEFINED`);
       error.status = 400;
       throw error;
     }
-    const checkData = await User.findByEmail(email);
+    const checkData = await this.userRepository.findByEmail(email);
 
     if (!checkData) {
       return { message: 'AVAILABLE_EMAIL' };
@@ -40,5 +45,5 @@ export class ValidatorService {
       err.status = 409;
       throw err;
     }
-  }
+  };
 }
