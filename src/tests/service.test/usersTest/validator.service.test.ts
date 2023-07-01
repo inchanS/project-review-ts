@@ -1,7 +1,8 @@
-import validatorService from '../../../services/users/validator.service';
 import { User } from '../../../entities/users.entity';
+import { ValidatorService } from '../../../services/users/validator.service';
 
-describe('checkDuplicateNickname', () => {
+const validatorService: ValidatorService = new ValidatorService();
+describe('unit test - checkDuplicateNickname ', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -58,7 +59,7 @@ describe('checkDuplicateNickname', () => {
   });
 });
 
-describe('checkDuplicateEmail', () => {
+describe('unit test - checkDuplicateEmail', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });

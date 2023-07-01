@@ -1,26 +1,26 @@
 import { Request, Response } from 'express';
 import { UserDto } from '../../entities/dto/user.dto';
-import validatorService from '../../services/users/validator.service';
+import { ValidatorService } from '../../services/users/validator.service';
 
-const checkDuplicateNickname = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { nickname }: UserDto = req.query;
-  const result = await validatorService.checkDuplicateNickname(nickname);
-  res.status(200).json(result /**/);
-};
+class ValidatorController {
+  private validatorService: ValidatorService;
 
-const checkDuplicateEmail = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { email }: UserDto = req.query;
-  const result = await validatorService.checkDuplicateEmail(email);
-  res.status(200).json(result);
-};
+  constructor() {
+    this.validatorService = new ValidatorService();
+  }
+  async checkDuplicateNickname(req: Request, res: Response): Promise<void> {
+    const { nickname }: UserDto = req.query;
 
-export default {
-  checkDuplicateNickname,
-  checkDuplicateEmail,
-};
+    const result = await this.validatorService.checkDuplicateNickname(nickname);
+    res.status(200).json(result /**/);
+  }
+
+  async checkDuplicateEmail(req: Request, res: Response): Promise<void> {
+    const { email }: UserDto = req.query;
+
+    const result = await this.validatorService.checkDuplicateEmail(email);
+    res.status(200).json(result);
+  }
+}
+
+export default new ValidatorController();
