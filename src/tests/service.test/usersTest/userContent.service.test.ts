@@ -1,15 +1,16 @@
 import { UserRepository } from '../../../repositories/user.repository';
 import { User } from '../../../entities/users.entity';
-import userContentService from '../../../services/users/userContent.service';
 import { FeedSymbolRepository } from '../../../repositories/feedSymbol.repository';
-import { Feed } from '../../../entities/feed.entity';
 import {
   FeedListRepository,
   FeedRepository,
 } from '../../../repositories/feed.repository';
 import { Comment } from '../../../entities/comment.entity';
 import { CommentRepository } from '../../../repositories/comment.repository';
+import { UserContentService } from '../../../services/users/userContent.service';
+import { FeedList } from '../../../entities/viewEntities/viewFeedList.entity';
 
+const userContentService = new UserContentService();
 describe('findUserInfoById', () => {
   const userId: number = 1;
   const user = new User();
@@ -20,7 +21,7 @@ describe('findUserInfoById', () => {
   });
 
   test('사용자 정보 조회 - 실패: 사용자를 찾을 수 없을 때, 에러반환', async () => {
-    jest.spyOn(UserRepository, 'findOne').mockResolvedValueOnce(null);
+    jest.spyOn(UserRepository.prototype, 'findOne').mockResolvedValueOnce(null);
 
     await expect(
       userContentService.findUserInfoByUserId(userId)
@@ -31,13 +32,15 @@ describe('findUserInfoById', () => {
   });
 
   test('사용자 정보 조회 - 성공', async () => {
-    jest.spyOn(UserRepository, 'findOne').mockResolvedValue(user);
+    jest.spyOn(UserRepository.prototype, 'findOne').mockResolvedValue(user);
 
     const result = await userContentService.findUserInfoByUserId(userId);
 
     // 함수 과정 확인
-    expect(UserRepository.findOne).toBeCalledTimes(1);
-    expect(UserRepository.findOne).toBeCalledWith({ where: { id: userId } });
+    expect(UserRepository.prototype.findOne).toBeCalledTimes(1);
+    expect(UserRepository.prototype.findOne).toBeCalledWith({
+      where: { id: userId },
+    });
 
     // 함수 결과물 형식 확인 - User 객체로 반환되어야 한다.
     expect(result instanceof User).toBe(true);
@@ -56,16 +59,16 @@ describe('findUserFeedsByUserId', () => {
 
   // 사용자의 피드는 3개라고 가정한다.
   const userFeedCount: number = 3;
-  const userFeedList: Feed[] = Array(userFeedCount)
+  const userFeedList: FeedList[] = Array(userFeedCount)
     .fill(null)
     .map((_, index) => {
-      const userFeed = new Feed();
+      const userFeed = new FeedList();
       userFeed.id = index + 1;
-      userFeed.user = user;
+      userFeed.userId = user.id;
       userFeed.title = 'title';
       userFeed.content = 'content';
-      userFeed.created_at = new Date();
-      userFeed.updated_at = new Date();
+      userFeed.createdAt = new Date();
+      userFeed.updatedAt = new Date();
 
       return userFeed;
     });
@@ -74,11 +77,11 @@ describe('findUserFeedsByUserId', () => {
     jest.restoreAllMocks();
 
     jest
-      .spyOn(FeedRepository, 'getFeedCountByUserId')
+      .spyOn(FeedRepository.prototype, 'getFeedCountByUserId')
       .mockResolvedValue(userFeedCount);
 
     jest
-      .spyOn(FeedListRepository, 'getFeedListByUserId')
+      .spyOn(FeedListRepository.prototype, 'getFeedListByUserId')
       .mockResolvedValue(userFeedList);
   });
 
@@ -102,11 +105,9 @@ describe('findUserFeedsByUserId', () => {
         userContentService.findUserFeedsByUserId(userId, page)
       ).toBeDefined();
 
-      expect(FeedListRepository.getFeedListByUserId).toHaveBeenCalledWith(
-        userId,
-        undefined,
-        undefined
-      );
+      expect(
+        FeedListRepository.prototype.getFeedListByUserId
+      ).toHaveBeenCalledWith(userId, undefined, undefined);
     }
   );
 
@@ -156,10 +157,12 @@ describe('findUserFeedsByUserId', () => {
     const result = await userContentService.findUserFeedsByUserId(userId, page);
 
     // 함수 과정 확인
-    expect(FeedRepository.getFeedCountByUserId).toBeCalledTimes(1);
-    expect(FeedRepository.getFeedCountByUserId).toBeCalledWith(userId);
-    expect(FeedListRepository.getFeedListByUserId).toBeCalledTimes(1);
-    expect(FeedListRepository.getFeedListByUserId).toBeCalledWith(
+    expect(FeedRepository.prototype.getFeedCountByUserId).toBeCalledTimes(1);
+    expect(FeedRepository.prototype.getFeedCountByUserId).toBeCalledWith(
+      userId
+    );
+    expect(FeedListRepository.prototype.getFeedListByUserId).toBeCalledTimes(1);
+    expect(FeedListRepository.prototype.getFeedListByUserId).toBeCalledWith(
       userId,
       page,
       undefined
@@ -199,11 +202,11 @@ describe('findUserCommentsByUserId', () => {
     jest.restoreAllMocks();
 
     jest
-      .spyOn(CommentRepository, 'getCommentCountByUserId')
+      .spyOn(CommentRepository.prototype, 'getCommentCountByUserId')
       .mockResolvedValue(userCommentCount);
 
     jest
-      .spyOn(CommentRepository, 'getCommentListByUserId')
+      .spyOn(CommentRepository.prototype, 'getCommentListByUserId')
       .mockResolvedValue(userCommentList);
   });
 
@@ -227,10 +230,9 @@ describe('findUserCommentsByUserId', () => {
         userContentService.findUserCommentsByUserId(userId, undefined, page)
       ).toBeDefined();
 
-      expect(CommentRepository.getCommentListByUserId).toHaveBeenCalledWith(
-        userId,
-        undefined
-      );
+      expect(
+        CommentRepository.prototype.getCommentListByUserId
+      ).toHaveBeenCalledWith(userId, undefined);
     }
   );
 
@@ -351,7 +353,7 @@ describe('findUserCommentsByUserId', () => {
       feed: { user: { id: otherUserid } },
     };
 
-    CommentRepository.getCommentListByUserId = jest
+    CommentRepository.prototype.getCommentListByUserId = jest
       .fn()
       .mockResolvedValue([
         comment1,
@@ -405,7 +407,7 @@ describe('findUserCommentsByUserId', () => {
     comment.updated_at = dateToString;
     comment.deleted_at = null;
 
-    CommentRepository.getCommentListByUserId = jest
+    CommentRepository.prototype.getCommentListByUserId = jest
       .fn()
       .mockResolvedValue([comment]);
 
@@ -430,11 +432,11 @@ describe('findUserFeedSymbolsByUserId', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
 
-    FeedSymbolRepository.getFeedSymbolCountByUserId = jest
+    FeedSymbolRepository.prototype.getFeedSymbolCountByUserId = jest
       .fn()
       .mockResolvedValue(feedSymbolCnt);
 
-    FeedSymbolRepository.getFeedSymbolsByUserId = jest
+    FeedSymbolRepository.prototype.getFeedSymbolsByUserId = jest
       .fn()
       .mockResolvedValue(feedSymbols);
   });
@@ -512,12 +514,11 @@ describe('findUserFeedSymbolsByUserId', () => {
     expect(result.totalPage).toBe(1);
     expect(result.symbolListByUserId).toEqual(feedSymbols);
 
-    expect(FeedSymbolRepository.getFeedSymbolCountByUserId).toBeCalledWith(
-      userId
-    );
-    expect(FeedSymbolRepository.getFeedSymbolsByUserId).toBeCalledWith(
-      userId,
-      page
-    );
+    expect(
+      FeedSymbolRepository.prototype.getFeedSymbolCountByUserId
+    ).toBeCalledWith(userId);
+    expect(
+      FeedSymbolRepository.prototype.getFeedSymbolsByUserId
+    ).toBeCalledWith(userId, page);
   });
 });

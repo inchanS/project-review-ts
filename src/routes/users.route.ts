@@ -4,7 +4,7 @@ import {
   authValidateOrNext,
   authValidateOrReject,
 } from '../middleware/jwt.strategy';
-import userContentController from '../controllers/users/userContent.controller';
+import UserContentController from '../controllers/users/userContent.controller';
 import usersController from '../controllers/users/users.controller';
 import AuthController from '../controllers/users/auth.controller';
 import ValidatorController from '../controllers/users/validator.controller';
@@ -31,25 +31,25 @@ router.get('/checkemail', asyncWrap(ValidatorController.checkDuplicateEmail));
 router.get(
   '/userinfo/:id?/feeds',
   asyncWrap(authValidateOrNext),
-  asyncWrap(userContentController.getUserFeeds)
+  asyncWrap(UserContentController.getUserFeeds)
 );
 // 유저의 모든 덧글 가져오기
 router.get(
   '/userinfo/:id?/comments',
   asyncWrap(authValidateOrNext),
-  asyncWrap(userContentController.getUserComments)
+  asyncWrap(UserContentController.getUserComments)
 );
 // 유저의 모든 좋아요 가져오기
 router.get(
   '/userinfo/:id?/symbols',
   asyncWrap(authValidateOrNext),
-  asyncWrap(userContentController.getUserFeedSymbols)
+  asyncWrap(UserContentController.getUserFeedSymbols)
 );
 // 유저 가입정보 확인하기
 router.get(
   '/userinfo/:id?',
   asyncWrap(authValidateOrNext),
-  asyncWrap(userContentController.getUserInfo) // authValidateOrNext
+  asyncWrap(UserContentController.getUserInfo) // authValidateOrNext
 );
 
 // 유저 정보 수정하기

@@ -45,4 +45,8 @@ export class UserRepository {
   async findOneOrFail(options: FindOneOptions): Promise<User> {
     return this.repository.findOneOrFail(options);
   }
+
+  async findOne(options: FindOneOptions): Promise<User> {
+    return this.repository.findOne(options);
+  }
 }

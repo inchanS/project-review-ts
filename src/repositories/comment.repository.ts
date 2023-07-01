@@ -2,10 +2,18 @@ import dataSource from './data-source';
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { Pagination } from './feed.repository';
+import { Repository } from 'typeorm';
 
-export const CommentRepository = dataSource.getRepository(Comment).extend({
+export class CommentRepository {
+  private repository: Repository<Comment>;
+
+  constructor() {
+    this.repository = dataSource.getRepository(Comment);
+  }
+
   async getCommentList(id: number) {
-    return await this.createQueryBuilder('comment')
+    return await this.repository
+      .createQueryBuilder('comment')
       .withDeleted()
       .addSelect(['user.id', 'user.nickname', 'user.email'])
       .addSelect(['feed.id', 'feed.title', 'feedUser'])
@@ -32,22 +40,22 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
       .addOrderBy('children.id', 'ASC')
       .setParameter('id', id)
       .getMany();
-  },
+  }
 
-  async createComment(commentInfo: CommentDto) {
-    const newComment = await this.create(commentInfo);
-    await this.save(newComment);
-  },
+  async createComment(commentInfo: Comment) {
+    const newComment = await this.repository.create(commentInfo);
+    await this.repository.save(newComment);
+  }
 
   async updateComment(commentId: number, commentInfo: CommentDto) {
     await dataSource.manager.update(Comment, commentId, {
       comment: commentInfo.comment,
       is_private: commentInfo.is_private,
     });
-  },
+  }
 
   async getCommentCountByUserId(userId: number) {
-    return await this.count({
+    return await this.repository.count({
       where: { user: { id: userId } },
       withDeleted: true,
     });
@@ -57,7 +65,7 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     //   .where('comment.user = :userId', { userId: userId })
     //   .withDeleted()
     //   .getRawOne();
-  },
+  }
 
   async getCommentListByUserId(userId: number, page: Pagination) {
     let pageCondition: {
@@ -82,7 +90,8 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     // });
 
     // version 2 (로그인한 사용자와의 관계로 비공개 덧글 내용을 조회하기 위한 로직 : 관계 테이블의 세부 정보를 조회하기 위해 queryBuilder를 이용한 join 사용)
-    return await this.createQueryBuilder('comment')
+    return await this.repository
+      .createQueryBuilder('comment')
       .withDeleted()
       .addSelect('user.id')
       .addSelect(['feed.id', 'feedUser.id'])
@@ -124,5 +133,5 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     //   .skip(pageCondition.skip)
     //   .take(pageCondition.take)
     //   .getRawMany();
-  },
-});
+  }
+}
