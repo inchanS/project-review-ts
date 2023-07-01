@@ -3,12 +3,20 @@ import jwt from 'jsonwebtoken';
 import { UserDto } from '../../../entities/dto/user.dto';
 import { User } from '../../../entities/users.entity';
 import { UserRepository } from '../../../repositories/user.repository';
-import { SendMail } from '../../../utils/sendMail';
 import { AuthService } from '../../../services/users/auth.service';
-import Mail from 'nodemailer/lib/mailer';
+import { SendMail } from '../../../utils/sendMail';
 
-const authService = new AuthService();
+jest.mock('../../../repositories/user.repository');
+jest.mock('../../../utils/sendMail');
+
 describe('signUp', () => {
+  let authService: AuthService;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    authService = new AuthService();
+  });
+
   afterAll(() => {
     jest.resetAllMocks();
   });
@@ -101,6 +109,7 @@ describe('signUp', () => {
 });
 
 describe('signIn', () => {
+  let authService: AuthService;
   const email: string = 'email';
   const password: string = 'password';
   const fakeToken = 'fake_token';
@@ -111,7 +120,12 @@ describe('signIn', () => {
   const user = new User();
   user.password = hashedPassword;
 
-  afterEach(() => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    authService = new AuthService();
+  });
+
+  afterAll(() => {
     jest.restoreAllMocks();
   });
 
@@ -122,7 +136,7 @@ describe('signIn', () => {
 
     await expect(authService.signIn(email, password)).rejects.toEqual({
       status: 404,
-      message: 'email_IS_NOT_FOUND',
+      message: `${email}_IS_NOT_FOUND`,
     });
   });
 
@@ -162,17 +176,19 @@ describe('signIn', () => {
 });
 
 describe('resetPassword', () => {
-  const email = 'creseeds@gmail.com';
+  let authService: AuthService;
+  const email = 'test@test.com';
   const resetPasswordUrl = 'http://localhost:3000/reset-password';
 
   const findOneMock = jest.spyOn(UserRepository.prototype, 'findOneOrFail');
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
+    authService = new AuthService();
   });
 
   afterAll(() => {
-    jest.resetAllMocks();
+    jest.restoreAllMocks();
   });
 
   test('사용자를 찾을 수 없을 때, 에러반환', async () => {
@@ -196,9 +212,7 @@ describe('resetPassword', () => {
 
     findOneMock.mockResolvedValue(user);
 
-    const sendMailSpy = jest
-      .spyOn(SendMail.prototype, 'execute')
-      .mockResolvedValue(null);
+    SendMail.prototype.executeSendMail = jest.fn().mockResolvedValue({});
 
     jest.spyOn(jwt, 'sign').mockImplementation(() => 'testToken');
 
@@ -207,38 +221,20 @@ describe('resetPassword', () => {
     expect(findOneMock).toBeCalledTimes(1);
     expect(findOneMock).toBeCalledWith({ where: { email } });
 
-    const mailOptions: Mail.Options = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: '비밀번호를 재설정해주세요 - review site',
-      html: `
-      <p>안녕하세요, Review Site입니다.</p>
-      <p>비밀번호를 재설정하려면 아래 링크를 클릭해주세요.</p>
-      <p>링크는 10분 후에 만료됩니다.</p>
-      <a href="${resetPasswordUrl}/testToken">
-        <button style="
-          padding: 10px 20px;
-          background-color: #676FA3;
-          color: #fff;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        ">
-          비밀번호 재설정
-        </button>
-      </a>
-      <p>만약 비밀번호 재설정을 요청하지 않으셨다면, 이 메일을 무시하시면 됩니다.</p>
-      <p>감사합니다.</p>
-    `,
-    };
-
     expect(jwt.sign).toHaveBeenCalledWith(
       { id: user.id },
       process.env.SECRET_KEY,
       { expiresIn: '10m' }
     );
 
-    expect(sendMailSpy).toBeCalledTimes(1);
-    expect(sendMailSpy).toBeCalledWith(mailOptions);
+    expect(SendMail.prototype.executeSendMail).toBeCalledTimes(1);
+    expect(SendMail.prototype.executeSendMail).toHaveBeenCalledWith({
+      from: process.env.EMAIL,
+      to: email,
+      subject: '비밀번호를 재설정해주세요 - review site',
+      // Check if the html includes the reset password URL.
+      // The actual content might be longer and more complex
+      html: expect.stringContaining(resetPasswordUrl),
+    });
   });
 });

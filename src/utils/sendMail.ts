@@ -19,7 +19,7 @@ export class SendMail {
     this.transporter = nodemailer.createTransport(options);
   }
 
-  execute = async (mailOption: Mail.Options) => {
+  executeSendMail = async (mailOption: Mail.Options) => {
     try {
       return await this.transporter.sendMail(mailOption);
     } catch (error) {

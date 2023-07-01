@@ -119,7 +119,7 @@ export class AuthService {
       `,
     };
 
-    await sendMail.execute(mailOption);
+    await sendMail.executeSendMail(mailOption);
 
     // await sendMail(mailOptions);
     // 위와 같이 작성시 가독성과 코드의 간결함은 좋지만 클라이언트의 응답시간이 비동기 동작의 block으로 인해 길어짐
