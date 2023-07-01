@@ -1,4 +1,5 @@
 import { UserRepository } from '../../repositories/user.repository';
+import { CustomError } from '../../utils/util';
 
 export class ValidatorService {
   private userRepository: UserRepository;
@@ -20,19 +21,16 @@ export class ValidatorService {
     }
 
     if (checkData.nickname === nickname) {
-      const err = new Error(
+      throw new CustomError(
+        409,
         `${checkData.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`
       );
-      err.status = 409;
-      throw err;
     }
   };
 
   checkDuplicateEmail = async (email: string): Promise<object> => {
     if (!email) {
-      const error = new Error(`EMAIL_IS_UNDEFINED`);
-      error.status = 400;
-      throw error;
+      throw new CustomError(400, 'EMAIL_IS_UNDEFINED');
     }
     const checkData = await this.userRepository.findByEmail(email);
 
