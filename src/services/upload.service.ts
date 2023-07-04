@@ -31,7 +31,7 @@ export class UploadService {
     }
   };
 
-  isImageFile = (filename: string): boolean => {
+  isImageFileToBoolean = (filename: string): boolean => {
     const imageFilter = filename.match(/\.(jpg|jpeg|png|gif)$/);
     return Boolean(imageFilter);
   };
@@ -61,7 +61,7 @@ export class UploadService {
       const fileExtension = file.originalname.split('.').pop();
 
       // 이미지 파일인지 확인
-      const imageFilter = this.isImageFile(file.originalname);
+      const imageFilter = this.isImageFileToBoolean(file.originalname);
 
       let fileBuffer;
       let isImage;
