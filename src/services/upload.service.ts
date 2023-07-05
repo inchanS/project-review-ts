@@ -36,6 +36,22 @@ export class UploadService {
     return Boolean(imageFilter);
   };
 
+  convertToStringFileSize = (size: number) => {
+    let fileSize: string;
+
+    if (size < 1024 * 1024) {
+      // 파일 크기가 1MB 미만인 경우 KB 단위로 출력
+      const fileSizeInKB = size / 1024;
+      fileSize = `${fileSizeInKB.toFixed(2)}KB`;
+    } else {
+      // 파일 크기가 1MB 이상인 경우 MB 단위로 출력
+      const fileSizeInMB = size / (1024 * 1024);
+      fileSize = `${fileSizeInMB.toFixed(2)}MB`;
+    }
+
+    return fileSize;
+  };
+
   // 파일 업로드
   uploadFiles = async (
     userId: number,
@@ -90,7 +106,7 @@ export class UploadService {
         ContentType: file.mimetype,
       };
 
-      const command = new PutObjectCommand(params);
+      const command: PutObjectCommand = new PutObjectCommand(params);
 
       try {
         await s3.send(command);
@@ -100,22 +116,13 @@ export class UploadService {
         }
       }
 
-      let fileSize: string;
-      if (file.size < 1024 * 1024) {
-        // 파일 크기가 1MB 미만인 경우 KB 단위로 출력
-        const fileSizeInKB = file.size / 1024;
-        fileSize = `${fileSizeInKB.toFixed(2)}KB`;
-      } else {
-        // 파일 크기가 1MB 이상인 경우 MB 단위로 출력
-        const fileSizeInMB = file.size / (1024 * 1024);
-        fileSize = `${fileSizeInMB.toFixed(2)}MB`;
-      }
+      const fileSizeString: string = this.convertToStringFileSize(file.size);
 
       const newUploadFile = await this.uploadFilesRepository.create({
         file_link: file_link,
         is_img: isImage,
         file_name: file.originalname,
-        file_size: fileSize,
+        file_size: fileSizeString,
       });
       await this.uploadFilesRepository.save(newUploadFile);
     }
