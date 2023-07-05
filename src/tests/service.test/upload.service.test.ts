@@ -301,3 +301,64 @@ describe('unit test - uploadFiles', () => {
     });
   });
 });
+
+describe('unit test - deleteFiles', () => {
+  let uploadService: UploadService;
+
+  const userId = 1;
+  const mockUser: User = new User();
+  mockUser.id = userId;
+
+  const files: string[] = [
+    'https://test.s3.ap-northeast-2.amazonaws.com/1/1234567890randomBytes.png',
+    'https://test.s3.ap-northeast-2.amazonaws.com/1/1234567890randomBytes.jpg',
+  ];
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    uploadService = new UploadService();
+
+    jest.mock('typeorm', () => {
+      return {
+        getRepository: jest.fn().mockImplementation(() => ({
+          create: jest.fn(),
+          save: jest.fn(),
+        })),
+      };
+    });
+
+    jest
+      .spyOn(UserRepository.prototype, 'findOneOrFail')
+      .mockResolvedValue(mockUser);
+
+    jest.mock('@aws-sdk/client-s3', () => {
+      return {
+        S3Client: jest.fn().mockImplementation(() => {
+          return {
+            send: jest.fn().mockResolvedValue({}),
+          };
+        }),
+        DeleteObjectsCommand: jest.fn().mockImplementation(params => params),
+      };
+    });
+
+    jest
+      .spyOn(dataSource.getRepository(UploadFiles), 'softDelete')
+      .mockImplementation();
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('deleteFiles - 실패: 로그인 사용자를 찾을 수 없을 때', async () => {
+    jest
+      .spyOn(UserRepository.prototype, 'findOneOrFail')
+      .mockRejectedValueOnce(new Error('User not found'));
+
+    await expect(
+      uploadService.deleteUploadFile(userId, files)
+    ).rejects.toMatchObject({ status: 400, message: 'INVALID_USER' });
+  });
+});
