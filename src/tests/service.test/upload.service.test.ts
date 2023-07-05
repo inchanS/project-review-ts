@@ -114,6 +114,20 @@ describe('unit test - uploadFiles', () => {
     }
   );
 
+  test.each([
+    { size: 5000, expected: '4.88KB' },
+    { size: 7000, expected: '6.84KB' },
+    { size: 4000000, expected: '3.81MB' },
+    { size: 20000000, expected: '19.07MB' },
+  ])(
+    'uploadFiles - convertToStringFileSize 함수 테스트',
+    async (item: { size: number; expected: string }) => {
+      const result = uploadService.convertToStringFileSize(item.size);
+
+      expect(result).toBe(item.expected);
+    }
+  );
+
   test('uploadFiles - 실패: userId가 찾을 수 없는 사용자일 때', async () => {
     jest
       .spyOn(UserRepository.prototype, 'findOneOrFail')
@@ -213,7 +227,9 @@ describe('unit test - uploadFiles', () => {
 
   test('uploadFiles - 성공: S3로 업로드 중, 파라미터 전달 확인', async () => {
     const mockPutObjectCommandInstance = { testValue: 'this is a mock' };
-    const PutObjectCommandMock = jest.fn(() => mockPutObjectCommandInstance);
+    const PutObjectCommandMock: any = jest.fn(
+      () => mockPutObjectCommandInstance
+    );
 
     (PutObjectCommand as any) = PutObjectCommandMock;
 
@@ -235,6 +251,41 @@ describe('unit test - uploadFiles', () => {
     await expect(uploadService.uploadFiles(userId, files)).rejects.toThrow(
       `UPLOAD_FILE_FAIL: Error: S3 Error`
     );
+  });
+
+  test('uploadFiles - 성공: mySQL DB로 올바른 데이터가 전달되는지 확인', async () => {
+    const mockUploadFilesRepository = jest.spyOn(
+      dataSource.getRepository(UploadFiles),
+      'create'
+    );
+
+    await uploadService.uploadFiles(userId, files);
+
+    expect(mockUploadFilesRepository).toBeCalledTimes(2);
+
+    files.forEach((file, index) => {
+      const expectedFileLink = `https://${process.env.AWS_S3_BUCKET}.s3.${
+        process.env.AWS_REGION
+      }.amazonaws.com/${userId}/${mockFilename}.${files[index].filename
+        .split('.')
+        .pop()}`;
+
+      const expectedIsImage = [true, true];
+      const expectedFileName = files[index].filename;
+      const expectedFileSize = ['4.88KB', '6.84KB'];
+
+      const expectedParams = {
+        file_link: expectedFileLink,
+        is_img: expectedIsImage[index],
+        file_name: expectedFileName,
+        file_size: expectedFileSize[index],
+      };
+
+      expect(mockUploadFilesRepository).toHaveBeenNthCalledWith(
+        index + 1,
+        expectedParams
+      );
+    });
   });
 
   test('uploadFiles - 성공: S3로 업로드할 때 fileLink의 주소가 제대로 변환되어 변환되는지 확인', async () => {
