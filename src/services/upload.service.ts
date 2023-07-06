@@ -19,8 +19,23 @@ export class UploadService {
   }
 
   // module 'sharp'은 모킹하기가 너무 까다롭고 문제가 생기며 코드가 지저분해진다.
-  // 때문에 함수를 분리하고 간단하게 이 함수를 테스트하고 모킹한다.
-  resizeImage = async (buffer: Buffer) => {
+  // 때문에 함수를 분리하고 간단하게 이 함수들을 테스트하고 모킹한다.
+
+  // 사용자 유효성 검사 (로그인 유저의 경우, 현재 시점에서의 유효성을 검사한다.)
+  private async validatorUserId(userId: number) {
+    return await this.userRepository
+      .findOneOrFail({
+        where: { id: userId },
+      })
+      .catch(() => {
+        throw {
+          status: 400,
+          message: 'INVALID_USER',
+        };
+      });
+  }
+
+  private async resizeImage(buffer: Buffer) {
     const image = sharp(buffer);
     const metadata = await image.metadata();
 
@@ -29,14 +44,14 @@ export class UploadService {
     } else {
       return await image.resize({ width: 1920, fit: 'inside' }).toBuffer();
     }
-  };
+  }
 
-  isImageFileToBoolean = (filename: string): boolean => {
+  private isImageFileToBoolean(filename: string): boolean {
     const imageFilter = filename.match(/\.(jpg|jpeg|png|gif)$/);
     return Boolean(imageFilter);
-  };
+  }
 
-  convertToStringFileSize = (size: number) => {
+  private convertToStringFileSize(size: number) {
     let fileSize: string;
 
     if (size < 1024 * 1024) {
@@ -50,21 +65,34 @@ export class UploadService {
     }
 
     return fileSize;
-  };
+  }
 
+  // AWS S3에서 개체 업로드 및 삭제 명령 전달 함수
+  private async commandToS3(command: DeleteObjectsCommand | PutObjectCommand) {
+    try {
+      // 유니온 타입으로 인한 타입 가드 처리 (이게 되려 코드가 지저분해보이기도 한 느낌)
+      if (command instanceof DeleteObjectsCommand) {
+        await s3.send(command as DeleteObjectsCommand);
+      } else if (command instanceof PutObjectCommand) {
+        await s3.send(command as PutObjectCommand);
+      } else {
+        throw new Error(`Invalid command type`);
+      }
+    } catch (err) {
+      if (err) {
+        throw new Error(`AWS_SEND_COMMAND_FILE_FAIL: ${err}`);
+      }
+    }
+  }
+
+  // this를 바인딩하기 위해 arrow function으로 작성
   // 파일 업로드
-  uploadFiles = async (
+  public uploadFiles = async (
     userId: number,
     files: Express.Multer.File[]
   ): Promise<object> => {
     // 사용자 유효성 검사
-    await this.userRepository
-      .findOneOrFail({
-        where: { id: userId },
-      })
-      .catch(() => {
-        throw { status: 400, message: 'INVALID_USER' };
-      });
+    await this.validatorUserId(userId);
 
     // aws S3는 동일한 이름의 파일을 업로드하면 덮어쓰기를 한다. 이에 대한 대비책으로 파일 이름을 랜덤하게 생성한다.
     let files_link: string[] = [];
@@ -108,13 +136,7 @@ export class UploadService {
 
       const command: PutObjectCommand = new PutObjectCommand(params);
 
-      try {
-        await s3.send(command);
-      } catch (err) {
-        if (err) {
-          throw new Error(`UPLOAD_FILE_FAIL: ${err}`);
-        }
-      }
+      this.commandToS3(command);
 
       const fileSizeString: string = this.convertToStringFileSize(file.size);
 
@@ -132,7 +154,7 @@ export class UploadService {
   // uploadFiles 업로드된 파일을 삭제하는 함수 ---------------------------------------------------
 
   // mySQL에서 file_link를 통해 uploadFile의 ID를 찾는 함수
-  private findFile = async (file_link: string) => {
+  private async findFileLink(file_link: string) {
     try {
       return await this.uploadFilesRepository.findOneOrFail({
         where: { file_link: file_link },
@@ -140,7 +162,7 @@ export class UploadService {
     } catch (err) {
       throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
     }
-  };
+  }
 
   // AWS S3에서 파일의 유무를 확인하는 함수
   // const checkFileAccess = async (param: any) => {
@@ -156,18 +178,8 @@ export class UploadService {
   //   }
   // };
 
-  // 파일 삭제 함수
-  deleteUploadFile = async (
-    userId: number,
-    file_links: string[]
-  ): Promise<void> => {
-    await this.userRepository
-      .findOneOrFail({
-        where: { id: userId },
-      })
-      .catch(() => {
-        throw { status: 400, message: 'INVALID_USER' };
-      });
+  private async checkDeleteFiles(newFileLinks: string[], userId: number) {
+    let param: Params;
 
     // AWS S3 Key값을 담을 배열
     let keyArray: { Key: string }[] = [];
@@ -175,63 +187,78 @@ export class UploadService {
     // mySQL에서 file_link를 통해 uploadFile의 ID를 담을 배열
     let uploadFileIdArray: number[] = [];
 
+    const findAndCheckPromises = newFileLinks.map(async file_link => {
+      // 지울 파일의 링크가 DB에 있는지 찾는다. 없으면 에러를 반환한다.
+      const findFileResult = await this.findFileLink(file_link);
+
+      // 찾은 파일의 사용자를 확인한다.
+      const file_userId = Number(findFileResult.file_link.split('/')[3]);
+
+      // 파일의 사용자와 요청한 사용자가 같은지 확인한다.
+      if (file_userId !== userId) {
+        throw { status: 403, message: 'DELETE_UPLOADED_FILE_IS_NOT_YOURS' };
+      }
+
+      // 파일이 AWS S3에 있는지 확인한다.
+      // 230706 현재 방법은 2가지 서버에서 S3에 있는 파일들을 확인하는 방법(checkFileAccess)과 lambda를 통해 확인하는 방법(invokeLambda)이 있다.
+      // S3 명령을 위한 param 생성
+      param = {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: findFileResult.file_link.split('.com/')[1],
+      };
+
+      keyArray.push({ Key: param.Key });
+      uploadFileIdArray.push(findFileResult.id);
+
+      // FIXME 여기가 지울 파일이 많아지면 병목현상?인지 여튼 오래걸리면서 transaction이 잠기는 현상이 발생한다.
+      // await checkFileAccess(param);
+      // FIXME lambda - AWS 계정 바꿔야 함
+      await invokeLambda(param);
+    });
+    await Promise.all(findAndCheckPromises);
+
+    return { keyArray, uploadFileIdArray };
+  }
+
+  // 파일 삭제 함수
+  public deleteUploadFile = async (
+    userId: number,
+    file_links: string[]
+  ): Promise<void> => {
+    // 사용자 유효성 검사
+    await this.validatorUserId(userId);
+
     // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
     const newFileLinks = file_links.filter(
       (file_link: string) => file_link !== 'DELETE_FROM_UPLOAD_FILES_TABLE'
     );
 
-    const deleteFiles = async (newFileLinks: string[], userId: number) => {
-      const findAndCheckPromises = newFileLinks.map(async file_link => {
-        const findFileResult = await this.findFile(file_link);
-        const file_userId = Number(findFileResult.file_link.split('/')[3]);
-
-        if (file_userId !== userId) {
-          throw { status: 403, message: 'DELETE_UPLOADED_FILE_IS_NOT_YOURS' };
-        }
-
-        const param: Params = {
-          Bucket: process.env.AWS_S3_BUCKET,
-          Key: findFileResult.file_link.split('.com/')[1],
-        };
-
-        keyArray.push({ Key: param.Key });
-        uploadFileIdArray.push(findFileResult.id);
-
-        // FIXME 여기가 지울 파일이 많아지면 병목현상?인지 여튼 오래걸리면서 transaction이 잠기는 현상이 발생한다.
-        // await checkFileAccess(param);
-        // FIXME lambda - AWS 계정 바꿔야 함
-        await invokeLambda(param);
-      });
-      await Promise.all(findAndCheckPromises);
-    };
-
-    // 이 함수를 호출하여 파일을 삭제
-    await deleteFiles(newFileLinks, userId);
+    // deleteFiles 함수를 호출하여 S3에서 해당 파일들을 삭제하고 DB에서도 삭제할 수 있도록 keyArray와 uploadFileIdArray를 반환받는다.
+    const checkDeleteFiles = await this.checkDeleteFiles(newFileLinks, userId);
 
     const params = {
       Bucket: process.env.AWS_S3_BUCKET,
       Delete: {
-        Objects: keyArray,
+        Objects: checkDeleteFiles.keyArray,
       },
     };
 
+    const command: DeleteObjectsCommand = new DeleteObjectsCommand(params);
+
     // AWS S3에서 개체 삭제
-    try {
-      await s3.send(new DeleteObjectsCommand(params));
-    } catch (err: any) {
-      if (err) {
-        throw new Error(`AWS_SEND_COMMAND_FILE_FAIL: ${err}`);
-      }
-    }
+    this.commandToS3(command);
 
     // file_links에 'DELETE_FROM_UPLOAD_FILES_TABLE'가 포함되어있으면 mySQL 테이블에서도 개체 삭제
+    // 230706 굳이 transaction 안해도 되는거 아닌가??
     if (file_links.includes('DELETE_FROM_UPLOAD_FILES_TABLE')) {
       // mySQL에서 개체 삭제
       const queryRunner = dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
       try {
-        await this.uploadFilesRepository.softDelete(uploadFileIdArray);
+        await this.uploadFilesRepository.softDelete(
+          checkDeleteFiles.uploadFileIdArray
+        );
         await queryRunner.commitTransaction();
       } catch (err) {
         await queryRunner.rollbackTransaction();
