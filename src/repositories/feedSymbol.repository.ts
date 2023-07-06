@@ -1,7 +1,7 @@
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import dataSource from './data-source';
 import { Pagination } from './feed.repository';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 
 export class FeedSymbolRepository {
   private repository: Repository<FeedSymbol>;
@@ -69,5 +69,9 @@ export class FeedSymbolRepository {
 
   async deleteFeedSymbol(feedSymbolId: number) {
     await this.repository.delete(feedSymbolId);
+  }
+
+  async find(options: FindManyOptions) {
+    return await this.repository.find(options);
   }
 }

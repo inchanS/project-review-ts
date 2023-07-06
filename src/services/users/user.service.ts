@@ -10,15 +10,18 @@ import { UserContentService } from './userContent.service';
 import { UploadFileService } from '../uploadFile.service';
 import { ValidatorService } from './validator.service';
 import { UserRepository } from '../../repositories/user.repository';
+import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 
 export class UserService {
   private userRepository: UserRepository;
+  private feedSymbolRepository: FeedSymbolRepository;
   private uploadFileService: UploadFileService;
   private userContentService: UserContentService;
   private validatorService: ValidatorService;
 
   constructor() {
     this.userRepository = new UserRepository();
+    this.feedSymbolRepository = new FeedSymbolRepository();
     this.uploadFileService = new UploadFileService();
     this.userContentService = new UserContentService();
     this.validatorService = new ValidatorService();
@@ -86,13 +89,10 @@ export class UserService {
       );
 
     // 사용자의 모든 좋아요 정보를 불러온다.
-    const userSymbols = await dataSource.manager.find<FeedSymbol>(
-      'FeedSymbol',
-      {
-        loadRelationIds: true,
-        where: { user: { id: userId } },
-      }
-    );
+    const userSymbols = await this.feedSymbolRepository.find({
+      loadRelationIds: true,
+      where: { user: { id: userId } },
+    });
 
     // transaction을 시작한다.
     const queryRunner = dataSource.createQueryRunner();
