@@ -49,4 +49,8 @@ export class UserRepository {
   async findOne(options: FindOneOptions): Promise<User> {
     return this.repository.findOne(options);
   }
+
+  async update(userId: number, userInfo: UserDto) {
+    return this.repository.update(userId, userInfo);
+  }
 }
