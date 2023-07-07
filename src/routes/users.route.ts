@@ -5,7 +5,7 @@ import {
   authValidateOrReject,
 } from '../middleware/jwt.strategy';
 import UserContentController from '../controllers/users/userContent.controller';
-import usersController from '../controllers/users/users.controller';
+import UsersController from '../controllers/users/users.controller';
 import AuthController from '../controllers/users/auth.controller';
 import ValidatorController from '../controllers/users/validator.controller';
 
@@ -56,14 +56,14 @@ router.get(
 router.patch(
   '/signup',
   asyncWrap(authValidateOrReject),
-  asyncWrap(usersController.updateUserInfo)
+  asyncWrap(UsersController.updateUserInfo)
 );
 
 // 유저 정보 삭제하기
 router.delete(
   '/signup',
   asyncWrap(authValidateOrReject),
-  asyncWrap(usersController.deleteUser)
+  asyncWrap(UsersController.deleteUser)
 );
 
 // 유저 비밀번호 찾기 - 이메일로 비밀번호 재설정 링크 보내기
