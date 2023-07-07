@@ -1,23 +1,28 @@
 import { Request, Response } from 'express';
 import { UserDto } from '../../entities/dto/user.dto';
-import userService from '../../services/users/user.service';
+import { UserService } from '../../services/users/user.service';
 
-const updateUserInfo = async (req: Request, res: Response): Promise<void> => {
-  const { nickname, password, email }: UserDto = req.body;
-  const userInfo: UserDto = { nickname, password, email };
-  const userId = req.userInfo.id;
+class UserController {
+  private userService: UserService;
 
-  const result = await userService.updateUserInfo(userId, userInfo);
-  res.status(200).json({ message: `UPDATE_USERINFO_SUCCESS`, result });
-};
+  constructor() {
+    this.userService = new UserService();
+  }
 
-const deleteUser = async (req: Request, res: Response): Promise<void> => {
-  const userId = req.userInfo.id;
-  await userService.deleteUser(userId);
-  res.status(200).json({ message: `DELETE_USER_SUCCESS` });
-};
+  updateUserInfo = async (req: Request, res: Response): Promise<void> => {
+    const { nickname, password, email }: UserDto = req.body;
+    const userInfo: UserDto = { nickname, password, email };
+    const userId = req.userInfo.id;
 
-export default {
-  updateUserInfo,
-  deleteUser,
-};
+    const result = await this.userService.updateUserInfo(userId, userInfo);
+    res.status(200).json({ message: `UPDATE_USERINFO_SUCCESS`, result });
+  };
+
+  deleteUser = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.userInfo.id;
+    await this.userService.deleteUser(userId);
+    res.status(200).json({ message: `DELETE_USER_SUCCESS` });
+  };
+}
+
+export default new UserController();

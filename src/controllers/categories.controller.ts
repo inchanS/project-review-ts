@@ -1,9 +1,17 @@
 import { Request, Response } from 'express';
-import categoriesService from '../services/categories.service';
+import { CategoriesService } from '../services/categories.service';
 
-const getCategoriesList = async (req: Request, res: Response) => {
-  const result = await categoriesService.getCategoriesList();
-  res.status(200).json(result);
-};
+class CategoriesController {
+  private categoriesService: CategoriesService;
 
-export default { getCategoriesList };
+  constructor() {
+    this.categoriesService = new CategoriesService();
+  }
+
+  getCategoriesList = async (req: Request, res: Response) => {
+    const result = await this.categoriesService.getCategoriesList();
+    res.status(200).json(result);
+  };
+}
+
+export default new CategoriesController();
