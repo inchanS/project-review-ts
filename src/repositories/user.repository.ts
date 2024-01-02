@@ -4,25 +4,22 @@ import { User } from '../entities/users.entity';
 import { UserDto } from '../entities/dto/user.dto';
 import { FindOneOptions, Repository } from 'typeorm';
 
-export class UserRepository {
-  private repository: Repository<User>;
-
+export class UserRepository extends Repository<User> {
   constructor() {
-    this.repository = dataSource.getRepository(User);
+    super(User, dataSource.createEntityManager());
   }
 
   async createUser(userInfo: UserDto) {
     const salt = await bcrypt.genSalt();
     userInfo.password = await bcrypt.hash(userInfo.password, salt);
 
-    const user = await this.repository.create(userInfo);
-    await this.repository.save(user);
+    const user = this.create(userInfo);
+    await this.save(user);
   }
 
   async findByEmail(email: string) {
     return (
-      this.repository
-        .createQueryBuilder('user')
+      this.createQueryBuilder('user')
         // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
         .addSelect('user.password')
         // typeORM은 삭제된 유저를 찾지 않는다. 하지만 softDelete로 삭제된 유저의 경우에도 findByEmail을 통해 찾아야 실제 가입시 Entity Duplicated 에러를 방지할 수 있다.
@@ -33,8 +30,7 @@ export class UserRepository {
   }
 
   async findByNickname(nickname: string) {
-    return this.repository
-      .createQueryBuilder('user')
+    return this.createQueryBuilder('user')
       .withDeleted()
       .where('nickname = :nickname', {
         nickname,
@@ -43,14 +39,14 @@ export class UserRepository {
   }
 
   async findOneOrFail(options: FindOneOptions): Promise<User> {
-    return this.repository.findOneOrFail(options);
+    return super.findOneOrFail(options);
   }
 
   async findOne(options: FindOneOptions): Promise<User> {
-    return this.repository.findOne(options);
+    return super.findOne(options);
   }
 
   async update(userId: number, userInfo: UserDto) {
-    return this.repository.update(userId, userInfo);
+    return super.update(userId, userInfo);
   }
 }

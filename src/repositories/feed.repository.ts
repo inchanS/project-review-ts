@@ -4,17 +4,15 @@ import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { IsNull, Like, Not, Repository } from 'typeorm';
 
 export type FeedOption = { isTemp?: boolean; isAll?: boolean };
-export class FeedRepository {
-  private repository: Repository<Feed>;
-
+export class FeedRepository extends Repository<Feed> {
   constructor() {
-    this.repository = dataSource.getRepository(Feed);
+    super(Feed, dataSource.createEntityManager());
   }
 
   async createFeed(feedInfo: Feed) {
-    const feed = await this.repository.create(feedInfo);
-    await this.repository.save(feed);
-    return await this.repository.findOne({
+    const feed = this.create(feedInfo);
+    await this.save(feed);
+    return await this.findOne({
       loadRelationIds: true,
       where: { user: { id: feedInfo.user.id } },
       order: { id: 'DESC' },
@@ -22,17 +20,16 @@ export class FeedRepository {
   }
 
   async updateFeed(feedId: number, feedInfo: Feed) {
-    await this.repository.update(feedId, feedInfo);
+    await this.update(feedId, feedInfo);
 
-    return await this.repository.findOne({
+    return await this.findOne({
       loadRelationIds: true,
       where: { id: feedId },
     });
   }
 
   async getFeed(feedId: number, options: FeedOption = {}) {
-    const queryBuilder = this.repository
-      .createQueryBuilder('feed')
+    const queryBuilder = this.createQueryBuilder('feed')
       .select([
         'feed.id',
         'user.id',
@@ -74,7 +71,7 @@ export class FeedRepository {
 
   // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
   async getFeedCountByUserId(userId: number) {
-    return await this.repository.countBy({
+    return await this.countBy({
       user: { id: userId },
       posted_at: Not(IsNull()),
     });
@@ -89,8 +86,7 @@ export class FeedRepository {
 
   // 피드의 symbol id별 count 가져오기
   async getFeedSymbolCount(feedId: number) {
-    return await this.repository
-      .createQueryBuilder('feed')
+    return await this.createQueryBuilder('feed')
       .select([
         'feed.id AS feedId',
         'feedSymbol.symbolId',
@@ -105,8 +101,7 @@ export class FeedRepository {
   }
 
   async addViewCount(feedId: number) {
-    await this.repository
-      .createQueryBuilder()
+    await this.createQueryBuilder()
       .update(Feed)
       .set({ viewCnt: () => 'viewCnt + 1' })
       .where('id = :feedId', { feedId: feedId })
