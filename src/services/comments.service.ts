@@ -59,7 +59,7 @@ export class CommentsService {
     };
   };
 
-  async getCommentList(feedId: number, userId: number) {
+  getCommentList = async (feedId: number, userId: number) => {
     const feed = await this.feedRepository.findOne({
       where: { id: feedId },
     });
@@ -76,9 +76,9 @@ export class CommentsService {
     return [...result].map((comment: any) =>
       this.formatComment(comment, userId, feedUserId)
     );
-  }
+  };
 
-  async createComment(commentInfo: CommentDto): Promise<void> {
+  createComment = async (commentInfo: CommentDto): Promise<void> => {
     // 임시게시글, 삭제된 게시글, 존재하지 않는 게시글에 댓글 달기 시도시 에러처리
     await this.feedRepository
       .findOneOrFail({
@@ -115,9 +115,9 @@ export class CommentsService {
     });
 
     await this.commentRepository.createComment(newComment);
-  }
+  };
 
-  async validateComment(userId: number, commentId: number) {
+  validateComment = async (userId: number, commentId: number) => {
     const result = await this.commentRepository.findOne({
       loadRelationIds: true,
       where: { id: commentId },
@@ -137,13 +137,13 @@ export class CommentsService {
     }
 
     return result;
-  }
+  };
 
-  async updateComment(
+  updateComment = async (
     userId: number,
     commentId: number,
     commentInfo: CommentDto
-  ): Promise<void> {
+  ): Promise<void> => {
     const originComment = await this.validateComment(userId, commentId);
 
     // commentInfo에서 내용 생략시, 원문 내용으로 채우기
@@ -165,19 +165,16 @@ export class CommentsService {
     }
 
     await this.commentRepository.updateComment(commentId, commentInfo);
-  }
+  };
 
-  async deleteComment(commentId: number, userId: number) {
+  deleteComment = async (commentId: number, userId: number) => {
     // 원댓글 유효성 검사
     await this.validateComment(userId, commentId);
 
     await this.commentRepository.softDelete(commentId);
-  }
+  };
 
-  async getCommentsById(userId: number) {
-    return await this.commentRepository.getCommentListByUserId(
-      userId,
-      undefined
-    );
-  }
+  // TODO 이 함수 왜 안쓰고 있지??
+  getCommentsById = async (userId: number) =>
+    await this.commentRepository.getCommentListByUserId(userId, undefined);
 }

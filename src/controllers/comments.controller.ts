@@ -16,7 +16,7 @@ class CommentsController {
     res.status(200).json(result);
   }
 
-  async createComment(req: Request, res: Response) {
+  createComment = async (req: Request, res: Response) => {
     const user: number = req.userInfo.id;
     const { feed, comment, is_private, parent }: CommentDto = req.body;
     const commentInfo: CommentDto = {
@@ -31,9 +31,9 @@ class CommentsController {
     res
       .status(201)
       .json({ message: 'THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED' });
-  }
+  };
 
-  async updateComment(req: Request, res: Response) {
+  updateComment = async (req: Request, res: Response) => {
     const { comment, is_private }: CommentDto = req.body;
     const commentInfo: CommentDto = { comment, is_private };
     const commentId: number = req.body.commentId;
@@ -43,9 +43,9 @@ class CommentsController {
     res
       .status(201)
       .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_UPDATED` });
-  }
+  };
 
-  async deleteComment(req: Request, res: Response) {
+  deleteComment = async (req: Request, res: Response) => {
     const commentId: number = Number(req.params.id);
     const userId: number = req.userInfo.id;
 
@@ -53,7 +53,7 @@ class CommentsController {
     res
       .status(200)
       .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_DELETED` });
-  }
+  };
 }
 
 export default new CommentsController();
