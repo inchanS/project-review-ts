@@ -1,65 +1,73 @@
-import symbolService from '../services/symbol.service';
 import { Request, Response } from 'express';
 import { FeedSymbolDto } from '../entities/dto/feedSymbol.dto';
 import { AddAndUpdateSymbolToFeedResult } from '../types/feedSymbol';
+import { SymbolService } from '../services/symbol.service';
 
-const getSymbols = async (req: Request, res: Response) => {
-  const result = await symbolService.getSymbols();
-  res.status(200).json(result);
-};
+class SymbolsController {
+  private symbolService: SymbolService;
 
-const getFeedSymbolCount = async (req: Request, res: Response) => {
-  const feedId: number = Number(req.params.feedId);
+  constructor() {
+    this.symbolService = new SymbolService();
+  }
 
-  const result = await symbolService.getFeedSymbolCount(feedId);
-  res.status(200).json(result);
-};
+  async getSymbols(req: Request, res: Response) {
+    const result = await this.symbolService.getSymbols();
+    res.status(200).json(result);
+  }
 
-const checkUsersSymbolForfeed = async (req: Request, res: Response) => {
-  const feedId: number = Number(req.params.feedId);
-  const userId: number = req.userInfo.id;
+  async getFeedSymbolCount(req: Request, res: Response) {
+    const feedId: number = Number(req.params.feedId);
 
-  const result = await symbolService.checkUsersSymbolForfeed(feedId, userId);
-  res.status(200).json(result);
-};
+    const result = await this.symbolService.getFeedSymbolCount(feedId);
+    res.status(200).json(result);
+  }
 
-const addAndUpdateSymbolToFeed = async (req: Request, res: Response) => {
-  const userId: number = req.userInfo.id;
-  const feedId: number = Number(req.params.feedId);
-  const { symbolId } = req.body;
+  async checkUsersSymbolForfeed(req: Request, res: Response) {
+    const feedId: number = Number(req.params.feedId);
+    const userId: number = req.userInfo.id;
 
-  const feedSymbolInfo: FeedSymbolDto = {
-    user: userId,
-    feed: feedId,
-    symbol: symbolId,
-  };
+    const result = await this.symbolService.checkUsersSymbolForfeed(
+      feedId,
+      userId
+    );
+    res.status(200).json(result);
+  }
 
-  const addMessage = `SYMBOL_ID_${feedSymbolInfo.symbol}_HAS_BEEN_ADDED_TO_THE_FEED_ID_${feedSymbolInfo.feed}`;
-  const updateMessage = `SYMBOL_ID_${feedSymbolInfo.symbol}_HAS_BEEN_UPDATED_TO_THE_FEED_ID_${feedSymbolInfo.feed}`;
+  async addAndUpdateSymbolToFeed(req: Request, res: Response) {
+    const userId: number = req.userInfo.id;
+    const feedId: number = Number(req.params.feedId);
+    const { symbolId } = req.body;
 
-  const result: AddAndUpdateSymbolToFeedResult =
-    await symbolService.addAndUpdateSymbolToFeed(feedSymbolInfo);
+    const feedSymbolInfo: FeedSymbolDto = {
+      user: userId,
+      feed: feedId,
+      symbol: symbolId,
+    };
 
-  const isAdd = result.sort === 'add';
-  const message = isAdd ? addMessage : updateMessage;
-  const statusCode = isAdd ? 201 : 200;
+    const addMessage = `SYMBOL_ID_${feedSymbolInfo.symbol}_HAS_BEEN_ADDED_TO_THE_FEED_ID_${feedSymbolInfo.feed}`;
+    const updateMessage = `SYMBOL_ID_${feedSymbolInfo.symbol}_HAS_BEEN_UPDATED_TO_THE_FEED_ID_${feedSymbolInfo.feed}`;
 
-  res.status(statusCode).json({ message, result: result.result });
-};
+    const result: AddAndUpdateSymbolToFeedResult =
+      await this.symbolService.addAndUpdateSymbolToFeed(feedSymbolInfo);
 
-const removeSymbolFromFeed = async (req: Request, res: Response) => {
-  const userId: number = req.userInfo.id;
-  const feedId: number = Number(req.params.feedId);
+    const isAdd = result.sort === 'add';
+    const message = isAdd ? addMessage : updateMessage;
+    const statusCode = isAdd ? 201 : 200;
 
-  const result = await symbolService.removeSymbolFromFeed(userId, feedId);
+    res.status(statusCode).json({ message, result: result.result });
+  }
 
-  res.status(200).json(result);
-};
+  async removeSymbolFromFeed(req: Request, res: Response) {
+    const userId: number = req.userInfo.id;
+    const feedId: number = Number(req.params.feedId);
 
-export default {
-  getSymbols,
-  getFeedSymbolCount,
-  addAndUpdateSymbolToFeed,
-  removeSymbolFromFeed,
-  checkUsersSymbolForfeed,
-};
+    const result = await this.symbolService.removeSymbolFromFeed(
+      userId,
+      feedId
+    );
+
+    res.status(200).json(result);
+  }
+}
+
+export default new SymbolsController();
