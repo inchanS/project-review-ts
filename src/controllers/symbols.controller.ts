@@ -26,7 +26,7 @@ class SymbolsController {
     const feedId: number = Number(req.params.feedId);
     const userId: number = req.userInfo.id;
 
-    const result = await this.symbolService.checkUsersSymbolForfeed(
+    const result = await this.symbolService.checkUsersSymbolForFeed(
       feedId,
       userId
     );

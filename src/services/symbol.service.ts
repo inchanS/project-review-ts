@@ -42,7 +42,7 @@ export class SymbolService {
     }));
   }
 
-  async checkUsersSymbolForfeed(
+  async checkUsersSymbolForFeed(
     feedId: number,
     userId: number
   ): Promise<CheckSymbolResult> {
