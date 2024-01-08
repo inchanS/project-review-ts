@@ -12,8 +12,9 @@ jest.mock('@aws-sdk/client-s3');
 jest.mock('crypto');
 jest.mock('../../middleware/uploadToS3');
 
+const uploadService: UploadService = new UploadService();
 describe('unit test - uploadFiles', () => {
-  let uploadService: UploadService;
+  // let uploadService: UploadService = new UploadService();
 
   const userId = 1;
   const mockUser: User = new User();
@@ -51,7 +52,7 @@ describe('unit test - uploadFiles', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    uploadService = new UploadService();
+    // uploadService = new UploadService();
 
     jest.mock('typeorm', () => {
       return {
@@ -248,8 +249,11 @@ describe('unit test - uploadFiles', () => {
       throw new Error('S3 Error');
     });
 
+    // TODO yaml파일에서 에러메세지 고치기
+    //  `UPLOAD_FILE_FAIL: Error: S3 Error`를 아래 에러메세지로!!
+
     await expect(uploadService.uploadFiles(userId, files)).rejects.toThrow(
-      `UPLOAD_FILE_FAIL: Error: S3 Error`
+      `AWS_SEND_COMMAND_FILE_FAIL: Error: S3 Error`
     );
   });
 

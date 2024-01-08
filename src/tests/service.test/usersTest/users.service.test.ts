@@ -2,20 +2,20 @@ import { User } from '../../../entities/users.entity';
 import { UserDto } from '../../../entities/dto/user.dto';
 import { UserRepository } from '../../../repositories/user.repository';
 import { Feed } from '../../../entities/feed.entity';
-import { FeedListRepository } from '../../../repositories/feed.repository';
 import { Comment } from '../../../entities/comment.entity';
-import { CommentRepository } from '../../../repositories/comment.repository';
 import dataSource from '../../../repositories/data-source';
 import {
-  UploadFileService,
   DeleteUploadFiles,
+  UploadFileService,
 } from '../../../services/uploadFile.service';
 import { FeedSymbol } from '../../../entities/feedSymbol.entity';
 import { UserService } from '../../../services/users/user.service';
+import { FeedListRepository } from '../../../repositories/feed.repository';
+import { CommentRepository } from '../../../repositories/comment.repository';
 
 const userService = new UserService();
-const userRepository = new UserRepository();
-const user = new User();
+const uploadFileService = new UploadFileService();
+
 describe('updateUserInfo', () => {
   beforeEach(() => {
     jest.resetAllMocks();
@@ -66,32 +66,42 @@ describe('updateUserInfo', () => {
     updatedUserInfo.nickname = 'nickname';
     updatedUserInfo.email = updateUserInfoDto.email;
 
-    jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(originUserInfo);
-
-    jest.spyOn(user, 'findByEmail').mockResolvedValueOnce(null);
-
-    jest.spyOn(userRepository, 'update').mockResolvedValueOnce(null);
+    jest
+      .spyOn(UserRepository.prototype, 'findOne')
+      .mockResolvedValueOnce(originUserInfo);
 
     jest
-      .spyOn(userRepository, 'findOne')
+      .spyOn(UserRepository.prototype, 'findByEmail')
+      .mockResolvedValueOnce(null);
+
+    jest.spyOn(UserRepository.prototype, 'update').mockResolvedValueOnce(null);
+
+    jest
+      .spyOn(UserRepository.prototype, 'findOne')
       .mockResolvedValueOnce(updatedUserInfo);
 
     const result = await userService.updateUserInfo(userId, updateUserInfoDto);
 
     // 함수 과정 확인
-    expect(userRepository.findOne).toBeCalledTimes(2);
-    expect(userRepository.findOne).toBeCalledWith({ where: { id: userId } });
-    expect(user.findByEmail).toBeCalledTimes(1);
-    expect(user.findByEmail).toBeCalledWith(updateUserInfoDto.email);
-    expect(userRepository.update).toBeCalledTimes(1);
-    expect(userRepository.update).toBeCalledWith(userId, updateUserInfoDto);
+    expect(UserRepository.prototype.findOne).toBeCalledTimes(2);
+    expect(UserRepository.prototype.findOne).toBeCalledWith({
+      where: { id: userId },
+    });
+    expect(UserRepository.prototype.findByEmail).toBeCalledTimes(1);
+    expect(UserRepository.prototype.findByEmail).toBeCalledWith(
+      updateUserInfoDto.email
+    );
+    expect(UserRepository.prototype.update).toBeCalledTimes(1);
+    expect(UserRepository.prototype.update).toBeCalledWith(
+      userId,
+      updateUserInfoDto
+    );
 
     // 함수 결과물 형식 확인
     expect(result).toBeDefined();
     expect(result).toEqual(updatedUserInfo);
   });
 });
-
 describe('deleteUser', () => {
   afterAll(() => {
     jest.resetAllMocks();
@@ -100,7 +110,7 @@ describe('deleteUser', () => {
   test('사용자를 찾을 수 없을 때, 에러반환', async () => {
     const userId: number = 1;
 
-    jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(null);
+    jest.spyOn(UserRepository.prototype, 'findOne').mockResolvedValueOnce(null);
 
     try {
       await userService.deleteUser(userId);
@@ -117,7 +127,7 @@ describe('deleteUser', () => {
     const user = new User();
     user.id = userId;
 
-    const mockUserFeeds = [
+    const mockUserFeeds: any = [
       {
         id: 1,
         userId: 1,
@@ -133,7 +143,7 @@ describe('deleteUser', () => {
       },
     ];
 
-    const mockUserComments = [
+    const mockUserComments: any = [
       {
         id: 1,
         user: 1,
@@ -182,36 +192,36 @@ describe('deleteUser', () => {
         },
       });
 
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(user);
+      jest.spyOn(UserRepository.prototype, 'findOne').mockResolvedValue(user);
 
       jest
         .spyOn(dataSource, 'createQueryRunner')
         .mockImplementation(queryRunnerMock);
 
       jest
-        .spyOn(FeedListRepository, 'getFeedListByUserId')
+        .spyOn(FeedListRepository.prototype, 'getFeedListByUserId')
         .mockResolvedValue(mockUserFeeds);
 
       jest.spyOn(dataSource.manager, 'find').mockResolvedValue(mockUserSymbols);
 
       jest
-        .spyOn(UploadFileService, 'deleteUnusedUploadFiles')
+        .spyOn(uploadFileService, 'deleteUnusedUploadFiles')
         .mockResolvedValue(mockUserUploadFiles);
       jest
-        .spyOn(UploadFileService, 'deleteUnconnectedLinks')
+        .spyOn(uploadFileService, 'deleteUnconnectedLinks')
         .mockResolvedValue(null);
     });
 
     test('사용자의 feed, comment, symbol 정보가 모두 있을때', async () => {
       jest
-        .spyOn(CommentRepository, 'getCommentListByUserId')
+        .spyOn(CommentRepository.prototype, 'getCommentListByUserId')
         .mockResolvedValue(mockUserComments);
 
       const result = await userService.deleteUser(userId);
 
       // 함수 과정 확인
-      expect(UserRepository.findOne).toBeCalledTimes(1);
-      expect(UserRepository.findOne).toBeCalledWith({
+      expect(UserRepository.prototype.findOne).toBeCalledTimes(1);
+      expect(UserRepository.prototype.findOne).toBeCalledWith({
         where: { id: userId },
       });
 
@@ -224,13 +234,13 @@ describe('deleteUser', () => {
       // feed 삭제 과정의 함수 확인
       expect(queryRunnerMock().manager.softDelete).toBeCalledWith(Feed, [1, 2]);
       // feed의 uploadFile 삭제 과정의 함수 확인
-      expect(UploadFileService.deleteUnusedUploadFiles).toBeCalledTimes(1);
-      expect(UploadFileService.deleteUnusedUploadFiles).toBeCalledWith(
+      expect(uploadFileService.deleteUnusedUploadFiles).toBeCalledTimes(1);
+      expect(uploadFileService.deleteUnusedUploadFiles).toBeCalledWith(
         queryRunnerMock(),
         userId
       );
-      expect(UploadFileService.deleteUnconnectedLinks).toBeCalledTimes(1);
-      expect(UploadFileService.deleteUnconnectedLinks).toBeCalledWith(
+      expect(uploadFileService.deleteUnconnectedLinks).toBeCalledTimes(1);
+      expect(uploadFileService.deleteUnconnectedLinks).toBeCalledWith(
         queryRunnerMock(),
         mockUserUploadFiles.uploadFileWithoutFeedId,
         mockUserUploadFiles.deleteFileLinksArray,
@@ -250,14 +260,14 @@ describe('deleteUser', () => {
 
     test('사용자의 comment 정보가 없을때', async () => {
       jest
-        .spyOn(CommentRepository, 'getCommentListByUserId')
+        .spyOn(CommentRepository.prototype, 'getCommentListByUserId')
         .mockResolvedValue([]);
 
       const result = await userService.deleteUser(userId);
 
       // 함수 과정 확인
-      expect(UserRepository.findOne).toBeCalledTimes(1);
-      expect(UserRepository.findOne).toBeCalledWith({
+      expect(UserRepository.prototype.findOne).toBeCalledTimes(1);
+      expect(UserRepository.prototype.findOne).toBeCalledWith({
         where: { id: userId },
       });
 
