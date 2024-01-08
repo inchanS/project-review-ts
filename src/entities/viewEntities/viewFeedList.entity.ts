@@ -18,12 +18,12 @@ import { ViewColumn, ViewEntity } from 'typeorm';
                                 GROUP BY feedId)),
            t3 AS (SELECT feedId AS feedId, COUNT(id) AS files_cnt
                   FROM upload_files
-                  WHERE is_img = FALSE
+                  WHERE is_img = FALSE AND deleted_at is NULL
                   GROUP BY feedId),
            t4 AS (SELECT feedId, COUNT(*) AS like_cnt FROM feed_symbol fs WHERE symbolId = 1 GROUP BY feedId),
            t5 AS (SELECT feedId AS feedId, COUNT(id) AS img_cnt
                   FROM upload_files
-                  WHERE is_img = TRUE
+                  WHERE is_img = TRUE AND deleted_at is NULL
                   GROUP BY feedId)
 
 
