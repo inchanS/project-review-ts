@@ -44,7 +44,7 @@ export class UserContentService {
     return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
   }
 
-  async findUserInfoByUserId(targetUserId: number) {
+  findUserInfoByUserId = async (targetUserId: number) => {
     this.validateUserId(targetUserId);
 
     const userInfo = await this.userRepository.findOne({
@@ -56,14 +56,14 @@ export class UserContentService {
     }
 
     return userInfo;
-  }
+  };
 
   // 유저 정보 확인시 유저의 게시글 조회
-  async findUserFeedsByUserId(
+  findUserFeedsByUserId = async (
     targetUserId: number,
     page: Pagination,
     options?: FeedListOptions
-  ) {
+  ) => {
     await this.findUserInfoByUserId(targetUserId);
     page = this.validatePage(page);
 
@@ -83,14 +83,14 @@ export class UserContentService {
     );
 
     return { feedCntByUserId, totalPage, feedListByUserId };
-  }
+  };
 
   // 유저 정보 확인시 유저의 댓글 조회
-  async findUserCommentsByUserId(
+  findUserCommentsByUserId = async (
     targetUserId: number,
     loggedInUserId: number,
     page?: Pagination
-  ) {
+  ) => {
     await this.findUserInfoByUserId(targetUserId);
 
     if (isNaN(page.startIndex) || isNaN(page.limit)) {
@@ -134,10 +134,13 @@ export class UserContentService {
     }
 
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
-  }
+  };
 
   // 유저 정보 확인시, 유저의 피드 심볼 조회
-  async findUserFeedSymbolsByUserId(targetUserId: number, page: Pagination) {
+  findUserFeedSymbolsByUserId = async (
+    targetUserId: number,
+    page: Pagination
+  ) => {
     await this.findUserInfoByUserId(targetUserId);
     page = this.validatePage(page);
 
@@ -157,5 +160,5 @@ export class UserContentService {
       );
 
     return { symbolCntByUserId, totalPage, symbolListByUserId };
-  }
+  };
 }
