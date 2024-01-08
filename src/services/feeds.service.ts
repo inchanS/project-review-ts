@@ -89,11 +89,12 @@ export class FeedsService {
         }
       }
 
+      await queryRunner.commitTransaction();
+
       const result: Feed = await queryRunner.manager
         .withRepository(this.feedRepository)
         .getFeed(newFeed.id, options);
 
-      await queryRunner.commitTransaction();
       return result;
     } catch (err: any) {
       await queryRunner.rollbackTransaction();
@@ -199,11 +200,11 @@ export class FeedsService {
         .withRepository(this.feedRepository)
         .updateFeed(feedId, feed);
 
+      await queryRunner.commitTransaction();
+
       const result = await queryRunner.manager
         .withRepository(this.feedRepository)
         .getFeed(newFeed.id, { isAll: true });
-
-      await queryRunner.commitTransaction();
 
       return result;
     } catch (err) {
