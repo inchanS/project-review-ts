@@ -17,7 +17,7 @@ class SearchController {
     res.status(200).json(result);
   };
 
-  async searchContentList(req: Request, res: Response) {
+  searchContentList = async (req: Request, res: Response) => {
     const query: string = req.query.query as string;
     const limit: number = Number(req.query.limit);
     const index: number = Number(req.query.index);
@@ -28,7 +28,7 @@ class SearchController {
     );
 
     res.status(200).json(result);
-  }
+  };
 }
 
 export default new SearchController();

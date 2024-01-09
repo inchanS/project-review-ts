@@ -13,7 +13,7 @@ export class SearchService {
     this.feedRepository = new FeedRepository();
     this.feedListRepository = new FeedListRepository();
   }
-  async searchContent(query: string, index: number, limit: number) {
+  searchContent = async (query: string, index: number, limit: number) => {
     // query로 전달된 limit가 0이거나 없을 경우 기본값 5으로 변경 처리
     if (!limit || limit === 0) {
       limit = 5;
@@ -88,9 +88,9 @@ export class SearchService {
       .getRawMany();
 
     return result;
-  }
+  };
 
-  async searchContentList(query: string, index: number, limit: number) {
+  searchContentList = async (query: string, index: number, limit: number) => {
     // query로 전달된 limit가 0이거나 없을 경우 기본값 10으로 변경 처리
     if (!limit || limit === 0) {
       limit = 10;
@@ -162,5 +162,5 @@ export class SearchService {
     });
 
     return result;
-  }
+  };
 }
