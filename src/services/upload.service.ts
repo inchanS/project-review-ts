@@ -136,11 +136,11 @@ export class UploadService {
 
       const command: PutObjectCommand = new PutObjectCommand(params);
 
-      this.commandToS3(command);
+      await this.commandToS3(command);
 
       const fileSizeString: string = this.convertToStringFileSize(file.size);
 
-      const newUploadFile = await this.uploadFilesRepository.create({
+      const newUploadFile = this.uploadFilesRepository.create({
         file_link: file_link,
         is_img: isImage,
         file_name: file.originalname,
@@ -154,7 +154,7 @@ export class UploadService {
   // uploadFiles 업로드된 파일을 삭제하는 함수 ---------------------------------------------------
 
   // mySQL에서 file_link를 통해 uploadFile의 ID를 찾는 함수
-  private async findFileLink(file_link: string) {
+  private findFileLink = async (file_link: string) => {
     try {
       return await this.uploadFilesRepository.findOneOrFail({
         where: { file_link: file_link },
@@ -162,7 +162,7 @@ export class UploadService {
     } catch (err) {
       throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
     }
-  }
+  };
 
   // AWS S3에서 파일의 유무를 확인하는 함수
   // const checkFileAccess = async (param: any) => {
@@ -178,7 +178,7 @@ export class UploadService {
   //   }
   // };
 
-  private async checkDeleteFiles(newFileLinks: string[], userId: number) {
+  private checkDeleteFiles = async (newFileLinks: string[], userId: number) => {
     let param: Params;
 
     // AWS S3 Key값을 담을 배열
@@ -218,7 +218,7 @@ export class UploadService {
     await Promise.all(findAndCheckPromises);
 
     return { keyArray, uploadFileIdArray };
-  }
+  };
 
   // 파일 삭제 함수
   public deleteUploadFile = async (
