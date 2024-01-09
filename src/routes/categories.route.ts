@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import categoriesController from '../controllers/categories.controller';
+import CategoriesController from '../controllers/categories.controller';
 import { asyncWrap } from '../utils/util';
 
 const router = Router();
 
-router.get('', asyncWrap(categoriesController.getCategoriesList));
+router.get('', asyncWrap(CategoriesController.getCategoriesList));
 
 export default router;

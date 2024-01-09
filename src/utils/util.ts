@@ -1,8 +1,15 @@
 import express, { ErrorRequestHandler, Request, Response } from 'express';
 import { TokenIndexer } from 'morgan';
 
-const { yellow, red, blue, green } = require('cli-color');
+// FIXME : CustomError 방식으로 전체 에러들 처리하기
+export class CustomError extends Error {
+  status: number;
 
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
 function asyncWrap(asyncController: express.RequestHandler) {
   return async (...[req, res, next]: Parameters<express.RequestHandler>) => {
     try {
@@ -21,6 +28,7 @@ const errHandler: ErrorRequestHandler = (err, _1, res, _2) => {
   res.status(errInfo.status || 500).json({ message: errInfo.message || '' });
 };
 
+const { yellow, red, blue, green } = require('cli-color');
 function bodyText(req: Request) {
   let bodyText = '';
   if (req.method !== 'GET') {

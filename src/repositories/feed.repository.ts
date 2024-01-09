@@ -1,20 +1,23 @@
 import dataSource from './data-source';
 import { Feed } from '../entities/feed.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import { IsNull, Like, Not } from 'typeorm';
+import { IsNull, Like, Not, Repository } from 'typeorm';
 
 export type FeedOption = { isTemp?: boolean; isAll?: boolean };
-export const FeedRepository = dataSource.getRepository(Feed).extend({
+export class FeedRepository extends Repository<Feed> {
+  constructor() {
+    super(Feed, dataSource.createEntityManager());
+  }
+
   async createFeed(feedInfo: Feed) {
-    const feed = await this.create(feedInfo);
+    const feed = this.create(feedInfo);
     await this.save(feed);
     return await this.findOne({
       loadRelationIds: true,
-      where: { user: feedInfo.user },
+      where: { user: { id: feedInfo.user.id } },
       order: { id: 'DESC' },
-      take: 1,
     });
-  },
+  }
 
   async updateFeed(feedId: number, feedInfo: Feed) {
     await this.update(feedId, feedInfo);
@@ -23,7 +26,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       loadRelationIds: true,
       where: { id: feedId },
     });
-  },
+  }
 
   async getFeed(feedId: number, options: FeedOption = {}) {
     const queryBuilder = this.createQueryBuilder('feed')
@@ -64,12 +67,13 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       queryBuilder.andWhere('feed.posted_at IS NOT NULL');
     }
     return await queryBuilder.getOneOrFail();
-  },
+  }
 
   // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
   async getFeedCountByUserId(userId: number) {
     return await this.countBy({
       user: { id: userId },
+      posted_at: Not(IsNull()),
     });
 
     // return await this.createQueryBuilder('feed')
@@ -78,7 +82,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
     //   .andWhere('feed.posted_at IS NOT NULL')
     //   .andWhere('feed.deleted_at IS NULL')
     //   .getRawOne();
-  },
+  }
 
   // 피드의 symbol id별 count 가져오기
   async getFeedSymbolCount(feedId: number) {
@@ -94,7 +98,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .where('feed.id = :feedId', { feedId: feedId })
       .groupBy('feedSymbol.symbolId')
       .getRawMany();
-  },
+  }
 
   async addViewCount(feedId: number) {
     await this.createQueryBuilder()
@@ -102,8 +106,8 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .set({ viewCnt: () => 'viewCnt + 1' })
       .where('id = :feedId', { feedId: feedId })
       .execute();
-  },
-});
+  }
+}
 
 export type FeedListOptions = {
   includeTempFeeds?: boolean;
@@ -114,7 +118,13 @@ export type Pagination = {
   startIndex: number;
   limit: number;
 };
-export const FeedListRepository = dataSource.getRepository(FeedList).extend({
+export class FeedListRepository {
+  private repository: Repository<FeedList>;
+
+  constructor() {
+    this.repository = dataSource.getRepository(FeedList);
+  }
+
   async getFeedList(
     categoryId: number | undefined,
     startIndex: number,
@@ -140,7 +150,7 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
       ];
     }
 
-    return await this.find({
+    return await this.repository.find({
       order: {
         postedAt: 'DESC',
       },
@@ -148,7 +158,7 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
       take: limit,
       where,
     });
-  },
+  }
 
   async getFeedListByUserId(
     userId: number,
@@ -197,7 +207,7 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
       ...pageCondition,
     };
 
-    return await this.find(findOption);
+    return await this.repository.find(findOption);
 
     // --------------------------------------------------------------------------
     // 아래의 2 코드를 위 코드로 리팩토링 함 (2023.03.24) ---------------------------------
@@ -217,5 +227,5 @@ export const FeedListRepository = dataSource.getRepository(FeedList).extend({
     //   return await this.find({
     //     where: { userId: userId, postedAt: IsNull() },
     //   });
-  },
-});
+  }
+}

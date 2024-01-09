@@ -1,22 +1,34 @@
 import { Request, Response } from 'express';
-import searchService from '../services/search.service';
+import { SearchService } from '../services/search.service';
 
-const searchContent = async (req: Request, res: Response) => {
-  const query: string = req.query.query as string;
-  const limit: number = Number(req.query.limit);
-  const index: number = Number(req.query.index);
-  const result = await searchService.searchContent(query, index, limit);
+class SearchController {
+  private searchService: SearchService;
 
-  res.status(200).json(result);
-};
+  constructor() {
+    this.searchService = new SearchService();
+  }
 
-const searchContentList = async (req: Request, res: Response) => {
-  const query: string = req.query.query as string;
-  const limit: number = Number(req.query.limit);
-  const index: number = Number(req.query.index);
-  const result = await searchService.searchContentList(query, index, limit);
+  searchContent = async (req: Request, res: Response) => {
+    const query: string = req.query.query as string;
+    const limit: number = Number(req.query.limit);
+    const index: number = Number(req.query.index);
+    const result = await this.searchService.searchContent(query, index, limit);
 
-  res.status(200).json(result);
-};
+    res.status(200).json(result);
+  };
 
-export default { searchContent, searchContentList };
+  searchContentList = async (req: Request, res: Response) => {
+    const query: string = req.query.query as string;
+    const limit: number = Number(req.query.limit);
+    const index: number = Number(req.query.index);
+    const result = await this.searchService.searchContentList(
+      query,
+      index,
+      limit
+    );
+
+    res.status(200).json(result);
+  };
+}
+
+export default new SearchController();
