@@ -19,14 +19,13 @@ export class SymbolService {
     this.feedRepository = new FeedRepository();
     this.feedSymbolRepository = new FeedSymbolRepository();
   }
-  async getSymbols() {
-    return await dataSource.getRepository(Symbol).find({
+  getSymbols = async () =>
+    await dataSource.getRepository(Symbol).find({
       select: ['id', 'symbol'],
     });
-  }
 
   // 게시글당 사용자별 공감표시의 개수 가져오기
-  async getFeedSymbolCount(feedId: number) {
+  getFeedSymbolCount = async (feedId: number) => {
     // 피드 유효성검사
     await this.feedRepository.getFeed(feedId).catch(() => {
       const error = new Error('INVALID_FEED');
@@ -40,12 +39,12 @@ export class SymbolService {
       ...item,
       count: Number(item.count),
     }));
-  }
+  };
 
-  async checkUsersSymbolForFeed(
+  checkUsersSymbolForFeed = async (
     feedId: number,
     userId: number
-  ): Promise<CheckSymbolResult> {
+  ): Promise<CheckSymbolResult> => {
     const result = await this.feedSymbolRepository.getFeedSymbol(
       feedId,
       userId
@@ -65,11 +64,11 @@ export class SymbolService {
       newResult.result = result;
       return newResult;
     }
-  }
+  };
 
-  async addAndUpdateSymbolToFeed(
+  addAndUpdateSymbolToFeed = async (
     feedSymbolInfo: FeedSymbolDto
-  ): Promise<AddAndUpdateSymbolToFeedResult> {
+  ): Promise<AddAndUpdateSymbolToFeedResult> => {
     await validateOrReject(feedSymbolInfo).catch(errors => {
       throw { status: 500, message: errors[0].constraints };
     });
@@ -116,9 +115,9 @@ export class SymbolService {
     const result = await this.getFeedSymbolCount(feedSymbolInfo.feed);
 
     return { sort, result };
-  }
+  };
 
-  async removeSymbolFromFeed(userId: number, feedId: number) {
+  removeSymbolFromFeed = async (userId: number, feedId: number) => {
     // 피드 심볼 유효성검사
     const validateFeedSymbol = await this.feedSymbolRepository.getFeedSymbol(
       feedId,
@@ -136,5 +135,5 @@ export class SymbolService {
     const message = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
     const result = await this.getFeedSymbolCount(feedId);
     return { message, result };
-  }
+  };
 }

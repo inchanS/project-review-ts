@@ -10,19 +10,19 @@ class SymbolsController {
     this.symbolService = new SymbolService();
   }
 
-  async getSymbols(req: Request, res: Response) {
+  getSymbols = async (req: Request, res: Response) => {
     const result = await this.symbolService.getSymbols();
     res.status(200).json(result);
-  }
+  };
 
-  async getFeedSymbolCount(req: Request, res: Response) {
+  getFeedSymbolCount = async (req: Request, res: Response) => {
     const feedId: number = Number(req.params.feedId);
 
     const result = await this.symbolService.getFeedSymbolCount(feedId);
     res.status(200).json(result);
-  }
+  };
 
-  async checkUsersSymbolForfeed(req: Request, res: Response) {
+  checkUsersSymbolForFeed = async (req: Request, res: Response) => {
     const feedId: number = Number(req.params.feedId);
     const userId: number = req.userInfo.id;
 
@@ -31,9 +31,9 @@ class SymbolsController {
       userId
     );
     res.status(200).json(result);
-  }
+  };
 
-  async addAndUpdateSymbolToFeed(req: Request, res: Response) {
+  addAndUpdateSymbolToFeed = async (req: Request, res: Response) => {
     const userId: number = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
     const { symbolId } = req.body;
@@ -55,9 +55,9 @@ class SymbolsController {
     const statusCode = isAdd ? 201 : 200;
 
     res.status(statusCode).json({ message, result: result.result });
-  }
+  };
 
-  async removeSymbolFromFeed(req: Request, res: Response) {
+  removeSymbolFromFeed = async (req: Request, res: Response) => {
     const userId: number = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
 
@@ -67,7 +67,7 @@ class SymbolsController {
     );
 
     res.status(200).json(result);
-  }
+  };
 }
 
 export default new SymbolsController();
