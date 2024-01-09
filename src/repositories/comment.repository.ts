@@ -2,8 +2,13 @@ import dataSource from './data-source';
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { Pagination } from './feed.repository';
+import { Repository } from 'typeorm';
 
-export const CommentRepository = dataSource.getRepository(Comment).extend({
+export class CommentRepository extends Repository<Comment> {
+  constructor() {
+    super(Comment, dataSource.createEntityManager());
+  }
+
   async getCommentList(id: number) {
     return await this.createQueryBuilder('comment')
       .withDeleted()
@@ -32,19 +37,19 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
       .addOrderBy('children.id', 'ASC')
       .setParameter('id', id)
       .getMany();
-  },
+  }
 
-  async createComment(commentInfo: CommentDto) {
-    const newComment = await this.create(commentInfo);
+  async createComment(commentInfo: Comment) {
+    const newComment = this.create(commentInfo);
     await this.save(newComment);
-  },
+  }
 
   async updateComment(commentId: number, commentInfo: CommentDto) {
     await dataSource.manager.update(Comment, commentId, {
       comment: commentInfo.comment,
       is_private: commentInfo.is_private,
     });
-  },
+  }
 
   async getCommentCountByUserId(userId: number) {
     return await this.count({
@@ -57,7 +62,7 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     //   .where('comment.user = :userId', { userId: userId })
     //   .withDeleted()
     //   .getRawOne();
-  },
+  }
 
   async getCommentListByUserId(userId: number, page: Pagination) {
     let pageCondition: {
@@ -124,5 +129,5 @@ export const CommentRepository = dataSource.getRepository(Comment).extend({
     //   .skip(pageCondition.skip)
     //   .take(pageCondition.take)
     //   .getRawMany();
-  },
-});
+  }
+}
