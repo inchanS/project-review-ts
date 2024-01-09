@@ -8,13 +8,13 @@ class CommentsController {
   constructor() {
     this.commentsService = new CommentsService();
   }
-  async getCommentList(req: Request, res: Response) {
+  getCommentList = async (req: Request, res: Response) => {
     const feedId: number = Number(req.params.id);
     const userId: number = req.userInfo.id;
 
     const result = await this.commentsService.getCommentList(feedId, userId);
     res.status(200).json(result);
-  }
+  };
 
   createComment = async (req: Request, res: Response) => {
     const user: number = req.userInfo.id;
