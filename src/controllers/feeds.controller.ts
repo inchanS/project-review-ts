@@ -45,6 +45,7 @@ export class FeedsController {
       category,
     };
 
+    // 임시저장 특성상 DTO와 별개로 따로이 validator error 핸들링을 해둔다.
     if (Object.keys(req.body).length === 0 && !fileLinks) {
       const error = new Error('NO_CONTENT');
       error.status = 400;

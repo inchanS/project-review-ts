@@ -63,6 +63,7 @@ export class CommentsService {
     const feed = await this.feedRepository.findOne({
       where: { id: feedId },
     });
+    // FIXME 임시게시글의 덧글 목록은 가져오지 않게하고 에러핸들링하기!!
     if (!feed) throw { status: 404, message: 'FEED_NOT_FOUND' };
 
     const result = await this.commentRepository.getCommentList(feedId);
@@ -79,6 +80,11 @@ export class CommentsService {
   };
 
   createComment = async (commentInfo: CommentDto): Promise<void> => {
+    commentInfo = plainToInstance(CommentDto, commentInfo);
+    await validateOrReject(commentInfo).catch(errors => {
+      throw { status: 500, message: errors[0].constraints };
+    });
+
     // 임시게시글, 삭제된 게시글, 존재하지 않는 게시글에 댓글 달기 시도시 에러처리
     await this.feedRepository
       .findOneOrFail({
@@ -110,13 +116,10 @@ export class CommentsService {
 
     const newComment = plainToInstance(Comment, commentInfo);
 
-    await validateOrReject(commentInfo).catch(errors => {
-      throw { status: 500, message: errors[0].constraints };
-    });
-
     await this.commentRepository.createComment(newComment);
   };
 
+  // 수정 또는 삭제시 해당 댓글의 유효성 검사 및 권한 검사를 위한 함수
   validateComment = async (userId: number, commentId: number) => {
     const result = await this.commentRepository.findOne({
       loadRelationIds: true,
