@@ -30,7 +30,7 @@ const createApp = () => {
   app.use(express.urlencoded({ extended: false }));
   app.use(router);
 
-  app.use((err: any, req: Request, res: Response) => {
+  app.use((err: any, _req: Request, res: Response) => {
     const { status, message } = err;
     console.error(err);
     res.status(status || 500).json({ message });
