@@ -1,4 +1,9 @@
-import express, { ErrorRequestHandler, Request, Response } from 'express';
+import express, {
+  ErrorRequestHandler,
+  NextFunction,
+  Request,
+  Response,
+} from 'express';
 import { TokenIndexer } from 'morgan';
 
 // FIXME : CustomError 방식으로 전체 에러들 처리하기
@@ -22,7 +27,14 @@ function asyncWrap(asyncController: express.RequestHandler) {
   };
 }
 
-const errHandler: ErrorRequestHandler = (err, _req, res) => {
+// 클라이언트가 잘못된 API 주소로 요청을 하였을 때의 에러핸들링
+const notFoundHandler = (_req: Request, _res: Response, next: NextFunction) => {
+  const err = new Error('Not Found API');
+  err.status = 404;
+  next(err);
+};
+
+const errHandler: ErrorRequestHandler = (err, _req: Request, res: Response) => {
   let errInfo = err;
   if (err.sqlMessage) {
     errInfo = { message: 'failed in SQL', status: 500, ...err };
@@ -74,4 +86,4 @@ function morganCustomFormat(
   ].join('');
 }
 
-export { asyncWrap, errHandler, morganCustomFormat };
+export { asyncWrap, notFoundHandler, errHandler, morganCustomFormat };
