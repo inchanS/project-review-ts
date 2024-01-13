@@ -1,10 +1,6 @@
-import express, {
-  ErrorRequestHandler,
-  NextFunction,
-  Request,
-  Response,
-} from 'express';
+import { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
 import { TokenIndexer } from 'morgan';
+import { blue, green, red, yellow } from 'cli-color';
 
 // FIXME : CustomError 방식으로 전체 에러들 처리하기
 export class CustomError extends Error {
@@ -17,8 +13,14 @@ export class CustomError extends Error {
 }
 
 // TODO 여기 생성형함수를 클래스타입으로 바꿀 수 있을까?
-function asyncWrap(asyncController: express.RequestHandler) {
-  return async (...[req, res, next]: Parameters<express.RequestHandler>) => {
+type RequestHandlerExtended = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<void>;
+
+function asyncWrap(asyncController: RequestHandlerExtended) {
+  return async (req: Request, res: Response, next: NextFunction) => {
     try {
       await asyncController(req, res, next);
     } catch (error) {
@@ -29,32 +31,38 @@ function asyncWrap(asyncController: express.RequestHandler) {
 
 // 클라이언트가 잘못된 API 주소로 요청을 하였을 때의 에러핸들링
 const notFoundHandler = (_req: Request, _res: Response, next: NextFunction) => {
-  const err = new Error('Not Found API');
-  err.status = 404;
-  next(err);
+  next(new CustomError(404, 'Not Found API'));
 };
 
 const errHandler: ErrorRequestHandler = (err, _req: Request, res: Response) => {
-  let errInfo = err;
-  if (err.sqlMessage) {
-    errInfo = { message: 'failed in SQL', status: 500, ...err };
-  }
-  res.status(errInfo.status || 500).json({ message: errInfo.message || '' });
+  let errInfo = err.sqlMessage
+    ? {
+        message: 'failed in SQL',
+        status: 500,
+        ...err,
+      }
+    : {
+        ...err,
+        status: err.status || 500,
+        message: err.message || '',
+      };
+  res.status(errInfo.status).json({ message: errInfo.message });
 };
 
-import { yellow, red, blue, green } from 'cli-color';
 function bodyText(req: Request) {
   let bodyText = '';
   if (req.method !== 'GET') {
-    bodyText = `${yellow('BODY\t|')}`;
-    bodyText +=
+    bodyText =
+      `${yellow('BODY\t|')}` +
       Object.keys(req.body)
-        .map((key, index) => {
-          return `${index === 0 ? '' : '\t' + yellow('|')} ${green.italic(
-            key
-          )} ${req.body[key]}`;
-        })
-        .join('\n') + '\n';
+        .map(
+          (key, index) =>
+            `${index === 0 ? '' : '\t' + yellow('|')} ${green.italic(key)} ${
+              req.body[key]
+            }`
+        )
+        .join('\n') +
+      '\n';
   }
   return bodyText;
 }
@@ -64,7 +72,7 @@ function morganCustomFormat(
   req: Request,
   res: Response
 ) {
-  return [
+  let result = [
     `\n= ${red('MESSAGE')} =`,
     '\n',
     `${blue('URL\t| ')}`,
@@ -84,6 +92,8 @@ function morganCustomFormat(
     new Date().toLocaleTimeString(),
     '\n',
   ].join('');
+
+  return result;
 }
 
 export { asyncWrap, notFoundHandler, errHandler, morganCustomFormat };
