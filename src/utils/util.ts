@@ -10,6 +10,8 @@ export class CustomError extends Error {
     this.status = status;
   }
 }
+
+// TODO 여기 생성형함수를 클래스타입으로 바꿀 수 있을까?
 function asyncWrap(asyncController: express.RequestHandler) {
   return async (...[req, res, next]: Parameters<express.RequestHandler>) => {
     try {
@@ -20,7 +22,7 @@ function asyncWrap(asyncController: express.RequestHandler) {
   };
 }
 
-const errHandler: ErrorRequestHandler = (err, _1, res, _2) => {
+const errHandler: ErrorRequestHandler = (err, _req, res) => {
   let errInfo = err;
   if (err.sqlMessage) {
     errInfo = { message: 'failed in SQL', status: 500, ...err };
@@ -28,7 +30,7 @@ const errHandler: ErrorRequestHandler = (err, _1, res, _2) => {
   res.status(errInfo.status || 500).json({ message: errInfo.message || '' });
 };
 
-const { yellow, red, blue, green } = require('cli-color');
+import { yellow, red, blue, green } from 'cli-color';
 function bodyText(req: Request) {
   let bodyText = '';
   if (req.method !== 'GET') {
