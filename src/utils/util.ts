@@ -34,7 +34,12 @@ const notFoundHandler = (_req: Request, _res: Response, next: NextFunction) => {
   next(new CustomError(404, 'Not Found API'));
 };
 
-const errHandler: ErrorRequestHandler = (err, _req: Request, res: Response) => {
+const errHandler: ErrorRequestHandler = (
+  err,
+  _req: Request,
+  res: Response,
+  _next: NextFunction
+) => {
   let errInfo = err.sqlMessage
     ? {
         message: 'failed in SQL',
