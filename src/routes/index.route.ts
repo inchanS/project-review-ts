@@ -1,7 +1,7 @@
 import { Router } from 'express';
 const router = Router();
 
-import { errHandler } from '../utils/util';
+import { errHandler, notFoundHandler } from '../utils/util';
 import usersRoute from './users.route';
 import feedsRoute from './feeds.route';
 import commentsRoute from './comments.route';
@@ -18,6 +18,8 @@ router.use('/symbols', symbolsRoute);
 router.use('/upload', uploadRoute);
 router.use('/search', searchRoute);
 
+// 에러핸들러
+router.use(notFoundHandler);
 router.use(errHandler);
 
 export default router;
