@@ -1,4 +1,4 @@
-import { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { TokenIndexer } from 'morgan';
 import { blue, green, red, yellow } from 'cli-color';
 
@@ -30,16 +30,16 @@ function asyncWrap(asyncController: RequestHandlerExtended) {
 }
 
 // 클라이언트가 잘못된 API 주소로 요청을 하였을 때의 에러핸들링
-const notFoundHandler = (_req: Request, _res: Response, next: NextFunction) => {
+function notFoundHandler(_req: Request, _res: Response, next: NextFunction) {
   next(new CustomError(404, 'Not Found API'));
-};
+}
 
-const errHandler: ErrorRequestHandler = (
-  err,
+function errHandler(
+  err: any,
   _req: Request,
   res: Response,
   _next: NextFunction
-) => {
+): void {
   let errInfo = err.sqlMessage
     ? {
         message: 'failed in SQL',
@@ -52,8 +52,7 @@ const errHandler: ErrorRequestHandler = (
         message: err.message || '',
       };
   res.status(errInfo.status).json({ message: errInfo.message });
-};
-
+}
 function bodyText(req: Request) {
   let bodyText = '';
   if (req.method !== 'GET') {
