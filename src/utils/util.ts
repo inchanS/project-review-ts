@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { TokenIndexer } from 'morgan';
 import { blue, green, red, yellow } from 'cli-color';
 
@@ -12,15 +12,8 @@ export class CustomError extends Error {
   }
 }
 
-// TODO 여기 생성형함수를 클래스타입으로 바꿀 수 있을까?
-type RequestHandlerExtended = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => Promise<void>;
-
-function asyncWrap(asyncController: RequestHandlerExtended) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+function asyncWrap(asyncController: express.RequestHandler) {
+  return async (...[req, res, next]: Parameters<express.RequestHandler>) => {
     try {
       await asyncController(req, res, next);
     } catch (error) {
