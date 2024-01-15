@@ -9,9 +9,7 @@ export class ValidatorService {
   }
   checkDuplicateNickname = async (nickname: string): Promise<object> => {
     if (!nickname) {
-      const error = new Error(`NICKNAME_IS_UNDEFINED`);
-      error.status = 400;
-      throw error;
+      throw new CustomError(400, `NICKNAME_IS_UNDEFINED`);
     }
     // const checkData = await userRepository.findOneBy({ nickname: nickname });
     const checkData = await this.userRepository.findByNickname(nickname);
@@ -39,9 +37,10 @@ export class ValidatorService {
     }
 
     if (checkData.email === email) {
-      const err = new Error(`${checkData.email}_IS_EMAIL_THAT_ALREADY_EXSITS`);
-      err.status = 409;
-      throw err;
+      throw new CustomError(
+        409,
+        `${checkData.email}_IS_EMAIL_THAT_ALREADY_EXSITS`
+      );
     }
   };
 }

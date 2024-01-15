@@ -27,7 +27,7 @@ export class UserContentService {
 
   private validateUserId(userId: number) {
     if (!userId) {
-      throw { status: 400, message: 'USER_ID_IS_UNDEFINED' };
+      throw new CustomError(400, 'USER_ID_IS_UNDEFINED');
     }
   }
 
@@ -35,7 +35,7 @@ export class UserContentService {
     if (isNaN(page.startIndex) || isNaN(page.limit)) {
       return undefined;
     } else if (page.startIndex < 1) {
-      throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
+      throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
     }
     return page;
   }
@@ -96,7 +96,7 @@ export class UserContentService {
     if (isNaN(page.startIndex) || isNaN(page.limit)) {
       page = undefined;
     } else if (page.startIndex < 0) {
-      throw { status: 400, message: 'PAGE_START_INDEX_IS_INVALID' };
+      throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
     }
 
     const commentCntByUserId =

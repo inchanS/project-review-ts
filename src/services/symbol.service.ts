@@ -10,6 +10,7 @@ import {
   AddAndUpdateSymbolToFeedResult,
   CheckSymbolResult,
 } from '../types/feedSymbol';
+import { CustomError } from '../utils/util';
 
 export class SymbolService {
   private feedRepository: FeedRepository;
@@ -28,9 +29,7 @@ export class SymbolService {
   getFeedSymbolCount = async (feedId: number) => {
     // 피드 유효성검사
     await this.feedRepository.getFeed(feedId).catch(() => {
-      const error = new Error('INVALID_FEED');
-      error.status = 404;
-      throw error;
+      throw new CustomError(404, 'INVALID_FEED');
     });
 
     const result = await this.feedRepository.getFeedSymbolCount(feedId);
@@ -70,19 +69,19 @@ export class SymbolService {
     feedSymbolInfo: FeedSymbolDto
   ): Promise<AddAndUpdateSymbolToFeedResult> => {
     await validateOrReject(feedSymbolInfo).catch(errors => {
-      throw { status: 500, message: errors[0].constraints };
+      throw new CustomError(500, errors[0].constraints);
     });
 
     // 피드 유효성검사
     const validateFeed = await this.feedRepository
       .getFeed(feedSymbolInfo.feed)
       .catch(() => {
-        throw { status: 404, message: 'INVALID_FEED' };
+        throw new CustomError(404, 'INVALID_FEED');
       });
 
     // 사용자 유효성검사 (게시글 작성자는 공감할 수 없음)
     if (validateFeed.user.id === feedSymbolInfo.user) {
-      throw { status: 403, message: 'THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE' };
+      throw new CustomError(403, 'THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
     }
 
     // 심볼 유효성검사
@@ -92,7 +91,7 @@ export class SymbolService {
         where: { id: feedSymbolInfo.symbol },
       })
       .catch(() => {
-        throw { status: 404, message: 'INVALID_SYMBOL' };
+        throw new CustomError(404, 'INVALID_SYMBOL');
       });
 
     // 피드 심볼 중복검사
@@ -125,9 +124,7 @@ export class SymbolService {
     );
 
     if (!validateFeedSymbol) {
-      const error = new Error(`FEED_SYMBOL_NOT_FOUND`);
-      error.status = 404;
-      throw error;
+      throw new CustomError(404, `FEED_SYMBOL_NOT_FOUND`);
     }
 
     await this.feedSymbolRepository.deleteFeedSymbol(validateFeedSymbol.id);

@@ -11,6 +11,7 @@ import { UploadFileService } from '../uploadFile.service';
 import { ValidatorService } from './validator.service';
 import { UserRepository } from '../../repositories/user.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
+import { CustomError } from '../../utils/util';
 
 export class UserService {
   private userRepository: UserRepository;
@@ -37,9 +38,7 @@ export class UserService {
       userInfo.email === originUserInfo.email &&
       !userInfo.password
     ) {
-      const error = new Error('NO_CHANGE');
-      error.status = 400;
-      throw error;
+      throw new CustomError(400, 'NO_CHANGE');
     }
 
     if (

@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { UserRepository } from '../repositories/user.repository';
 import { invokeLambda } from '../utils/awsLambda';
 import { Repository } from 'typeorm';
+import { CustomError } from '../utils/util';
 
 export type Params = { Bucket: string; Key: string };
 export class UploadService {
@@ -28,10 +29,7 @@ export class UploadService {
         where: { id: userId },
       })
       .catch(() => {
-        throw {
-          status: 400,
-          message: 'INVALID_USER',
-        };
+        throw new CustomError(400, 'INVALID_USER');
       });
   }
 
@@ -160,7 +158,7 @@ export class UploadService {
         where: { file_link: file_link },
       });
     } catch (err) {
-      throw { status: 404, message: 'NOT_FOUND_UPLOAD_FILE' };
+      throw new CustomError(404, 'NOT_FOUND_UPLOAD_FILE');
     }
   };
 
@@ -196,7 +194,7 @@ export class UploadService {
 
       // 파일의 사용자와 요청한 사용자가 같은지 확인한다.
       if (file_userId !== userId) {
-        throw { status: 403, message: 'DELETE_UPLOADED_FILE_IS_NOT_YOURS' };
+        throw new CustomError(403, 'DELETE_UPLOADED_FILE_IS_NOT_YOURS');
       }
 
       // 파일이 AWS S3에 있는지 확인한다.
