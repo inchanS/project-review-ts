@@ -3,6 +3,7 @@ import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import { FeedsService } from '../services/feeds.service';
+import { CustomError } from '../utils/util';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -47,9 +48,7 @@ export class FeedsController {
 
     // 임시저장 특성상 DTO와 별개로 따로이 validator error 핸들링을 해둔다.
     if (Object.keys(req.body).length === 0 && !fileLinks) {
-      const error = new Error('NO_CONTENT');
-      error.status = 400;
-      throw error;
+      throw new CustomError(400, 'NO_CONTENT');
     }
 
     // FeedStatus id 2 is 'temporary'
