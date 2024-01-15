@@ -27,6 +27,7 @@ function notFoundHandler(_req: Request, _res: Response, next: NextFunction) {
   next(new CustomError(404, 'Not Found API'));
 }
 
+// tip) errHandler 함수를 화살표함수로 변환한다면 parameter의 type으로 `ErrorRequestHandler`를 Express에서 import하여 지정해주면 된다.
 function errHandler(
   err: any,
   _req: Request,
