@@ -112,7 +112,10 @@ export class FeedsService {
           options
         );
       } else {
-        throw new Error(`createFeed TRANSACTION error: ${err}`);
+        throw new CustomError(
+          err.status,
+          `createFeed TRANSACTION error: ${err.message}`
+        );
       }
     }
   };
@@ -186,7 +189,6 @@ export class FeedsService {
 
       // 수정내용 중 fileLink가 있는지 확인하고, 있다면 uploadFile에 feed의 ID를 연결해주는 함수
       // fildLink가 없다면 기존의 fileLink를 삭제한다.
-
       await this.uploadFileService.checkUploadFileOfFeed(
         queryRunner,
         feedId,

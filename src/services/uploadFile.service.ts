@@ -57,11 +57,16 @@ export class UploadFileService {
         where: { file_link: fileLink },
       });
 
+      // 인자로 들어온 fileLink를 데이터베이스에서 찾을 수 없을 때의 에러메세지 반환
+      if (!findUploadFile) {
+        throw new CustomError(404, `NOT_FOUND_UPLOAD_FILE_LINK`);
+      }
+
       if (findUploadFile.feed !== null) {
         if (Number(findUploadFile.feed) === feed.id) {
           continue;
         }
-        throw new CustomError(409, `file_link already exists`);
+        throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
       }
 
       await queryRunner.manager.update(UploadFiles, findUploadFile.id, {
