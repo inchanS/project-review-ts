@@ -2,6 +2,7 @@ import { Brackets, QueryRunner } from 'typeorm';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import { Feed } from '../entities/feed.entity';
 import { UploadService } from './upload.service';
+import { CustomError } from '../utils/util';
 
 export type DeleteUploadFiles = {
   uploadFileWithoutFeedId: number[];
@@ -60,9 +61,7 @@ export class UploadFileService {
         if (Number(findUploadFile.feed) === feed.id) {
           continue;
         }
-        const error = new Error(`file_link already exists`);
-        error.status = 409;
-        throw error;
+        throw new CustomError(409, `file_link already exists`);
       }
 
       await queryRunner.manager.update(UploadFiles, findUploadFile.id, {

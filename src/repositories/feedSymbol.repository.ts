@@ -2,6 +2,7 @@ import { FeedSymbol } from '../entities/feedSymbol.entity';
 import dataSource from './data-source';
 import { Pagination } from './feed.repository';
 import { Repository } from 'typeorm';
+import { CustomError } from '../utils/util';
 
 export class FeedSymbolRepository extends Repository<FeedSymbol> {
   constructor() {
@@ -55,9 +56,7 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
         'Cannot update entity because entity id is not set in the entity.'
       ) {
         // 업데이트 할 내용이 기존의 내용과 다르지 않다는 에러메세지 처리
-        const error = new Error('NOT_CHANGED_FEED_SYMBOL');
-        error.status = 400;
-        throw error;
+        throw new CustomError(400, 'NOT_CHANGED_FEED_SYMBOL');
       }
     });
   }

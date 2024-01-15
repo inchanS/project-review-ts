@@ -5,6 +5,7 @@ import { CommentRepository } from '../repositories/comment.repository';
 import { FeedRepository } from '../repositories/feed.repository';
 import { IsNull, Not } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
+import { CustomError } from '../utils/util';
 
 export class CommentsService {
   private feedRepository: FeedRepository;
@@ -64,7 +65,7 @@ export class CommentsService {
       where: { id: feedId },
     });
     // FIXME 임시게시글의 덧글 목록은 가져오지 않게하고 에러핸들링하기!!
-    if (!feed) throw { status: 404, message: 'FEED_NOT_FOUND' };
+    if (!feed) throw new CustomError(404, 'FEED_NOT_FOUND');
 
     const result = await this.commentRepository.getCommentList(feedId);
 
@@ -94,7 +95,7 @@ export class CommentsService {
         },
       })
       .catch(err => {
-        throw { status: 404, message: "COMMENT'S_FEED_VALIDATION_ERROR" };
+        throw new CustomError(404, "COMMENT'S_FEED_VALIDATION_ERROR");
       });
 
     if (commentInfo.parent) {
@@ -105,12 +106,12 @@ export class CommentsService {
           where: { id: commentInfo.parent },
         })
         .catch(err => {
-          throw { status: 404, message: 'COMMENT_PARENT_NOT_FOUND' };
+          throw new CustomError(404, 'COMMENT_PARENT_NOT_FOUND');
         });
 
       // 부모 댓글의 feedId와 body의 feedId가 다를 경우 에러 반환
       if (Number(parentComment.feed) !== commentInfo.feed) {
-        throw { status: 400, message: 'COMMENT_PARENT_VALIDATION_ERROR' };
+        throw new CustomError(400, 'COMMENT_PARENT_VALIDATION_ERROR');
       }
     }
 
@@ -127,16 +128,12 @@ export class CommentsService {
     });
 
     if (!result) {
-      const error = new Error(`ID_${commentId}_COMMENT_DOES_NOT_EXIST`);
-      error.status = 404;
-      throw error;
+      throw new CustomError(404, `ID_${commentId}_COMMENT_DOES_NOT_EXIST`);
     }
 
     // 작성자 아이디가 다를 때 에러처리
     if (userId !== Number(result.user)) {
-      const error = new Error(`ONLY_THE_AUTHOR_CAN_EDIT`);
-      error.status = 401;
-      throw error;
+      throw new CustomError(401, `ONLY_THE_AUTHOR_CAN_EDIT`);
     }
 
     return result;
@@ -162,9 +159,7 @@ export class CommentsService {
       commentInfo.comment === originComment.comment &&
       commentInfo.is_private === originComment.is_private
     ) {
-      const error = new Error(`COMMENT_IS_NOT_CHANGED`);
-      error.status = 405;
-      throw error;
+      throw new CustomError(405, `COMMENT_IS_NOT_CHANGED`);
     }
 
     await this.commentRepository.updateComment(commentId, commentInfo);
