@@ -1,4 +1,4 @@
-name: github action tag release 
+name: github action Release Tag
 
 on:
   push:
