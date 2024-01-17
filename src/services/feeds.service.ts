@@ -15,6 +15,7 @@ import { Estimation } from '../entities/estimation.entity';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { DeleteUploadFiles, UploadFileService } from './uploadFile.service';
 import { UploadService } from './upload.service';
+import { CustomError } from '../utils/util';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -111,7 +112,10 @@ export class FeedsService {
           options
         );
       } else {
-        throw new Error(`createFeed TRANSACTION error: ${err}`);
+        throw new CustomError(
+          err.status,
+          `createFeed TRANSACTION error: ${err.message}`
+        );
       }
     }
   };
@@ -154,13 +158,11 @@ export class FeedsService {
     const originFeed = await this.feedRepository
       .getFeed(feedId, options)
       .catch(() => {
-        throw { status: 404, message: 'NOT_FOUND_FEED' };
+        throw new CustomError(404, 'NOT_FOUND_FEED');
       });
 
     if (originFeed.user.id !== userId) {
-      const error = new Error('ONLY_THE_AUTHOR_CAN_EDIT');
-      error.status = 403;
-      throw error;
+      throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_EDIT');
     }
 
     if (originFeed.status.id === 2 && feedInfo.status === 1) {
@@ -173,7 +175,7 @@ export class FeedsService {
     }
 
     await validateOrReject(feedInfo).catch(errors => {
-      throw { status: 500, message: errors[0].constraints };
+      throw new CustomError(500, errors[0].constraints);
     });
 
     // transaction으로 묶어주기
@@ -187,7 +189,6 @@ export class FeedsService {
 
       // 수정내용 중 fileLink가 있는지 확인하고, 있다면 uploadFile에 feed의 ID를 연결해주는 함수
       // fildLink가 없다면 기존의 fileLink를 삭제한다.
-
       await this.uploadFileService.checkUploadFileOfFeed(
         queryRunner,
         feedId,
@@ -227,9 +228,7 @@ export class FeedsService {
       .getFeed(feedId, options)
       .catch((err: Error) => {
         if (err instanceof EntityNotFoundError) {
-          const error = new Error(`NOT_FOUND_FEED`);
-          error.status = 404;
-          throw error;
+          throw new CustomError(404, `NOT_FOUND_FEED`);
         }
       });
 
@@ -245,9 +244,7 @@ export class FeedsService {
 
     // 임시저장 게시글은 본인만 볼 수 있음
     if (result.status.id === 2 && result.user.id !== userId) {
-      const error = new Error(`UNAUTHORIZED_TO_ACCESS_THE_POST`);
-      error.status = 403;
-      throw error;
+      throw new CustomError(403, `UNAUTHORIZED_TO_ACCESS_THE_POST`);
     }
 
     // 등록된 정식 게시글의 경우 호출시 조회수 +1 증가
@@ -286,17 +283,13 @@ export class FeedsService {
       .getFeed(feedId, { isAll: true })
       .catch((err: Error) => {
         if (err instanceof EntityNotFoundError) {
-          const error = new Error(`NOT_FOUND_FEED`);
-          error.status = 404;
-          throw error;
+          throw new CustomError(404, `NOT_FOUND_FEED`);
         }
       });
 
     // 사용자 유효성 검사
     if (feed.user.id !== userId) {
-      const error = new Error('ONLY_THE_AUTHOR_CAN_DELETE');
-      error.status = 403;
-      throw error;
+      throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_DELETE');
     }
 
     // transaction으로 묶어주기

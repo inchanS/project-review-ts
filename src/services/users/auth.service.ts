@@ -8,6 +8,7 @@ import { ValidatorService } from './validator.service';
 import { User } from '../../entities/users.entity';
 import { MailOptions, SendMail } from '../../utils/sendMail';
 import Mail from 'nodemailer/lib/mailer';
+import { CustomError } from '../../utils/util';
 
 export class AuthService {
   private userRepository: UserRepository;
@@ -47,7 +48,7 @@ export class AuthService {
     const checkUserbyEmail: User = await this.userRepository.findByEmail(email);
 
     if (!checkUserbyEmail || checkUserbyEmail.deleted_at) {
-      throw { status: 404, message: `${email}_IS_NOT_FOUND` };
+      throw new CustomError(404, `${email}_IS_NOT_FOUND`);
     }
 
     const isSame: boolean = bcrypt.compareSync(
@@ -55,7 +56,7 @@ export class AuthService {
       checkUserbyEmail.password
     );
     if (!isSame) {
-      throw { status: 401, message: 'PASSWORD_IS_INCORRECT' };
+      throw new CustomError(401, 'PASSWORD_IS_INCORRECT');
     }
 
     const jwtSecret: string = process.env.SECRET_KEY;
@@ -72,7 +73,7 @@ export class AuthService {
     const user: User = await this.userRepository
       .findOneOrFail({ where: { email } })
       .catch(() => {
-        throw { status: 404, message: 'USER_IS_NOT_FOUND' };
+        throw new CustomError(404, 'USER_IS_NOT_FOUND');
       });
 
     const jwtSecret: string = process.env.SECRET_KEY;
