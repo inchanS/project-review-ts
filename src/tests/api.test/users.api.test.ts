@@ -5,6 +5,7 @@ import request from 'supertest';
 import { Comment } from '../../entities/comment.entity';
 import { Feed } from '../../entities/feed.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
+import { UserDto } from '../../entities/dto/user.dto';
 
 // 테스트간 피드생성을 위한 피드 클래스 생성
 class FeedClass {
@@ -127,7 +128,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('checkDuplicateNickname', () => {
+  describe('user validator service API - checkDuplicateNickname', () => {
     beforeAll(async () => {
       // 이미 존재하는 유저 생성
       const existUser = new User();
@@ -175,7 +176,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('checkDuplicateEmail', () => {
+  describe('user validator service API - checkDuplicateEmail', () => {
     // 이미 존재하는 유저
     const existUser = new User();
     existUser.nickname = 'existedNickname';
@@ -223,7 +224,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('signup', () => {
+  describe('user auth service API - signup', () => {
     afterAll(async () => {
       // 생성된 유저 삭제
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
@@ -255,8 +256,8 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('signin', () => {
-    const existUser = new User();
+  describe('user auth service API - signin', () => {
+    const existUser: User = new User();
     existUser.nickname = 'existedNickname';
     existUser.email = 'existedEmail@email.com';
     existUser.password = 'existedPassword@1234';
@@ -273,7 +274,7 @@ describe('users.service API test', () => {
     });
 
     test('signin - not found email', async () => {
-      const newUser = {
+      const newUser: UserDto = {
         email: 'email',
         password: 'password',
       };
@@ -286,7 +287,7 @@ describe('users.service API test', () => {
     });
 
     test('signin - wrong password', async () => {
-      const newUser = {
+      const newUser: UserDto = {
         email: existUser.email,
         password: 'password',
       };
@@ -299,7 +300,7 @@ describe('users.service API test', () => {
     });
 
     test('signin - success', async () => {
-      const newUser = {
+      const newUser: UserDto = {
         email: existUser.email,
         password: existUser.password,
       };
@@ -312,8 +313,8 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('로그인 사용자의 정보 조회 (api endpoint에서 사용자 ID가 없을 때)', () => {
-    const existUser = new User();
+  describe('user Content - 로그인 사용자의 정보 조회 (api endpoint에서 사용자 ID가 없을 때)', () => {
+    const existUser: User = new User();
     existUser.id = 1;
     existUser.nickname = 'existedNickname';
     existUser.email = 'existedEmail@email.com';
@@ -324,20 +325,23 @@ describe('users.service API test', () => {
       password: existUser.password,
     };
 
-    const otherUser = new User();
+    const otherUser: User = new User();
     otherUser.id = 2;
     otherUser.nickname = 'otherNickname';
     otherUser.email = 'otherUser@email.com';
     otherUser.password = 'otherPassword@1234';
 
     // 반복되는 로그인 함수
-    const signInResultFn = async (user: {
-      email: string;
-      password: string;
-    }) => {
-      const result = await request(app).post(`/users/signin`).send(user);
+    const signInUser = async (user: UserDto) => {
+      return request(app).post(`/users/signin`).send(user);
+    };
 
-      return result;
+    // 토큰을 필요로 하는 http get 메소드 함수
+    const makeAuthRequest = async (user: UserDto, endpoint: string) => {
+      const authResponse = await signInUser(user);
+      return request(app)
+        .get(endpoint)
+        .set('Authorization', `Bearer ${authResponse.body.result.token}`);
     };
 
     beforeAll(async () => {
@@ -392,25 +396,31 @@ describe('users.service API test', () => {
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
 
-    test('getMyInfo - user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
+    test('user Content - getMyInfo - user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
       const result = await request(app).get('/users/userinfo');
 
       expect(result.status).toBe(400);
       expect(result.body.message).toEqual('USER_ID_IS_UNDEFINED');
     });
 
-    test('getMyInfo - not_found_user', async () => {
-      // 로그인 후 막 탈퇴한 회원의 유효성 검사
-      const deleteUser = new User();
-      deleteUser.nickname = 'deleteNickname';
-      deleteUser.email = 'deleteEmail@email.com';
-      deleteUser.password = 'deletePassword@1234';
-      await request(app).post(`/users/signup`).send(deleteUser);
+    // 로그인 후 막 탈퇴한 회원의 유효성 검사
+    test('user Content - getMyInfo - not_found_user', async () => {
+      const tempUser = new User();
+      tempUser.nickname = 'deleteNickname';
+      tempUser.email = 'deleteEmail@email.com';
+      tempUser.password = 'deletePassword@1234';
 
-      const signInResult = await signInResultFn({
-        email: deleteUser.email,
-        password: deleteUser.password,
-      });
+      await request(app).post(`/users/signup`).send(tempUser);
+
+      const tempUserInfo = {
+        email: tempUser.email,
+        password: tempUser.password,
+      };
+
+      // 로그인 후, 토큰 발급
+      const authResponse = await signInUser(tempUserInfo);
+
+      // 인위적으로 DB에서 회원정보에 탈퇴정보를 추가하여 탈퇴회원으로 수정
 
       await dataSource.manager.update(
         User,
@@ -422,18 +432,14 @@ describe('users.service API test', () => {
 
       const result = await request(app)
         .get('/users/userinfo')
-        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+        .set('Authorization', `Bearer ${authResponse.body.result.token}`);
 
       expect(result.status).toBe(404);
       expect(result.body.message).toEqual('USER_IS_NOT_FOUND');
     });
 
-    test('getMyInfo - success', async () => {
-      const signInResult = await signInResultFn(newUser);
-
-      const result = await request(app)
-        .get(`/users/userinfo`)
-        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+    test('user Content - getMyInfo - success', async () => {
+      const result = await makeAuthRequest(newUser, `/users/userinfo`);
 
       expect(result.status).toBe(200);
       expect(Object.keys(result.body)).toHaveLength(6);
@@ -441,12 +447,8 @@ describe('users.service API test', () => {
       expect(result.body.email).toEqual(existUser.email);
     });
 
-    test('getMyFeedList - success', async () => {
-      const signInResult = await signInResultFn(newUser);
-
-      const result = await request(app)
-        .get(`/users/userinfo/feeds`)
-        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+    test('user Content - getMyFeedList - success', async () => {
+      const result = await makeAuthRequest(newUser, `/users/userinfo/feeds`);
 
       expect(result.status).toBe(200);
       expect(Object.keys(result.body)).toHaveLength(3);
@@ -455,12 +457,8 @@ describe('users.service API test', () => {
       expect(result.body.feedListByUserId[0].title).toEqual('test title');
     });
 
-    test('getMyCommentList - success', async () => {
-      const signInResult = await signInResultFn(newUser);
-
-      const result = await request(app)
-        .get(`/users/userinfo/comments`)
-        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+    test('user Content - getMyCommentList - success', async () => {
+      const result = await makeAuthRequest(newUser, `/users/userinfo/comments`);
 
       expect(result.status).toBe(200);
       expect(Array.isArray(result.body)).toBeTruthy();
@@ -473,12 +471,8 @@ describe('users.service API test', () => {
       expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
     });
 
-    test('getMyFeedSymbolList - success', async () => {
-      const signInResult = await signInResultFn(newUser);
-
-      const result = await request(app)
-        .get(`/users/userinfo/symbols`)
-        .set('Authorization', `Bearer ${signInResult.body.result.token}`);
+    test('user Content - getMyFeedSymbolList - success', async () => {
+      const result = await makeAuthRequest(newUser, `/users/userinfo/symbols`);
 
       expect(result.status).toBe(200);
       expect(Array.isArray(result.body)).toBeTruthy();
