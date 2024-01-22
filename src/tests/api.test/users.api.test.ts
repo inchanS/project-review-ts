@@ -175,7 +175,7 @@ describe('users.service API test', () => {
     });
   });
 
-  describe('checkDuplicateEmail or checkDuplicateNickname', () => {
+  describe('checkDuplicateEmail', () => {
     // 이미 존재하는 유저
     const existUser = new User();
     existUser.nickname = 'existedNickname';
@@ -449,10 +449,10 @@ describe('users.service API test', () => {
         .set('Authorization', `Bearer ${signInResult.body.result.token}`);
 
       expect(result.status).toBe(200);
-      expect(Array.isArray(result.body)).toBeTruthy();
-      expect(result.body).toHaveLength(1);
-      expect(result.body[0].userId).toEqual(existUser.id);
-      expect(result.body[0].title).toEqual('test title');
+      expect(Object.keys(result.body)).toHaveLength(3);
+      expect(result.body.feedCntByUserId).toEqual(existUser.id);
+      expect(result.body.totalPage).toEqual(1);
+      expect(result.body.feedListByUserId[0].title).toEqual('test title');
     });
 
     test('getMyCommentList - success', async () => {
