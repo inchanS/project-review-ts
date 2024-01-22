@@ -421,7 +421,6 @@ describe('users.service API test', () => {
       const authResponse = await signInUser(tempUserInfo);
 
       // 인위적으로 DB에서 회원정보에 탈퇴정보를 추가하여 탈퇴회원으로 수정
-
       await dataSource.manager.update(
         User,
         { nickname: 'deleteNickname' },
@@ -430,6 +429,7 @@ describe('users.service API test', () => {
         }
       );
 
+      // 탈퇴 전 발급받은 토큰으로 정보조회 요청
       const result = await request(app)
         .get('/users/userinfo')
         .set('Authorization', `Bearer ${authResponse.body.result.token}`);
@@ -461,14 +461,19 @@ describe('users.service API test', () => {
       const result = await makeAuthRequest(newUser, `/users/userinfo/comments`);
 
       expect(result.status).toBe(200);
-      expect(Array.isArray(result.body)).toBeTruthy();
-      expect(result.body).toHaveLength(3);
+      expect(Object.keys(result.body)).toHaveLength(3);
+      // 로그인 사용자의 총 덧글 개수
+      expect(result.body.commentCntByUserId).toEqual(3);
       // 로그인 사용자의 공개 덧글
-      expect(result.body[0].comment).toEqual('test comment');
+      expect(result.body.commentListByUserId[2].comment).toEqual(
+        'test comment'
+      );
       // 로그인 사용자의 비공개 덧글
-      expect(result.body[1].comment).toEqual('test comment');
+      expect(result.body.commentListByUserId[1].is_private).toEqual(true);
       // 로그인 사용자의 삭제 덧글
-      expect(result.body[2].comment).toEqual('## DELETED_COMMENT ##');
+      expect(result.body.commentListByUserId[0].comment).toEqual(
+        '## DELETED_COMMENT ##'
+      );
     });
 
     test('user Content - getMyFeedSymbolList - success', async () => {
