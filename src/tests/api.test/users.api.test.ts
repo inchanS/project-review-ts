@@ -480,11 +480,11 @@ describe('users.service API test', () => {
       const result = await makeAuthRequest(newUser, `/users/userinfo/symbols`);
 
       expect(result.status).toBe(200);
-      expect(Array.isArray(result.body)).toBeTruthy();
-      expect(result.body).toHaveLength(1);
-      expect(result.body[0].feed.id).toEqual(2);
-      expect(result.body[0].symbol.id).toEqual(1);
-      expect(result.body[0].symbol.symbol).toEqual('like');
+      expect(Object.keys(result.body)).toHaveLength(3);
+      expect(result.body.symbolCntByUserId).toEqual(1);
+      expect(result.body.symbolListByUserId[0].feed.id).toEqual(2);
+      expect(result.body.symbolListByUserId[0].symbol.id).toEqual(1);
+      expect(result.body.symbolListByUserId[0].symbol.symbol).toEqual('like');
     });
   });
 
