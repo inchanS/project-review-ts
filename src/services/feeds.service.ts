@@ -65,7 +65,7 @@ export class FeedsService {
       const newFeedInstance = plainToInstance(Feed, feedInfo);
       const newFeed = await queryRunner.manager
         .withRepository(this.feedRepository)
-        .createFeed(newFeedInstance);
+        .createFeed(newFeedInstance, queryRunner);
 
       if (fileLinks) {
         await this.uploadFileService.updateFileLinks(
