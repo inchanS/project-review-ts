@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserDto } from '../../entities/dto/user.dto';
 import { AuthService } from '../../services/users/auth.service';
 
+// 사용자 회원가입, 로그인, 패스워드 리셋 관련 컨트롤러
 class AuthController {
   constructor(private authService: AuthService) {}
   signUp = async (req: Request, res: Response): Promise<void> => {

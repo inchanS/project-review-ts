@@ -3,6 +3,7 @@ import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentsService } from '../services/comments.service';
 import { Comment } from '../entities/comment.entity';
 
+// 덧글 관련
 class CommentsController {
   constructor(private commentsService: CommentsService) {}
 

@@ -14,6 +14,7 @@ import { CustomError } from '../../utils/util';
 import { QueryRunner } from 'typeorm';
 import { CommentListByUserId, FeedListByUserId } from '../../types/user';
 
+// 사용자 정보 수정, 삭제와 관련한 서비스
 export class UserService {
   private userRepository: UserRepository;
   private feedSymbolRepository: FeedSymbolRepository;

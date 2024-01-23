@@ -7,6 +7,7 @@ import {
 import { SymbolService } from '../services/symbol.service';
 import { Symbol } from '../entities/symbol.entity';
 
+// 게시글에 대한 사용자 공감 관련
 class SymbolsController {
   constructor(private symbolService: SymbolService) {}
 

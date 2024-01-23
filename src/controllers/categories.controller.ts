@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CategoriesService } from '../services/categories.service';
 import { Category } from '../entities/category.entity';
 
+// 카테고리 관련
 class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
 

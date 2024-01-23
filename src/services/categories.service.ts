@@ -1,6 +1,7 @@
 import { CategoriesRepository } from '../repositories/categories.repository';
 import { Category } from '../entities/category.entity';
 
+// 카테고리 관련
 export class CategoriesService {
   private repository: CategoriesRepository;
 

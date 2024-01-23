@@ -10,6 +10,7 @@ import { MailOptions, SendMail } from '../../utils/sendMail';
 import Mail from 'nodemailer/lib/mailer';
 import { CustomError } from '../../utils/util';
 
+// 사용자 회원가입, 로그인, 패스워드 리셋 관련 서비스
 export class AuthService {
   private userRepository: UserRepository;
   private validatorService: ValidatorService;

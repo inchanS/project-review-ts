@@ -4,6 +4,7 @@ import { FeedListRepository } from '../repositories/feedList.repository';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { DateUtils } from '../utils/dateUtils';
 
+// 검색 관련
 export class SearchService {
   private feedRepository: FeedRepository;
   private feedListRepository: FeedListRepository;

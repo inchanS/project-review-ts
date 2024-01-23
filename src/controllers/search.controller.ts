@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SearchService } from '../services/search.service';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 
+// 검색 관련
 class SearchController {
   constructor(private searchService: SearchService) {}
 

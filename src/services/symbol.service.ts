@@ -13,6 +13,7 @@ import {
 import { CustomError } from '../utils/util';
 import { Feed } from '../entities/feed.entity';
 
+// 게시글에 대한 사용자 공감 관련
 export class SymbolService {
   private feedRepository: FeedRepository;
   private feedSymbolRepository: FeedSymbolRepository;

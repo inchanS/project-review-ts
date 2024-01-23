@@ -89,6 +89,7 @@ export class CommentFormatter {
   };
 }
 
+// 덧글 관련
 export class CommentsService {
   private feedRepository: FeedRepository;
   private commentRepository: CommentRepository;
