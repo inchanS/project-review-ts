@@ -8,6 +8,7 @@ import {
 } from '../../types/user';
 import { createUserContentService } from '../../utils/serviceFactory';
 
+// 사용자 가입정보, 사용자별 게시물, 덧글, 공감등에 대한 정보 확인과 관련된 컨트롤러
 class UserContentController {
   constructor(private userContentService: UserContentService) {}
   // 유저의 모든 게시물 가져오기

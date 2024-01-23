@@ -15,6 +15,7 @@ import { CustomError } from '../utils/util';
 import { Feed } from '../entities/feed.entity';
 import { EntityNotFoundError } from 'typeorm';
 
+// 게시글에 대한 사용자 공감 관련
 export class SymbolService {
   constructor(
     private feedCustomRepository: FeedCustomRepository,

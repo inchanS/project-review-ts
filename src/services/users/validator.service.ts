@@ -3,6 +3,7 @@ import { CustomError } from '../../utils/util';
 import { User } from '../../entities/users.entity';
 import { EntityNotFoundError, Repository } from 'typeorm';
 
+// 사용자 정보 검증 관련 서비스
 export class ValidatorService {
   constructor(
     private userCustomRepository: UserCustomRepository,
