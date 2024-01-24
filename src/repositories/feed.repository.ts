@@ -1,7 +1,7 @@
 import dataSource from './data-source';
 import { Feed } from '../entities/feed.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import { IsNull, Like, Not, Repository } from 'typeorm';
+import { IsNull, Like, Not, QueryRunner, Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
 
 export type FeedOption = { isTemp?: boolean; isAll?: boolean };
@@ -10,14 +10,21 @@ export class FeedRepository extends Repository<Feed> {
     super(Feed, dataSource.createEntityManager());
   }
 
-  async createFeed(feedInfo: Feed) {
-    const feed = this.create(feedInfo);
-    await this.save(feed);
-    return await this.findOne({
+  async createFeed(feedInfo: Feed, queryRunner: QueryRunner) {
+    // typeORM의 save, update 등의 메소드는 호출할때마다 새로운 트랜잭션을 자체적으로 시작한다.
+
+    // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
+    // 다른 방법으로 처리해준다.
+    const feed = queryRunner.manager.create(Feed, feedInfo);
+    await queryRunner.manager.save(feed);
+
+    const result = await queryRunner.manager.findOne(Feed, {
       loadRelationIds: true,
       where: { user: { id: feedInfo.user.id } },
       order: { id: 'DESC' },
     });
+
+    return result;
   }
 
   async updateFeed(feedId: number, feedInfo: Feed) {
