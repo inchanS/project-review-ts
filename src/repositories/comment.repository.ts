@@ -1,8 +1,8 @@
 import dataSource from './data-source';
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
-import { Pagination } from './feed.repository';
 import { Repository } from 'typeorm';
+import { Pagination } from './feedList.repository';
 
 export class CommentRepository extends Repository<Comment> {
   constructor() {

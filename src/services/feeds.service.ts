@@ -1,11 +1,7 @@
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import {
-  FeedListRepository,
-  FeedOption,
-  FeedRepository,
-} from '../repositories/feed.repository';
+import { FeedOption, FeedRepository } from '../repositories/feed.repository';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
@@ -16,6 +12,7 @@ import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { DeleteUploadFiles, UploadFileService } from './uploadFile.service';
 import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
+import { FeedListRepository } from '../repositories/feedList.repository';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -24,8 +21,8 @@ export class FeedsService {
   private uploadService: UploadService;
 
   constructor() {
-    this.feedRepository = new FeedRepository();
-    this.feedListRepository = new FeedListRepository();
+    this.feedRepository = FeedRepository.getInstance();
+    this.feedListRepository = FeedListRepository.getInstance();
     this.uploadFileService = new UploadFileService();
     this.uploadService = new UploadService();
   }

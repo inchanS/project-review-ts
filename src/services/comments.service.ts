@@ -12,7 +12,7 @@ export class CommentsService {
   private commentRepository: CommentRepository;
 
   constructor() {
-    this.feedRepository = new FeedRepository();
+    this.feedRepository = FeedRepository.getInstance();
     this.commentRepository = new CommentRepository();
   }
 

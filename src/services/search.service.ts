@@ -1,17 +1,15 @@
-import {
-  FeedListRepository,
-  FeedRepository,
-} from '../repositories/feed.repository';
+import { FeedRepository } from '../repositories/feed.repository';
 import { Brackets } from 'typeorm';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
+import { FeedListRepository } from '../repositories/feedList.repository';
 
 export class SearchService {
   private feedRepository: FeedRepository;
   private feedListRepository: FeedListRepository;
 
   constructor() {
-    this.feedRepository = new FeedRepository();
-    this.feedListRepository = new FeedListRepository();
+    this.feedRepository = FeedRepository.getInstance();
+    this.feedListRepository = FeedListRepository.getInstance();
   }
   searchContent = async (query: string, index: number, limit: number) => {
     // query로 전달된 limit가 0이거나 없을 경우 기본값 5으로 변경 처리
