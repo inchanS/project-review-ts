@@ -1,7 +1,7 @@
 // 유저의 가입정보 가져오기
 import { Request, Response } from 'express';
-import { Pagination } from '../../repositories/feed.repository';
 import { UserContentService } from '../../services/users/userContent.service';
+import { Pagination } from '../../repositories/feedList.repository';
 
 class UserContentController {
   private userContentService: UserContentService;

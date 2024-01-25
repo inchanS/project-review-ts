@@ -1,6 +1,5 @@
 import { UserDto } from '../../entities/dto/user.dto';
 import bcrypt from 'bcryptjs';
-import { Pagination } from '../../repositories/feed.repository';
 import dataSource from '../../repositories/data-source';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { User } from '../../entities/users.entity';
@@ -12,6 +11,7 @@ import { ValidatorService } from './validator.service';
 import { UserRepository } from '../../repositories/user.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
+import { Pagination } from '../../repositories/feedList.repository';
 
 export class UserService {
   private userRepository: UserRepository;
@@ -21,8 +21,8 @@ export class UserService {
   private validatorService: ValidatorService;
 
   constructor() {
-    this.userRepository = new UserRepository();
-    this.feedSymbolRepository = new FeedSymbolRepository();
+    this.userRepository = UserRepository.getInstance();
+    this.feedSymbolRepository = FeedSymbolRepository.getInstance();
     this.uploadFileService = new UploadFileService();
     this.userContentService = new UserContentService();
     this.validatorService = new ValidatorService();

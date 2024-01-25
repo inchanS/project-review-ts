@@ -5,8 +5,17 @@ import { UserDto } from '../entities/dto/user.dto';
 import { FindOneOptions, Repository } from 'typeorm';
 
 export class UserRepository extends Repository<User> {
-  constructor() {
+  private static instance: UserRepository;
+
+  private constructor() {
     super(User, dataSource.createEntityManager());
+  }
+
+  public static getInstance(): UserRepository {
+    if (!UserRepository.instance) {
+      UserRepository.instance = new UserRepository();
+    }
+    return UserRepository.instance;
   }
 
   async createUser(userInfo: UserDto) {

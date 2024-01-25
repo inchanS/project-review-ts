@@ -5,7 +5,7 @@ export class ValidatorService {
   private userRepository: UserRepository;
 
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userRepository = UserRepository.getInstance();
   }
   checkDuplicateNickname = async (nickname: string): Promise<object> => {
     if (!nickname) {
