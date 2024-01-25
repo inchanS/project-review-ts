@@ -22,7 +22,7 @@ export class UserContentService {
     this.feedRepository = FeedRepository.getInstance();
     this.feedListRepository = FeedListRepository.getInstance();
     this.commentRepository = CommentRepository.getInstance();
-    this.feedSymbolRepository = new FeedSymbolRepository();
+    this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
 
   private validateUserId(userId: number) {

@@ -22,7 +22,7 @@ export class UserService {
 
   constructor() {
     this.userRepository = UserRepository.getInstance();
-    this.feedSymbolRepository = new FeedSymbolRepository();
+    this.feedSymbolRepository = FeedSymbolRepository.getInstance();
     this.uploadFileService = new UploadFileService();
     this.userContentService = new UserContentService();
     this.validatorService = new ValidatorService();
