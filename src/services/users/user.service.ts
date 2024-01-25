@@ -21,7 +21,7 @@ export class UserService {
   private validatorService: ValidatorService;
 
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userRepository = UserRepository.getInstance();
     this.feedSymbolRepository = new FeedSymbolRepository();
     this.uploadFileService = new UploadFileService();
     this.userContentService = new UserContentService();

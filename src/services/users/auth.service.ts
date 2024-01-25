@@ -16,7 +16,7 @@ export class AuthService {
 
   constructor() {
     this.validatorService = new ValidatorService();
-    this.userRepository = new UserRepository();
+    this.userRepository = UserRepository.getInstance();
   }
 
   signUp = async (userInfo: UserDto): Promise<void> => {

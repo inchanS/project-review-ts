@@ -15,7 +15,7 @@ export class UploadService {
   private uploadFilesRepository: Repository<UploadFiles>;
 
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userRepository = UserRepository.getInstance();
     this.uploadFilesRepository = dataSource.getRepository(UploadFiles);
   }
 

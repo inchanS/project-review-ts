@@ -18,7 +18,7 @@ export class UserContentService {
   private feedSymbolRepository: FeedSymbolRepository;
 
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userRepository = UserRepository.getInstance();
     this.feedRepository = FeedRepository.getInstance();
     this.feedListRepository = FeedListRepository.getInstance();
     this.commentRepository = CommentRepository.getInstance();
