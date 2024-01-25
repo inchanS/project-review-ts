@@ -5,10 +5,18 @@ import { Repository } from 'typeorm';
 import { Pagination } from './feedList.repository';
 
 export class CommentRepository extends Repository<Comment> {
-  constructor() {
+  private static instance: CommentRepository;
+
+  private constructor() {
     super(Comment, dataSource.createEntityManager());
   }
 
+  public static getInstance(): CommentRepository {
+    if (!CommentRepository.instance) {
+      CommentRepository.instance = new CommentRepository();
+    }
+    return CommentRepository.instance;
+  }
   async getCommentList(id: number) {
     return await this.createQueryBuilder('comment')
       .withDeleted()

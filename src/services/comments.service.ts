@@ -13,7 +13,7 @@ export class CommentsService {
 
   constructor() {
     this.feedRepository = FeedRepository.getInstance();
-    this.commentRepository = new CommentRepository();
+    this.commentRepository = CommentRepository.getInstance();
   }
 
   // 무한 대댓글의 경우, 재귀적으로 호출되는 함수

@@ -3,6 +3,7 @@ import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import dataSource from './data-source';
 import { CustomError } from '../utils/util';
 
+// TODO type을 interface로 바꾸고 다른 파일로 정리
 export type FeedListOptions = {
   includeTempFeeds?: boolean;
   onlyTempFeeds?: boolean;
