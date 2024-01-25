@@ -18,7 +18,7 @@ export class FeedRepository extends Repository<Feed> {
     return FeedRepository.instance;
   }
 
-  public async createFeed(feedInfo: Feed, queryRunner: QueryRunner) {
+  async createFeed(feedInfo: Feed, queryRunner: QueryRunner) {
     // typeORM의 save, update 등의 메소드는 호출할때마다 새로운 트랜잭션을 자체적으로 시작한다.
 
     // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
