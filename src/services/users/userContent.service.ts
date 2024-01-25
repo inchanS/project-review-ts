@@ -1,14 +1,14 @@
 // 유저 정보 찾기시 유저 정보의 확인
 import { UserRepository } from '../../repositories/user.repository';
-import {
-  FeedListOptions,
-  FeedListRepository,
-  FeedRepository,
-  Pagination,
-} from '../../repositories/feed.repository';
+import { FeedRepository } from '../../repositories/feed.repository';
 import { CommentRepository } from '../../repositories/comment.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
+import {
+  FeedListOptions,
+  FeedListRepository,
+  Pagination,
+} from '../../repositories/feedList.repository';
 
 export class UserContentService {
   private userRepository: UserRepository;
@@ -18,11 +18,11 @@ export class UserContentService {
   private feedSymbolRepository: FeedSymbolRepository;
 
   constructor() {
-    this.userRepository = new UserRepository();
-    this.feedRepository = new FeedRepository();
-    this.feedListRepository = new FeedListRepository();
-    this.commentRepository = new CommentRepository();
-    this.feedSymbolRepository = new FeedSymbolRepository();
+    this.userRepository = UserRepository.getInstance();
+    this.feedRepository = FeedRepository.getInstance();
+    this.feedListRepository = FeedListRepository.getInstance();
+    this.commentRepository = CommentRepository.getInstance();
+    this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
 
   private validateUserId(userId: number) {

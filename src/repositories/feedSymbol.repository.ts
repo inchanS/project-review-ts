@@ -1,12 +1,21 @@
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import dataSource from './data-source';
-import { Pagination } from './feed.repository';
 import { Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
+import { Pagination } from './feedList.repository';
 
 export class FeedSymbolRepository extends Repository<FeedSymbol> {
-  constructor() {
+  private static instance: FeedSymbolRepository;
+
+  private constructor() {
     super(FeedSymbol, dataSource.createEntityManager());
+  }
+
+  public static getInstance(): FeedSymbolRepository {
+    if (!FeedSymbolRepository.instance) {
+      FeedSymbolRepository.instance = new FeedSymbolRepository();
+    }
+    return FeedSymbolRepository.instance;
   }
   async getFeedSymbol(feedId: number, userId: number) {
     return await this.findOne({
