@@ -12,10 +12,10 @@ export class UserRepository extends Repository<User> {
   }
 
   public static getInstance(): UserRepository {
-    if (!UserRepository.instance) {
-      UserRepository.instance = new UserRepository();
+    if (!this.instance) {
+      this.instance = new this();
     }
-    return UserRepository.instance;
+    return this.instance;
   }
 
   async createUser(userInfo: UserDto) {
