@@ -12,10 +12,10 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
   }
 
   public static getInstance(): FeedSymbolRepository {
-    if (!FeedSymbolRepository.instance) {
-      FeedSymbolRepository.instance = new FeedSymbolRepository();
+    if (!this.instance) {
+      this.instance = new this();
     }
-    return FeedSymbolRepository.instance;
+    return this.instance;
   }
   async getFeedSymbol(feedId: number, userId: number) {
     return await this.findOne({

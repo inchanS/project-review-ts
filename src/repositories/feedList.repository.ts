@@ -15,16 +15,14 @@ export type Pagination = {
 
 export class FeedListRepository extends Repository<FeedList> {
   private static instance: FeedListRepository;
-
   private constructor() {
     super(FeedList, dataSource.createEntityManager());
   }
-
   public static getInstance(): FeedListRepository {
-    if (!FeedListRepository.instance) {
-      FeedListRepository.instance = new FeedListRepository();
+    if (!this.instance) {
+      this.instance = new this();
     }
-    return FeedListRepository.instance;
+    return this.instance;
   }
 
   async getFeedList(
