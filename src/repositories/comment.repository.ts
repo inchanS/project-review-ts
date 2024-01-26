@@ -6,17 +6,16 @@ import { Pagination } from './feedList.repository';
 
 export class CommentRepository extends Repository<Comment> {
   private static instance: CommentRepository;
-
   private constructor() {
     super(Comment, dataSource.createEntityManager());
   }
-
   public static getInstance(): CommentRepository {
-    if (!CommentRepository.instance) {
-      CommentRepository.instance = new CommentRepository();
+    if (!this.instance) {
+      this.instance = new this();
     }
-    return CommentRepository.instance;
+    return this.instance;
   }
+
   async getCommentList(id: number) {
     return await this.createQueryBuilder('comment')
       .withDeleted()

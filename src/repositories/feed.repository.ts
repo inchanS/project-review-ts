@@ -6,16 +6,14 @@ export type FeedOption = { isTemp?: boolean; isAll?: boolean };
 
 export class FeedRepository extends Repository<Feed> {
   private static instance: FeedRepository;
-
   private constructor() {
     super(Feed, dataSource.createEntityManager());
   }
-
   public static getInstance(): FeedRepository {
-    if (!FeedRepository.instance) {
-      FeedRepository.instance = new FeedRepository();
+    if (!this.instance) {
+      this.instance = new this();
     }
-    return FeedRepository.instance;
+    return this.instance;
   }
 
   async createFeed(feedInfo: Feed, queryRunner: QueryRunner) {
