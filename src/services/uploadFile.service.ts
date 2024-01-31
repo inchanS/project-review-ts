@@ -15,7 +15,7 @@ export class UploadFileService {
     this.uploadService = new UploadService();
   }
 
-  private createDeleteFileLinksList = async (
+  private generateListOfLinksForDeletableFiles = async (
     originFeed: Feed,
     fileLinks: string[]
   ) => {
@@ -129,7 +129,7 @@ export class UploadFileService {
     fileLinks: string[]
   ) => {
     let { uploadFileIdsToDelete, fileLinksToDelete } =
-      await this.createDeleteFileLinksList(originFeed, fileLinks);
+      await this.generateListOfLinksForDeletableFiles(originFeed, fileLinks);
 
     if (fileLinks) {
       await this.updateFileLinks(queryRunner, originFeed, fileLinks);
