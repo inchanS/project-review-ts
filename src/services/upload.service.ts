@@ -5,7 +5,6 @@ import dataSource from '../repositories/data-source';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
 import { UserRepository } from '../repositories/user.repository';
-import { invokeLambda } from '../utils/awsLambda';
 import { Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
 
@@ -211,7 +210,7 @@ export class UploadService {
       // FIXME 여기가 지울 파일이 많아지면 병목현상?인지 여튼 오래걸리면서 transaction이 잠기는 현상이 발생한다.
       // await checkFileAccess(param);
       // FIXME lambda - AWS 계정 바꿔야 함
-      await invokeLambda(param);
+      // await invokeLambda(param);
     });
     await Promise.all(findAndCheckPromises);
 
