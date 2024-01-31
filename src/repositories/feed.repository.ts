@@ -33,10 +33,10 @@ export class FeedRepository extends Repository<Feed> {
     return result;
   }
 
-  async updateFeed(feedId: number, feedInfo: Feed) {
-    await this.update(feedId, feedInfo);
+  async updateFeed(feedId: number, feedInfo: Feed, queryRunner: QueryRunner) {
+    await queryRunner.manager.update(Feed, feedId, feedInfo);
 
-    return await this.findOne({
+    return await queryRunner.manager.findOne(Feed, {
       loadRelationIds: true,
       where: { id: feedId },
     });
