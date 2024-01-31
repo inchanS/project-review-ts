@@ -1,20 +1,37 @@
-import dataSource from './data-source';
 import { Feed } from '../entities/feed.entity';
-import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import { IsNull, Like, Not } from 'typeorm';
+import { IsNull, Not, QueryRunner, Repository } from 'typeorm';
+import dataSource from './data-source';
 
 export type FeedOption = { isTemp?: boolean; isAll?: boolean };
-export const FeedRepository = dataSource.getRepository(Feed).extend({
-  async createFeed(feedInfo: Feed) {
-    const feed = await this.create(feedInfo);
-    await this.save(feed);
-    return await this.findOne({
+
+export class FeedRepository extends Repository<Feed> {
+  private static instance: FeedRepository;
+  private constructor() {
+    super(Feed, dataSource.createEntityManager());
+  }
+  public static getInstance(): FeedRepository {
+    if (!this.instance) {
+      this.instance = new this();
+    }
+    return this.instance;
+  }
+
+  async createFeed(feedInfo: Feed, queryRunner: QueryRunner) {
+    // typeORM의 save, update 등의 메소드는 호출할때마다 새로운 트랜잭션을 자체적으로 시작한다.
+
+    // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
+    // 다른 방법으로 처리해준다.
+    const feed = queryRunner.manager.create(Feed, feedInfo);
+    await queryRunner.manager.save(feed);
+
+    const result = await queryRunner.manager.findOne(Feed, {
       loadRelationIds: true,
-      where: { user: feedInfo.user },
+      where: { user: { id: feedInfo.user.id } },
       order: { id: 'DESC' },
-      take: 1,
     });
-  },
+
+    return result;
+  }
 
   async updateFeed(feedId: number, feedInfo: Feed) {
     await this.update(feedId, feedInfo);
@@ -23,7 +40,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       loadRelationIds: true,
       where: { id: feedId },
     });
-  },
+  }
 
   async getFeed(feedId: number, options: FeedOption = {}) {
     const queryBuilder = this.createQueryBuilder('feed')
@@ -64,7 +81,22 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       queryBuilder.andWhere('feed.posted_at IS NOT NULL');
     }
     return await queryBuilder.getOneOrFail();
-  },
+  }
+
+  // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
+  async getFeedCountByUserId(userId: number) {
+    return await this.countBy({
+      user: { id: userId },
+      posted_at: Not(IsNull()),
+    });
+
+    // return await this.createQueryBuilder('feed')
+    //   .select(['COUNT(feed.id) as feedCnt', 'feed.user'])
+    //   .where('feed.user = :userId', { userId: userId })
+    //   .andWhere('feed.posted_at IS NOT NULL')
+    //   .andWhere('feed.deleted_at IS NULL')
+    //   .getRawOne();
+  }
 
   // 피드의 symbol id별 count 가져오기
   async getFeedSymbolCount(feedId: number) {
@@ -80,7 +112,7 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .where('feed.id = :feedId', { feedId: feedId })
       .groupBy('feedSymbol.symbolId')
       .getRawMany();
-  },
+  }
 
   async addViewCount(feedId: number) {
     await this.createQueryBuilder()
@@ -88,94 +120,5 @@ export const FeedRepository = dataSource.getRepository(Feed).extend({
       .set({ viewCnt: () => 'viewCnt + 1' })
       .where('id = :feedId', { feedId: feedId })
       .execute();
-  },
-});
-
-export type FeedListOptions = {
-  includeTempFeeds?: boolean;
-  onlyTempFeeds?: boolean;
-};
-export const FeedListRepository = dataSource.getRepository(FeedList).extend({
-  async getFeedList(
-    categoryId: number | undefined,
-    startIndex: number,
-    limit: number,
-    query?: string
-  ) {
-    let where: any = {
-      categoryId: categoryId,
-      postedAt: Not(IsNull()),
-      deletedAt: IsNull(),
-    };
-
-    if (query) {
-      where = [
-        {
-          ...where,
-          title: Like(`%${query}%`),
-        },
-        {
-          ...where,
-          content: Like(`%${query}%`),
-        },
-      ];
-    }
-
-    return await this.find({
-      order: {
-        postedAt: 'DESC',
-      },
-      skip: startIndex,
-      take: limit,
-      where,
-    });
-  },
-
-  async getFeedListByUserId(userId: number, options: FeedListOptions = {}) {
-    const { includeTempFeeds = false, onlyTempFeeds = false } = options;
-
-    let feedListCondition = {};
-
-    if (includeTempFeeds && onlyTempFeeds) {
-      throw {
-        status: 400,
-        message:
-          'INCLUDE_TEMP_FEEDS_AND_ONLY_TEMP_FEEDS_CANNOT_BE_SET_TO_TRUE_AT_THE_SAME_TIME',
-      };
-    }
-
-    if (includeTempFeeds) {
-      // 없어도 되는 빈 if문이지만 코드 가독성을 위해 추가
-      // 사용자의 정식 게시글 + 임시저장 게시글 목록 반환 (삭제된 글은 반환하지 않음)
-    } else if (onlyTempFeeds) {
-      // 사용자의 임시저장 게시글 목록만 반환
-      feedListCondition = { postedAt: IsNull() };
-    } else {
-      // 사용자의 정식 게시글 목록만 반환
-      feedListCondition = { postedAt: Not(IsNull()) };
-    }
-
-    return await this.find({
-      where: { userId: userId, deletedAt: IsNull(), ...feedListCondition },
-    });
-
-    // --------------------------------------------------------------------------
-    // 아래의 2 코드를 위 코드로 리팩토링 함 (2023.03.24) ---------------------------------
-
-    //   if (includeTempFeeds) {
-    //     return await this.find({
-    //       where: { userId: userId, deletedAt: IsNull() },
-    //     });
-    //   } else {
-    //     return await this.find({
-    //       where: { userId: userId, postedAt: Not(IsNull()), deletedAt: IsNull() },
-    //     });
-    //   }
-    // },
-    //
-    // async getTempFeedList(userId: number) {
-    //   return await this.find({
-    //     where: { userId: userId, postedAt: IsNull() },
-    //   });
-  },
-});
+  }
+}

@@ -28,7 +28,7 @@ router.delete(
 router.get(
   '/check/:feedId',
   asyncWrap(authValidateOrReject),
-  asyncWrap(symbolsController.checkUsersSymbolForfeed)
+  asyncWrap(symbolsController.checkUsersSymbolForFeed)
 );
 
 export default router;

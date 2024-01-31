@@ -1,25 +1,29 @@
 import nodemailer from 'nodemailer';
+import Mail from 'nodemailer/lib/mailer';
 
-// FIXME : any 타입 제거
-export const sendMail = (mailOption: any) => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.NODEMAILER_USER,
-      pass: process.env.NODEMAILER_PASS,
-    },
-  });
+export interface MailOptions {
+  service: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  auth: {
+    user: string;
+    pass: string;
+  };
+}
 
-  return new Promise((resolve, reject) => {
-    transporter.sendMail(mailOption, (error, info) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(info);
-      }
-    });
-  });
-};
+export class SendMail {
+  private transporter: nodemailer.Transporter;
+
+  constructor(options: MailOptions) {
+    this.transporter = nodemailer.createTransport(options);
+  }
+
+  executeSendMail = async (mailOption: Mail.Options) => {
+    try {
+      return await this.transporter.sendMail(mailOption);
+    } catch (error) {
+      throw error;
+    }
+  };
+}
