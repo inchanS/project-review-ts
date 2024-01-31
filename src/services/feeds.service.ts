@@ -196,13 +196,13 @@ export class FeedsService {
 
       const newFeed = await queryRunner.manager
         .withRepository(this.feedRepository)
-        .updateFeed(feedId, feed);
+        .updateFeed(feedId, feed, queryRunner);
 
       await queryRunner.commitTransaction();
 
-      const result = await queryRunner.manager
-        .withRepository(this.feedRepository)
-        .getFeed(newFeed.id, { isAll: true });
+      const result = await this.feedRepository.getFeed(newFeed.id, {
+        isAll: true,
+      });
 
       return result;
     } catch (err) {

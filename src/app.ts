@@ -3,8 +3,6 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { morganCustomFormat } from './utils/util';
 import router from './routes/index.route';
-import { specs, swaggerOptions } from './utils/swagger';
-import swaggerUi from 'swagger-ui-express';
 
 let corsOptions = {
   origin: '*',
@@ -23,8 +21,6 @@ const createApp = () => {
   } else {
     app.use(morgan('combined'));
   }
-
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));

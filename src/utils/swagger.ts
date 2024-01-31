@@ -27,12 +27,12 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:8000',
-        description: 'local Server',
-      },
-      {
         description: 'project_review AWS RDS Test API document',
         url: 'http://3.35.117.128:8000',
+      },
+      {
+        url: 'http://localhost:8000',
+        description: 'local Server',
       },
     ],
   },
