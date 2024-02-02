@@ -137,10 +137,13 @@ export class UploadService {
 
       const fileSizeString: string = this.convertToStringFileSize(file.size);
 
+      // 클라이언트에서 UTF-8로 인코딩된 파일 이름을 디코딩하여 저장한다. (한글 파일명을 위해)
+      const decodedFilename = decodeURIComponent(file.originalname);
+
       const newUploadFile = this.uploadFilesRepository.create({
         file_link: file_link,
         is_img: isImage,
-        file_name: file.originalname,
+        file_name: decodedFilename,
         file_size: fileSizeString,
       });
       await this.uploadFilesRepository.save(newUploadFile);
