@@ -246,10 +246,10 @@ export class UploadService {
     const command: DeleteObjectsCommand = new DeleteObjectsCommand(params);
 
     // AWS S3에서 개체 삭제
-    this.commandToS3(command);
+    await this.commandToS3(command);
 
     // file_links에 'DELETE_FROM_UPLOAD_FILES_TABLE'가 포함되어있으면 mySQL 테이블에서도 개체 삭제
-    // 230706 굳이 transaction 안해도 되는거 아닌가??
+    // TODO  230706 굳이 transaction 안해도 되는거 아닌가??
     if (file_links.includes('DELETE_FROM_UPLOAD_FILES_TABLE')) {
       // mySQL에서 개체 삭제
       const queryRunner = dataSource.createQueryRunner();
@@ -263,6 +263,8 @@ export class UploadService {
       } catch (err) {
         await queryRunner.rollbackTransaction();
         throw new Error(`DELETE_UPLOAD_FILE_FAIL: ${err}`);
+      } finally {
+        await queryRunner.release();
       }
     }
   };

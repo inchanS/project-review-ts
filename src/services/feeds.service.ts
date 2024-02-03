@@ -64,7 +64,7 @@ export class FeedsService {
         .withRepository(this.feedRepository)
         .createFeed(newFeedInstance, queryRunner);
 
-      if (fileLinks) {
+      if (fileLinks && fileLinks.length > 0) {
         await this.uploadFileService.updateFileLinks(
           queryRunner,
           newFeed,
@@ -89,9 +89,10 @@ export class FeedsService {
 
       await queryRunner.commitTransaction();
 
-      const result: Feed = await queryRunner.manager
-        .withRepository(this.feedRepository)
-        .getFeed(newFeed.id, options);
+      const result: Feed = await this.feedRepository.getFeed(
+        newFeed.id,
+        options
+      );
 
       return result;
     } catch (err: any) {
@@ -114,6 +115,8 @@ export class FeedsService {
           `createFeed TRANSACTION error: ${err.message}`
         );
       }
+    } finally {
+      await queryRunner.release();
     }
   };
 
