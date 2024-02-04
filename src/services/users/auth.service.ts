@@ -29,6 +29,9 @@ export class AuthService {
     await this.validatorService.checkDuplicateEmail(userInfo.email);
     await this.validatorService.checkDuplicateNickname(userInfo.nickname);
 
+    const salt = await bcrypt.genSalt();
+    userInfo.password = await bcrypt.hash(userInfo.password, salt);
+
     await this.userRepository.createUser(userInfo);
   };
 

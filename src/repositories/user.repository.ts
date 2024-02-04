@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import dataSource from './data-source';
 import { User } from '../entities/users.entity';
 import { UserDto } from '../entities/dto/user.dto';
@@ -19,9 +18,6 @@ export class UserRepository extends Repository<User> {
   }
 
   async createUser(userInfo: UserDto) {
-    const salt = await bcrypt.genSalt();
-    userInfo.password = await bcrypt.hash(userInfo.password, salt);
-
     const user = this.create(userInfo);
     await this.save(user);
   }
