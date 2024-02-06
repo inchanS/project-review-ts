@@ -28,7 +28,10 @@ export class UserService {
     this.validatorService = new ValidatorService();
   }
 
-  public updateUserInfo = async (userId: number, userInfo: UserDto) => {
+  public updateUserInfo = async (
+    userId: number,
+    userInfo: UserDto
+  ): Promise<User> => {
     const originUserInfo = await this.userRepository.findOne({
       where: { id: userId },
     });

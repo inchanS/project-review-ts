@@ -35,7 +35,10 @@ export class AuthService {
     await this.userRepository.createUser(userInfo);
   };
 
-  signIn = async (email: string, password: string): Promise<object> => {
+  signIn = async (
+    email: string,
+    password: string
+  ): Promise<{ token: string }> => {
     // // <version 1>
     // // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
     // const checkUserbyEmail = await dataSource

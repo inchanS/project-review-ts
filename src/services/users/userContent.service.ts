@@ -9,6 +9,37 @@ import {
   FeedListRepository,
   Pagination,
 } from '../../repositories/feedList.repository';
+import { User } from '../../entities/users.entity';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
+import { Comment } from '../../entities/comment.entity';
+import { FeedSymbol } from '../../entities/feedSymbol.entity';
+
+interface FeedListByUserId {
+  feedCntByUserId: number;
+  totalPage: number;
+  feedListByUserId: FeedList[];
+}
+
+type ExtendedComment = Omit<
+  Comment,
+  'created_at' | 'updated_at' | 'deleted_at'
+> & {
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+interface CommentListByUserId {
+  commentCntByUserId: number;
+  totalScrollCnt: number;
+  commentListByUserId: ExtendedComment[];
+}
+
+interface FeedSymbolListByUserId {
+  symbolCntByUserId: number;
+  totalPage: number;
+  symbolListByUserId: FeedSymbol[];
+}
 
 export class UserContentService {
   private userRepository: UserRepository;
@@ -25,13 +56,13 @@ export class UserContentService {
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
 
-  private validateUserId(userId: number) {
+  private validateUserId(userId: number): void {
     if (!userId) {
       throw new CustomError(400, 'USER_ID_IS_UNDEFINED');
     }
   }
 
-  private validatePage(page: Pagination) {
+  private validatePage(page: Pagination): Pagination {
     if (isNaN(page.startIndex) || isNaN(page.limit)) {
       return undefined;
     } else if (page.startIndex < 1) {
@@ -40,11 +71,14 @@ export class UserContentService {
     return page;
   }
 
-  private calculateTotalPageCount(totalItems: number, page: Pagination) {
+  private calculateTotalPageCount(
+    totalItems: number,
+    page: Pagination
+  ): number {
     return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
   }
 
-  findUserInfoByUserId = async (targetUserId: number) => {
+  findUserInfoByUserId = async (targetUserId: number): Promise<User> => {
     this.validateUserId(targetUserId);
 
     const userInfo = await this.userRepository.findOne({
@@ -63,7 +97,7 @@ export class UserContentService {
     targetUserId: number,
     page: Pagination,
     options?: FeedListOptions
-  ) => {
+  ): Promise<FeedListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
     page = this.validatePage(page);
 
@@ -76,21 +110,31 @@ export class UserContentService {
       feedCntByUserId,
       page
     );
-    const feedListByUserId = await this.feedListRepository.getFeedListByUserId(
-      targetUserId,
-      page,
-      options
-    );
+    const feedListByUserId: FeedList[] =
+      await this.feedListRepository.getFeedListByUserId(
+        targetUserId,
+        page,
+        options
+      );
 
     return { feedCntByUserId, totalPage, feedListByUserId };
   };
 
   // 유저 정보 확인시 유저의 댓글 조회
+  // 애플리케이션 서버의 타임존을 고려하여 Date타입을 재가공 (ex. 2021-08-01T00:00:00.000Z -> 2021-08-01 00:00:00)
+  public formatDate(date: Date): string {
+    const localDateTime: Date = new Date(
+      date.getTime() - date.getTimezoneOffset() * 60 * 1000
+    );
+
+    return localDateTime.toISOString().substring(0, 19).replace('T', ' ');
+  }
+
   findUserCommentsByUserId = async (
     targetUserId: number,
     loggedInUserId: number,
     page?: Pagination
-  ) => {
+  ): Promise<CommentListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
 
     if (isNaN(page.startIndex) || isNaN(page.limit)) {
@@ -99,7 +143,7 @@ export class UserContentService {
       throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
     }
 
-    const commentCntByUserId =
+    const commentCntByUserId: number =
       await this.commentRepository.getCommentCountByUserId(targetUserId);
 
     // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
@@ -108,30 +152,34 @@ export class UserContentService {
       page
     );
 
-    const commentListByUserId: any =
+    const originalCommentListByUserId: Comment[] =
       await this.commentRepository.getCommentListByUserId(targetUserId, page);
 
-    for (const comment of commentListByUserId) {
-      const isPrivate: boolean =
-        comment.is_private === true &&
-        comment.user.id !== loggedInUserId &&
-        (comment.parent
-          ? comment.parent.user.id !== loggedInUserId
-          : comment.feed.user.id !== loggedInUserId);
-      const isDeleted: boolean = comment.deleted_at !== null;
-      comment.comment = isDeleted
-        ? '## DELETED_COMMENT ##'
-        : isPrivate
-        ? '## PRIVATE_COMMENT ##'
-        : comment.comment;
+    const commentListByUserId: ExtendedComment[] =
+      originalCommentListByUserId.map((comment: Comment) => {
+        const isPrivate: boolean =
+          comment.is_private === true &&
+          comment.user.id !== loggedInUserId &&
+          (comment.parent
+            ? comment.parent.user.id !== loggedInUserId
+            : comment.feed.user.id !== loggedInUserId);
+        const isDeleted: boolean = comment.deleted_at !== null;
 
-      // Date타입 재가공
-      comment.created_at = comment.created_at.substring(0, 19);
-      comment.updated_at = comment.updated_at.substring(0, 19);
-      comment.deleted_at = comment.deleted_at
-        ? comment.deleted_at.substring(0, 19)
-        : null;
-    }
+        return {
+          ...comment,
+          comment: isDeleted
+            ? '## DELETED_COMMENT ##'
+            : isPrivate
+            ? '## PRIVATE_COMMENT ##'
+            : comment.comment,
+          // Date타입 재가공
+          created_at: this.formatDate(comment.created_at),
+          updated_at: this.formatDate(comment.updated_at),
+          deleted_at: comment.deleted_at
+            ? this.formatDate(comment.deleted_at)
+            : null,
+        };
+      });
 
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
   };
@@ -140,11 +188,11 @@ export class UserContentService {
   findUserFeedSymbolsByUserId = async (
     targetUserId: number,
     page: Pagination
-  ) => {
+  ): Promise<FeedSymbolListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
     page = this.validatePage(page);
 
-    const symbolCntByUserId =
+    const symbolCntByUserId: number =
       await this.feedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);
 
     // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
@@ -153,7 +201,7 @@ export class UserContentService {
       page
     );
 
-    const symbolListByUserId =
+    const symbolListByUserId: FeedSymbol[] =
       await this.feedSymbolRepository.getFeedSymbolsByUserId(
         targetUserId,
         page
