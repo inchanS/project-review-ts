@@ -6,7 +6,7 @@ import {
   authValidateOrReject,
 } from '../middleware/jwt.strategy';
 
-const router = Router();
+const router: Router = Router();
 
 // 임시저장글 ------------------------------------------------
 // 임시저장 목록 가져오기

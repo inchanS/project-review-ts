@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { asyncWrap } from '../utils/util';
 import searchController from '../controllers/search.controller';
-const router = Router();
+
+const router: Router = Router();
 
 // 검색창에서 사용하는 용도
 router.get('', asyncWrap(searchController.searchContent));
