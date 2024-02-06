@@ -13,6 +13,7 @@ import { User } from '../../entities/users.entity';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
+import { DateUtils } from '../../utils/dateUtils';
 
 interface FeedListByUserId {
   feedCntByUserId: number;
@@ -121,14 +122,6 @@ export class UserContentService {
   };
 
   // 유저 정보 확인시 유저의 댓글 조회
-  // 애플리케이션 서버의 타임존을 고려하여 Date타입을 재가공 (ex. 2021-08-01T00:00:00.000Z -> 2021-08-01 00:00:00)
-  public formatDate(date: Date): string {
-    const localDateTime: Date = new Date(
-      date.getTime() - date.getTimezoneOffset() * 60 * 1000
-    );
-
-    return localDateTime.toISOString().substring(0, 19).replace('T', ' ');
-  }
 
   findUserCommentsByUserId = async (
     targetUserId: number,
@@ -173,10 +166,10 @@ export class UserContentService {
             ? '## PRIVATE_COMMENT ##'
             : comment.comment,
           // Date타입 재가공
-          created_at: this.formatDate(comment.created_at),
-          updated_at: this.formatDate(comment.updated_at),
+          created_at: DateUtils.formatDate(comment.created_at),
+          updated_at: DateUtils.formatDate(comment.updated_at),
           deleted_at: comment.deleted_at
-            ? this.formatDate(comment.deleted_at)
+            ? DateUtils.formatDate(comment.deleted_at)
             : null,
         };
       });

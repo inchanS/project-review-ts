@@ -2,16 +2,15 @@ import express, { NextFunction, Request, Response } from 'express';
 import { TokenIndexer } from 'morgan';
 import { blue, green, red, yellow } from 'cli-color';
 
-// FIXME : CustomError 방식으로 전체 에러들 처리하기
 export class CustomError extends Error {
   status: number;
-
   constructor(status: number, message: string) {
     super(message);
     this.status = status;
   }
 }
 
+// TODO 아래 함수들 모두 Class-static method로 변경
 function asyncWrap(asyncController: express.RequestHandler) {
   return async (...[req, res, next]: Parameters<express.RequestHandler>) => {
     try {
