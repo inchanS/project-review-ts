@@ -10,19 +10,22 @@ class SymbolsController {
     this.symbolService = new SymbolService();
   }
 
-  getSymbols = async (req: Request, res: Response) => {
+  getSymbols = async (req: Request, res: Response): Promise<void> => {
     const result = await this.symbolService.getSymbols();
     res.status(200).json(result);
   };
 
-  getFeedSymbolCount = async (req: Request, res: Response) => {
+  getFeedSymbolCount = async (req: Request, res: Response): Promise<void> => {
     const feedId: number = Number(req.params.feedId);
 
     const result = await this.symbolService.getFeedSymbolCount(feedId);
     res.status(200).json(result);
   };
 
-  checkUsersSymbolForFeed = async (req: Request, res: Response) => {
+  checkUsersSymbolForFeed = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     const feedId: number = Number(req.params.feedId);
     const userId: number = req.userInfo.id;
 
@@ -33,7 +36,10 @@ class SymbolsController {
     res.status(200).json(result);
   };
 
-  addAndUpdateSymbolToFeed = async (req: Request, res: Response) => {
+  addAndUpdateSymbolToFeed = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     const userId: number = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
     const { symbolId } = req.body;
@@ -57,7 +63,7 @@ class SymbolsController {
     res.status(statusCode).json({ message, result: result.result });
   };
 
-  removeSymbolFromFeed = async (req: Request, res: Response) => {
+  removeSymbolFromFeed = async (req: Request, res: Response): Promise<void> => {
     const userId: number = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
 

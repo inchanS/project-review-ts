@@ -8,7 +8,7 @@ class CategoriesController {
     this.categoriesService = new CategoriesService();
   }
 
-  getCategoriesList = async (req: Request, res: Response) => {
+  getCategoriesList = async (req: Request, res: Response): Promise<void> => {
     const result = await this.categoriesService.getCategoriesList();
     res.status(200).json(result);
   };

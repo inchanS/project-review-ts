@@ -8,7 +8,7 @@ class CommentsController {
   constructor() {
     this.commentsService = new CommentsService();
   }
-  getCommentList = async (req: Request, res: Response) => {
+  getCommentList = async (req: Request, res: Response): Promise<void> => {
     const feedId: number = Number(req.params.id);
     const userId: number = req.userInfo.id;
 
@@ -16,7 +16,7 @@ class CommentsController {
     res.status(200).json(result);
   };
 
-  createComment = async (req: Request, res: Response) => {
+  createComment = async (req: Request, res: Response): Promise<void> => {
     const user: number = req.userInfo.id;
     const { feed, comment, is_private, parent }: CommentDto = req.body;
     const commentInfo: CommentDto = {
@@ -33,7 +33,7 @@ class CommentsController {
       .json({ message: 'THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED' });
   };
 
-  updateComment = async (req: Request, res: Response) => {
+  updateComment = async (req: Request, res: Response): Promise<void> => {
     const { comment, is_private }: CommentDto = req.body;
     const commentInfo: CommentDto = { comment, is_private };
     const commentId: number = req.body.commentId;
@@ -45,7 +45,7 @@ class CommentsController {
       .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_UPDATED` });
   };
 
-  deleteComment = async (req: Request, res: Response) => {
+  deleteComment = async (req: Request, res: Response): Promise<void> => {
     const commentId: number = Number(req.params.id);
     const userId: number = req.userInfo.id;
 

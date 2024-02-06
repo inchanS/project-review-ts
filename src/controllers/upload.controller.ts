@@ -8,17 +8,18 @@ class UploadController {
     this.uploadService = new UploadService();
   }
   // 파일 업로드를 처리하는 API 엔드포인트 ----------------------
-  uploadFiles = async (req: Request, res: Response) => {
+  uploadFiles = async (req: Request, res: Response): Promise<void> => {
     const userId: number = req.userInfo.id;
     const files = req.files as Express.Multer.File[];
     const result = await this.uploadService.uploadFiles(userId, files);
-    await res.status(201).send({
+
+    res.status(201).send({
       file_links: result,
     });
   };
 
   // 파일 삭제를 처리하는 API 엔드포인트 ----------------------
-  deleteUploadFile = async (req: Request, res: Response) => {
+  deleteUploadFile = async (req: Request, res: Response): Promise<void> => {
     const { file_links } = req.body;
     const userId: number = req.userInfo.id;
 
@@ -27,7 +28,7 @@ class UploadController {
 
     await this.uploadService.deleteUploadFile(userId, file_links);
 
-    await res.status(204).send();
+    res.status(204).send();
   };
 }
 

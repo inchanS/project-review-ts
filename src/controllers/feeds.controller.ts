@@ -13,7 +13,7 @@ export class FeedsController {
   constructor() {
     this.feedsService = new FeedsService();
   }
-  getTempFeedList = async (req: Request, res: Response) => {
+  getTempFeedList = async (req: Request, res: Response): Promise<void> => {
     const user = req.userInfo.id;
     const result = await this.feedsService.getTempFeedList(user);
 
@@ -21,7 +21,7 @@ export class FeedsController {
   };
 
   // 임시저장 게시글 불러오기 -----------------------------------------------------------
-  getFeed = async (req: Request, res: Response) => {
+  getFeed = async (req: Request, res: Response): Promise<void> => {
     const user = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
 
@@ -33,7 +33,7 @@ export class FeedsController {
   };
 
   // 게시글 임시저장 -----------------------------------------------------------
-  createTempFeed = async (req: Request, res: Response) => {
+  createTempFeed = async (req: Request, res: Response): Promise<void> => {
     const user = req.userInfo.id;
     const { title, content, estimation, category }: TempFeedDto = req.body;
     const fileLinks: string[] = req.body.fileLinks;
@@ -64,7 +64,7 @@ export class FeedsController {
   };
 
   // 게시글 임시저장 수정 -----------------------------------------------------------
-  updateTempFeed = async (req: Request, res: Response) => {
+  updateTempFeed = async (req: Request, res: Response): Promise<void> => {
     const user = req.userInfo.id;
     const feedId: number = req.body.feedId;
     const { title, content, estimation, category }: TempFeedDto = req.body;
@@ -93,7 +93,7 @@ export class FeedsController {
 
   // 게시글 ==================================================================
   // 게시글 작성 --------------------------------------------------------------
-  createFeed = async (req: Request, res: Response) => {
+  createFeed = async (req: Request, res: Response): Promise<void> => {
     const user = req.userInfo.id;
     const fileLinks: string[] = req.body.fileLinks;
     const { title, content, estimation, category }: FeedDto = req.body;
@@ -132,7 +132,7 @@ export class FeedsController {
   };
 
   // 게시글 수정 --------------------------------------------------------------
-  updateFeed = async (req: Request, res: Response) => {
+  updateFeed = async (req: Request, res: Response): Promise<void> => {
     const user = req.userInfo.id;
     const feedId: number = req.body.feedId;
     const fileLinks: string[] = req.body.fileLinks;
@@ -156,7 +156,7 @@ export class FeedsController {
     res.status(200).json({ message: `update feed success`, result: result });
   };
 
-  deleteFeed = async (req: Request, res: Response) => {
+  deleteFeed = async (req: Request, res: Response): Promise<void> => {
     const userId = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
 
@@ -166,7 +166,7 @@ export class FeedsController {
   };
 
   // 게시글 리스트 ------------------------------------------------------------
-  getFeedList = async (req: Request, res: Response) => {
+  getFeedList = async (req: Request, res: Response): Promise<void> => {
     const categoryId: number = Number(req.query.categoryId);
 
     const index: number = Number(req.query.index);
@@ -181,7 +181,7 @@ export class FeedsController {
     res.status(200).json(result);
   };
 
-  getEstimations = async (_req: Request, res: Response) => {
+  getEstimations = async (_req: Request, res: Response): Promise<void> => {
     const result = await this.feedsService.getEstimations();
 
     res.status(200).json(result);
