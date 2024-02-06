@@ -21,14 +21,12 @@ interface FeedListByUserId {
   feedListByUserId: FeedList[];
 }
 
-type ExtendedComment = Omit<
-  Comment,
-  'created_at' | 'updated_at' | 'deleted_at'
-> & {
+interface ExtendedComment
+  extends Omit<Comment, 'created_at' | 'updated_at' | 'deleted_at'> {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-};
+}
 
 interface CommentListByUserId {
   commentCntByUserId: number;
