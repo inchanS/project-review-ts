@@ -8,6 +8,7 @@ import { Comment } from '../entities/comment.entity';
 import { CustomError } from '../utils/util';
 import { User } from '../entities/users.entity';
 import { DateUtils } from '../utils/dateUtils';
+import { Feed } from '../entities/feed.entity';
 
 export class CommentFormatter {
   private readonly comment: Comment;
@@ -15,6 +16,8 @@ export class CommentFormatter {
   private readonly feedUserId: number;
   private readonly parentUserId?: number;
 
+  // TODO feedUserId는 comment의 feed의 user.id를 의미하는데 굳이 따로 넣어줄 필요가 있나?
+  //  인자를 빼고, comment의 feed의 user.id를 가져오는 방법으로 변경해도 될 것 같다.
   constructor(
     comment: Comment,
     userId: number,
@@ -90,11 +93,17 @@ export class CommentsService {
 
   // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
   getCommentList = async (feedId: number, userId: number) => {
-    const feed = await this.feedRepository.findOne({
+    const feed: Feed = await this.feedRepository.findOne({
+      loadRelationIds: true,
       where: { id: feedId },
     });
-    // FIXME 임시게시글의 덧글 목록은 가져오지 않게하고 에러핸들링하기!!
-    if (!feed) throw new CustomError(404, 'FEED_NOT_FOUND');
+
+    // TODO 어떤 쿼리가 더 성능이 좋을까??
+    // if (!feed || feed.posted_at === null) {
+    const statusId: number = Number(feed.status);
+    if (!feed || statusId === 2) {
+      throw new CustomError(404, 'FEED_NOT_FOUND');
+    }
 
     const result = await this.commentRepository.getCommentList(feedId);
 

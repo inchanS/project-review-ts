@@ -147,6 +147,7 @@ export class UserContentService {
       await this.commentRepository.getCommentListByUserId(targetUserId, page);
 
     const commentListByUserId: ExtendedComment[] =
+      // TODO CommentFormatter().format 메소드 재사용으로 처리하기
       originalCommentListByUserId.map((comment: Comment) => {
         const isPrivate: boolean =
           comment.is_private === true &&
