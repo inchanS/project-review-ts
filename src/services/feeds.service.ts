@@ -279,6 +279,7 @@ export class FeedsService {
   };
 
   public deleteFeed = async (userId: number, feedId: number): Promise<void> => {
+    // FIXME type any 고치기
     const feed: any = await this.feedRepository
       .getFeed(feedId, { isAll: true })
       .catch((err: Error) => {
@@ -314,8 +315,18 @@ export class FeedsService {
           });
       }
 
+      // FIXME feed 삭제시 feed.status.id를 3(deleted)으로 변경하는 로직이 추가되어야 한다.
+      //  아래 transaction 코드 확인해보기 20240207
+      feed.status = 3;
+      await queryRunner.manager.update(
+        Feed,
+        { id: feedId },
+        { status: feed.status }
+      );
+      await queryRunner.manager.softDelete(Feed, { id: feedId });
+
       // feed 삭제
-      await queryRunner.manager.softDelete(Feed, feedId);
+      // await queryRunner.manager.softDelete(Feed, feedId);
 
       // feedSymbol 삭제
       await queryRunner.manager.softDelete(FeedSymbol, { feed: feedId });
