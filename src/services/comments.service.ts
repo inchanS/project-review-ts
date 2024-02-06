@@ -209,8 +209,4 @@ export class CommentsService {
 
     await this.commentRepository.softDelete(commentId);
   };
-
-  // TODO 이 함수 왜 안쓰고 있지??
-  getCommentsById = async (userId: number) =>
-    await this.commentRepository.getCommentListByUserId(userId, undefined);
 }
