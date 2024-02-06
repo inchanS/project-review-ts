@@ -27,7 +27,7 @@ export class CommentFormatter {
     this.parentUserId = parentUserId;
   }
 
-  isPrivate(): boolean {
+  isPrivate = (): boolean => {
     return (
       this.comment.is_private === true &&
       this.comment.user.id !== this.userId &&
@@ -35,21 +35,19 @@ export class CommentFormatter {
         ? this.parentUserId !== this.userId
         : this.feedUserId !== this.userId)
     );
-  }
+  };
 
-  isDeleted(): boolean {
-    return this.comment.deleted_at !== null;
-  }
+  isDeleted = (): boolean => this.comment.deleted_at !== null;
 
-  formatUser(): User {
+  formatUser = (): User => {
     if (this.isDeleted() || this.isPrivate()) {
       return { id: null, nickname: null, email: null } as User;
     }
     return this.comment.user;
-  }
+  };
 
-  formatChildren(): Comment[] {
-    return this.comment.children
+  formatChildren = (): Comment[] =>
+    this.comment.children
       ? this.comment.children.map(child =>
           new CommentFormatter(
             child,
@@ -59,29 +57,26 @@ export class CommentFormatter {
           ).format()
         )
       : [];
-  }
 
-  public format(): Comment {
-    return {
-      ...this.comment,
-      comment: this.isDeleted()
-        ? '## DELETED_COMMENT ##'
-        : this.isPrivate()
-        ? '## PRIVATE_COMMENT ##'
-        : this.comment.comment,
-      user: this.formatUser(),
-      created_at: DateUtils.formatDate(
-        this.comment.created_at
-      ) as unknown as Date,
-      updated_at: DateUtils.formatDate(
-        this.comment.updated_at
-      ) as unknown as Date,
-      deleted_at: this.comment.deleted_at
-        ? (DateUtils.formatDate(this.comment.deleted_at) as unknown as Date)
-        : null,
-      children: this.formatChildren(),
-    };
-  }
+  public format = (): Comment => ({
+    ...this.comment,
+    comment: this.isDeleted()
+      ? '## DELETED_COMMENT ##'
+      : this.isPrivate()
+      ? '## PRIVATE_COMMENT ##'
+      : this.comment.comment,
+    user: this.formatUser(),
+    created_at: DateUtils.formatDate(
+      this.comment.created_at
+    ) as unknown as Date,
+    updated_at: DateUtils.formatDate(
+      this.comment.updated_at
+    ) as unknown as Date,
+    deleted_at: this.comment.deleted_at
+      ? (DateUtils.formatDate(this.comment.deleted_at) as unknown as Date)
+      : null,
+    children: this.formatChildren(),
+  });
 }
 
 export class CommentsService {
