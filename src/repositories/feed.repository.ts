@@ -2,7 +2,17 @@ import { Feed } from '../entities/feed.entity';
 import { IsNull, Not, QueryRunner, Repository } from 'typeorm';
 import dataSource from './data-source';
 
-export type FeedOption = { isTemp?: boolean; isAll?: boolean };
+export interface FeedOption {
+  isTemp?: boolean;
+  isAll?: boolean;
+}
+
+interface FeedSymbolCount {
+  feedId: number;
+  symbolId: number;
+  symbol: string;
+  count: number;
+}
 
 export class FeedRepository extends Repository<Feed> {
   private static instance: FeedRepository;
@@ -16,7 +26,7 @@ export class FeedRepository extends Repository<Feed> {
     return this.instance;
   }
 
-  async createFeed(feedInfo: Feed, queryRunner: QueryRunner) {
+  async createFeed(feedInfo: Feed, queryRunner: QueryRunner): Promise<Feed> {
     // typeORM의 save, update 등의 메소드는 호출할때마다 새로운 트랜잭션을 자체적으로 시작한다.
     // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
     // 다른 방법으로 처리해준다.
@@ -32,7 +42,11 @@ export class FeedRepository extends Repository<Feed> {
     return result;
   }
 
-  async updateFeed(feedId: number, feedInfo: Feed, queryRunner: QueryRunner) {
+  async updateFeed(
+    feedId: number,
+    feedInfo: Feed,
+    queryRunner: QueryRunner
+  ): Promise<Feed> {
     await queryRunner.manager.update(Feed, feedId, feedInfo);
 
     return await queryRunner.manager.findOne(Feed, {
@@ -41,7 +55,7 @@ export class FeedRepository extends Repository<Feed> {
     });
   }
 
-  async getFeed(feedId: number, options: FeedOption = {}) {
+  async getFeed(feedId: number, options: FeedOption = {}): Promise<Feed> {
     const queryBuilder = this.createQueryBuilder('feed')
       .select([
         'feed.id',
@@ -83,7 +97,7 @@ export class FeedRepository extends Repository<Feed> {
   }
 
   // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
-  async getFeedCountByUserId(userId: number) {
+  async getFeedCountByUserId(userId: number): Promise<number> {
     return await this.countBy({
       user: { id: userId },
       posted_at: Not(IsNull()),
@@ -98,7 +112,7 @@ export class FeedRepository extends Repository<Feed> {
   }
 
   // 피드의 symbol id별 count 가져오기
-  async getFeedSymbolCount(feedId: number) {
+  async getFeedSymbolCount(feedId: number): Promise<FeedSymbolCount[]> {
     return await this.createQueryBuilder('feed')
       .select([
         'feed.id AS feedId',
@@ -113,7 +127,7 @@ export class FeedRepository extends Repository<Feed> {
       .getRawMany();
   }
 
-  async addViewCount(feedId: number) {
+  async addViewCount(feedId: number): Promise<void> {
     await this.createQueryBuilder()
       .update(Feed)
       .set({ viewCnt: () => 'viewCnt + 1' })

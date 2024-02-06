@@ -16,7 +16,7 @@ export class CommentRepository extends Repository<Comment> {
     return this.instance;
   }
 
-  async getCommentList(id: number) {
+  async getCommentList(id: number): Promise<Comment[]> {
     return await this.createQueryBuilder('comment')
       .withDeleted()
       .addSelect(['user.id', 'user.nickname', 'user.email'])
@@ -46,19 +46,22 @@ export class CommentRepository extends Repository<Comment> {
       .getMany();
   }
 
-  async createComment(commentInfo: Comment) {
+  async createComment(commentInfo: Comment): Promise<void> {
     const newComment = this.create(commentInfo);
     await this.save(newComment);
   }
 
-  async updateComment(commentId: number, commentInfo: CommentDto) {
+  async updateComment(
+    commentId: number,
+    commentInfo: CommentDto
+  ): Promise<void> {
     await dataSource.manager.update(Comment, commentId, {
       comment: commentInfo.comment,
       is_private: commentInfo.is_private,
     });
   }
 
-  async getCommentCountByUserId(userId: number) {
+  async getCommentCountByUserId(userId: number): Promise<number> {
     return await this.count({
       where: { user: { id: userId } },
       withDeleted: true,
@@ -71,7 +74,10 @@ export class CommentRepository extends Repository<Comment> {
     //   .getRawOne();
   }
 
-  async getCommentListByUserId(userId: number, page: Pagination) {
+  async getCommentListByUserId(
+    userId: number,
+    page: Pagination
+  ): Promise<Comment[]> {
     let pageCondition: {
       skip: number;
       take: number;

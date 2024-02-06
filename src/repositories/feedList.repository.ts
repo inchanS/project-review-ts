@@ -3,15 +3,14 @@ import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import dataSource from './data-source';
 import { CustomError } from '../utils/util';
 
-// TODO type을 interface로 바꾸고 다른 파일로 정리
-export type FeedListOptions = {
+export interface FeedListOptions {
   includeTempFeeds?: boolean;
   onlyTempFeeds?: boolean;
-};
-export type Pagination = {
+}
+export interface Pagination {
   startIndex: number;
   limit: number;
-};
+}
 
 export class FeedListRepository extends Repository<FeedList> {
   private static instance: FeedListRepository;
@@ -30,7 +29,7 @@ export class FeedListRepository extends Repository<FeedList> {
     startIndex: number,
     limit: number,
     query?: string
-  ) {
+  ): Promise<FeedList[]> {
     let where: any = {
       categoryId: categoryId,
       postedAt: Not(IsNull()),
@@ -64,7 +63,7 @@ export class FeedListRepository extends Repository<FeedList> {
     userId: number,
     page: Pagination,
     options: FeedListOptions = {}
-  ) {
+  ): Promise<FeedList[]> {
     const { includeTempFeeds = false, onlyTempFeeds = false } = options;
 
     let feedListCondition = {};

@@ -58,7 +58,7 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     return await queryBuilder.getMany();
   }
 
-  async upsertFeedSymbol(feedSymbolInfo: FeedSymbol) {
+  async upsertFeedSymbol(feedSymbolInfo: FeedSymbol): Promise<void> {
     await this.upsert(feedSymbolInfo, ['feed', 'user']).catch((err: Error) => {
       if (
         err.message ===
@@ -70,7 +70,7 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     });
   }
 
-  async deleteFeedSymbol(feedSymbolId: number) {
+  async deleteFeedSymbol(feedSymbolId: number): Promise<void> {
     await this.delete(feedSymbolId);
   }
 
