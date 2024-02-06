@@ -6,6 +6,83 @@ import { FeedRepository } from '../repositories/feed.repository';
 import { IsNull, Not } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CustomError } from '../utils/util';
+import { User } from '../entities/users.entity';
+import { DateUtils } from '../utils/dateUtils';
+
+export class CommentFormatter {
+  private readonly comment: Comment;
+  private readonly userId: number;
+  private readonly feedUserId: number;
+  private readonly parentUserId?: number;
+
+  constructor(
+    comment: Comment,
+    userId: number,
+    feedUserId: number,
+    parentUserId?: number
+  ) {
+    this.comment = comment;
+    this.userId = userId;
+    this.feedUserId = feedUserId;
+    this.parentUserId = parentUserId;
+  }
+
+  isPrivate(): boolean {
+    return (
+      this.comment.is_private === true &&
+      this.comment.user.id !== this.userId &&
+      (this.parentUserId
+        ? this.parentUserId !== this.userId
+        : this.feedUserId !== this.userId)
+    );
+  }
+
+  isDeleted(): boolean {
+    return this.comment.deleted_at !== null;
+  }
+
+  formatUser(): User {
+    if (this.isDeleted() || this.isPrivate()) {
+      return { id: null, nickname: null, email: null } as User;
+    }
+    return this.comment.user;
+  }
+
+  formatChildren(): Comment[] {
+    return this.comment.children
+      ? this.comment.children.map(child =>
+          new CommentFormatter(
+            child,
+            this.userId,
+            this.feedUserId,
+            this.comment.user.id
+          ).format()
+        )
+      : [];
+  }
+
+  public format(): Comment {
+    return {
+      ...this.comment,
+      comment: this.isDeleted()
+        ? '## DELETED_COMMENT ##'
+        : this.isPrivate()
+        ? '## PRIVATE_COMMENT ##'
+        : this.comment.comment,
+      user: this.formatUser(),
+      created_at: DateUtils.formatDate(
+        this.comment.created_at
+      ) as unknown as Date,
+      updated_at: DateUtils.formatDate(
+        this.comment.updated_at
+      ) as unknown as Date,
+      deleted_at: this.comment.deleted_at
+        ? (DateUtils.formatDate(this.comment.deleted_at) as unknown as Date)
+        : null,
+      children: this.formatChildren(),
+    };
+  }
+}
 
 export class CommentsService {
   private feedRepository: FeedRepository;
@@ -17,49 +94,6 @@ export class CommentsService {
   }
 
   // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
-  private formatComment = (
-    comment: any,
-    userId: number,
-    feedUserId: number,
-    parentUserId?: number
-  ): any => {
-    const isPrivate =
-      comment.is_private === true &&
-      comment.user.id !== userId &&
-      (parentUserId ? parentUserId !== userId : feedUserId !== userId);
-    const isDeleted = comment.deleted_at !== null;
-
-    return {
-      ...comment,
-      // 로그인 사용자의 비밀덧글 조회시 유효성 확인 및 삭제된 덧글 필터링
-      comment: isDeleted
-        ? '## DELETED_COMMENT ##'
-        : isPrivate
-        ? '## PRIVATE_COMMENT ##'
-        : comment.comment,
-
-      user: isDeleted
-        ? { id: null, nickname: null, email: null }
-        : isPrivate
-        ? { id: null, nickname: null, email: null }
-        : comment.user,
-
-      // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
-      created_at: comment.created_at.substring(0, 19),
-      updated_at: comment.updated_at.substring(0, 19),
-      deleted_at: comment.deleted_at
-        ? comment.deleted_at.substring(0, 19)
-        : null,
-
-      // 대댓글 영역
-      children: comment.children
-        ? comment.children.map((child: any) =>
-            this.formatComment(child, userId, feedUserId, comment.user.id)
-          )
-        : [],
-    };
-  };
-
   getCommentList = async (feedId: number, userId: number) => {
     const feed = await this.feedRepository.findOne({
       where: { id: feedId },
@@ -76,7 +110,7 @@ export class CommentsService {
 
     const feedUserId = result[0].feed.user.id;
     return [...result].map((comment: any) =>
-      this.formatComment(comment, userId, feedUserId)
+      new CommentFormatter(comment, userId, feedUserId).format()
     );
   };
 
