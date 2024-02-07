@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './users.entity';
 import { Feed } from './feed.entity';
-import { Base } from './index.entity';
+import { Base } from './base.entity';
 
 @Entity('comments')
 export class Comment extends Base {

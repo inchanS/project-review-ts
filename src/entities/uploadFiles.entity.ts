@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
-import { Base } from './index.entity';
+import { Base } from './base.entity';
 import { Feed } from './feed.entity';
 
 @Entity('upload_files')

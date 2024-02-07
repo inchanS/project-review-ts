@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany } from 'typeorm';
-import { Base } from './index.entity';
+import { Base } from './base.entity';
 import { Feed } from './feed.entity';
 
 export type feedStatusType = 'published' | 'temporary' | 'deleted';

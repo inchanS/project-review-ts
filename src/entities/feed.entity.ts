@@ -5,7 +5,7 @@ import { Category } from './category.entity';
 import { FeedStatus } from './feedStatus.entity';
 import { Comment } from './comment.entity';
 import { FeedSymbol } from './feedSymbol.entity';
-import { Base } from './index.entity';
+import { Base } from './base.entity';
 import { UploadFiles } from './uploadFiles.entity';
 
 @Entity('feeds')

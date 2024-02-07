@@ -2,7 +2,7 @@ import { Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { User } from './users.entity';
 import { Feed } from './feed.entity';
 import { Symbol } from './symbol.entity';
-import { Base } from './index.entity';
+import { Base } from './base.entity';
 
 @Entity('feed_symbol')
 @Index(['feed', 'user'], { unique: true })
