@@ -61,25 +61,29 @@ export class CommentFormatter {
         )
       : [];
 
-  public format = (): Comment => ({
-    ...this.comment,
-    comment: this.isDeleted()
-      ? '## DELETED_COMMENT ##'
-      : this.isPrivate()
-      ? '## PRIVATE_COMMENT ##'
-      : this.comment.comment,
-    user: this.formatUser(),
-    created_at: DateUtils.formatDate(
-      this.comment.created_at
-    ) as unknown as Date,
-    updated_at: DateUtils.formatDate(
-      this.comment.updated_at
-    ) as unknown as Date,
-    deleted_at: this.comment.deleted_at
-      ? (DateUtils.formatDate(this.comment.deleted_at) as unknown as Date)
-      : null,
-    children: this.formatChildren(),
-  });
+  public format = (): Comment => {
+    const formattedComment: Comment = {
+      ...this.comment,
+      comment: this.isDeleted()
+        ? '## DELETED_COMMENT ##'
+        : this.isPrivate()
+        ? '## PRIVATE_COMMENT ##'
+        : this.comment.comment,
+      user: this.formatUser(),
+      created_at: DateUtils.formatDate(
+        this.comment.created_at
+      ) as unknown as Date,
+      updated_at: DateUtils.formatDate(
+        this.comment.updated_at
+      ) as unknown as Date,
+      deleted_at: this.comment.deleted_at
+        ? (DateUtils.formatDate(this.comment.deleted_at) as unknown as Date)
+        : null,
+      children: this.formatChildren(),
+    };
+
+    return formattedComment;
+  };
 }
 
 export class CommentsService {
