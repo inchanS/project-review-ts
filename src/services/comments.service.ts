@@ -13,20 +13,11 @@ import { Feed } from '../entities/feed.entity';
 export class CommentFormatter {
   private readonly comment: Comment;
   private readonly userId: number;
-  private readonly feedUserId: number;
   private readonly parentUserId?: number;
 
-  // TODO feedUserId는 comment의 feed의 user.id를 의미하는데 굳이 따로 넣어줄 필요가 있나?
-  //  인자를 빼고, comment의 feed의 user.id를 가져오는 방법으로 변경해도 될 것 같다.
-  constructor(
-    comment: Comment,
-    userId: number,
-    feedUserId: number,
-    parentUserId?: number
-  ) {
+  constructor(comment: Comment, userId: number, parentUserId?: number) {
     this.comment = comment;
     this.userId = userId;
-    this.feedUserId = feedUserId;
     this.parentUserId = parentUserId;
   }
 
@@ -36,17 +27,21 @@ export class CommentFormatter {
       this.comment.user.id !== this.userId &&
       (this.parentUserId
         ? this.parentUserId !== this.userId
-        : this.feedUserId !== this.userId)
+        : this.comment.feed.user.id !== this.userId)
     );
   };
 
   isDeleted = (): boolean => this.comment.deleted_at !== null;
 
   formatUser = (): User => {
+    let formattedUser: User = this.comment.user;
     if (this.isDeleted() || this.isPrivate()) {
-      return { id: null, nickname: null, email: null } as User;
+      formattedUser = { id: null, nickname: null, email: null } as User;
+
+      return formattedUser;
     }
-    return this.comment.user;
+
+    return formattedUser;
   };
 
   formatChildren = (): Comment[] =>
@@ -55,7 +50,6 @@ export class CommentFormatter {
           new CommentFormatter(
             child,
             this.userId,
-            this.feedUserId,
             this.comment.user.id
           ).format()
         )
@@ -116,9 +110,8 @@ export class CommentsService {
       return [];
     }
 
-    const feedUserId = result[0].feed.user.id;
     return [...result].map((comment: any) =>
-      new CommentFormatter(comment, userId, feedUserId).format()
+      new CommentFormatter(comment, userId).format()
     );
   };
 
