@@ -73,10 +73,17 @@ export class CommentFormatter {
       deleted_at: this.comment.deleted_at
         ? (DateUtils.formatDate(this.comment.deleted_at) as unknown as Date)
         : null,
-      children: this.formatChildren(),
     };
 
     return formattedComment;
+  };
+
+  public formatWithChildren = (): Comment => {
+    const basicFormat: Comment = this.format();
+    return {
+      ...basicFormat,
+      children: this.formatChildren(),
+    };
   };
 }
 
@@ -111,7 +118,7 @@ export class CommentsService {
     }
 
     return [...result].map((comment: any) =>
-      new CommentFormatter(comment, userId).format()
+      new CommentFormatter(comment, userId).formatWithChildren()
     );
   };
 

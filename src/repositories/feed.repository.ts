@@ -85,6 +85,8 @@ export class FeedRepository extends Repository<Feed> {
       .leftJoin('feed.status', 'status')
       .leftJoin('feed.uploadFiles', 'uploadFiles')
       .where('feed.id = :feedId', { feedId: feedId })
+      // TODO typeORM에서는 deleted_at이 null인 것만 가져오는 것이 기본이기 때문에,
+      //  아래와 갈이 별도의 조건을 추가하지 않아도 될것 같은데? 확인 필요
       .andWhere('feed.deleted_at IS NULL');
 
     if (options.isAll) {

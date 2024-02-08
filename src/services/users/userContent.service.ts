@@ -13,7 +13,7 @@ import { User } from '../../entities/users.entity';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
-import { DateUtils } from '../../utils/dateUtils';
+import { CommentFormatter } from '../comments.service';
 
 interface FeedListByUserId {
   feedCntByUserId: number;
@@ -21,17 +21,17 @@ interface FeedListByUserId {
   feedListByUserId: FeedList[];
 }
 
-interface ExtendedComment
-  extends Omit<Comment, 'created_at' | 'updated_at' | 'deleted_at'> {
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
+// interface ExtendedComment
+//   extends Omit<Comment, 'created_at' | 'updated_at' | 'deleted_at'> {
+//   created_at: string;
+//   updated_at: string;
+//   deleted_at: string | null;
+// }
 
 interface CommentListByUserId {
   commentCntByUserId: number;
   totalScrollCnt: number;
-  commentListByUserId: ExtendedComment[];
+  commentListByUserId: Comment[];
 }
 
 interface FeedSymbolListByUserId {
@@ -146,32 +146,41 @@ export class UserContentService {
     const originalCommentListByUserId: Comment[] =
       await this.commentRepository.getCommentListByUserId(targetUserId, page);
 
-    const commentListByUserId: ExtendedComment[] =
-      // TODO CommentFormatter().format 메소드 재사용으로 처리하기
+    const commentListByUserId: Comment[] =
+      // TODO CommentFormatter().format 메소드 재사용으로 처리 - 테스트 확인 필요
       originalCommentListByUserId.map((comment: Comment) => {
-        const isPrivate: boolean =
-          comment.is_private === true &&
-          comment.user.id !== loggedInUserId &&
-          (comment.parent
-            ? comment.parent.user.id !== loggedInUserId
-            : comment.feed.user.id !== loggedInUserId);
-        const isDeleted: boolean = comment.deleted_at !== null;
-
-        return {
-          ...comment,
-          comment: isDeleted
-            ? '## DELETED_COMMENT ##'
-            : isPrivate
-            ? '## PRIVATE_COMMENT ##'
-            : comment.comment,
-          // Date타입 재가공
-          created_at: DateUtils.formatDate(comment.created_at),
-          updated_at: DateUtils.formatDate(comment.updated_at),
-          deleted_at: comment.deleted_at
-            ? DateUtils.formatDate(comment.deleted_at)
-            : null,
-        };
+        return new CommentFormatter(
+          comment,
+          loggedInUserId,
+          comment.parent?.user.id
+        ).format();
       });
+
+    // // CommentFormatter().format 메소드 사용전 원래의 코드
+    // originalCommentListByUserId.map((comment: Comment) => {
+    //   const isPrivate: boolean =
+    //     comment.is_private === true &&
+    //     comment.user.id !== loggedInUserId &&
+    //     (comment.parent
+    //       ? comment.parent.user.id !== loggedInUserId
+    //       : comment.feed.user.id !== loggedInUserId);
+    //   const isDeleted: boolean = comment.deleted_at !== null;
+    //
+    //   return {
+    //     ...comment,
+    //     comment: isDeleted
+    //       ? '## DELETED_COMMENT ##'
+    //       : isPrivate
+    //       ? '## PRIVATE_COMMENT ##'
+    //       : comment.comment,
+    //     // Date타입 재가공
+    //     created_at: DateUtils.formatDate(comment.created_at),
+    //     updated_at: DateUtils.formatDate(comment.updated_at),
+    //     deleted_at: comment.deleted_at
+    //       ? DateUtils.formatDate(comment.deleted_at)
+    //       : null,
+    //   };
+    // });
 
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
   };
