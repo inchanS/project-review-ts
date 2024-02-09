@@ -6,9 +6,26 @@ import { FeedRepository } from '../repositories/feed.repository';
 import { IsNull, Not } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CustomError } from '../utils/util';
-import { User } from '../entities/users.entity';
 import { DateUtils } from '../utils/dateUtils';
 import { Feed } from '../entities/feed.entity';
+
+export interface ExtendedComment
+  extends Omit<
+    Comment,
+    'created_at' | 'updated_at' | 'deleted_at' | 'user' | 'children'
+  > {
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  user: ExtendedUser;
+  children?: ExtendedComment[];
+}
+
+interface ExtendedUser {
+  id: number | null;
+  nickname: string | null;
+  email: string | null;
+}
 
 export class CommentFormatter {
   private readonly comment: Comment;
@@ -33,10 +50,10 @@ export class CommentFormatter {
 
   isDeleted = (): boolean => this.comment.deleted_at !== null;
 
-  formatUser = (): User => {
-    let formattedUser: User = this.comment.user;
+  formatUser = (): ExtendedUser => {
+    let formattedUser: ExtendedUser = this.comment.user;
     if (this.isDeleted() || this.isPrivate()) {
-      formattedUser = { id: null, nickname: null, email: null } as User;
+      formattedUser = { id: null, nickname: null, email: null };
 
       return formattedUser;
     }
@@ -44,7 +61,7 @@ export class CommentFormatter {
     return formattedUser;
   };
 
-  formatChildren = (): Comment[] =>
+  formatChildren = (): ExtendedComment[] =>
     this.comment.children
       ? this.comment.children.map(child =>
           new CommentFormatter(
@@ -55,31 +72,28 @@ export class CommentFormatter {
         )
       : [];
 
-  public format = (): Comment => {
-    const formattedComment: Comment = {
-      ...this.comment,
+  public format = (): ExtendedComment => {
+    return {
+      id: this.comment.id,
+      parent: this.comment.parent,
+      feed: this.comment.feed,
+      is_private: this.comment.is_private,
       comment: this.isDeleted()
         ? '## DELETED_COMMENT ##'
         : this.isPrivate()
         ? '## PRIVATE_COMMENT ##'
         : this.comment.comment,
       user: this.formatUser(),
-      created_at: DateUtils.formatDate(
-        this.comment.created_at
-      ) as unknown as Date,
-      updated_at: DateUtils.formatDate(
-        this.comment.updated_at
-      ) as unknown as Date,
+      created_at: DateUtils.formatDate(this.comment.created_at),
+      updated_at: DateUtils.formatDate(this.comment.updated_at),
       deleted_at: this.comment.deleted_at
-        ? (DateUtils.formatDate(this.comment.deleted_at) as unknown as Date)
+        ? DateUtils.formatDate(this.comment.deleted_at)
         : null,
     };
-
-    return formattedComment;
   };
 
-  public formatWithChildren = (): Comment => {
-    const basicFormat: Comment = this.format();
+  public formatWithChildren = (): ExtendedComment => {
+    const basicFormat: ExtendedComment = this.format();
     return {
       ...basicFormat,
       children: this.formatChildren(),
