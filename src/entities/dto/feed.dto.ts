@@ -11,7 +11,7 @@ import { User } from '../users.entity';
 export class FeedDto {
   @IsNotEmpty()
   @IsNumber()
-  user: User;
+  user: User | number;
 
   @IsNotEmpty()
   @IsString()
