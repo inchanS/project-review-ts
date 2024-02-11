@@ -30,4 +30,9 @@ export class CommentDto {
   @IsNumber()
   @IsOptional()
   parent?: number;
+
+  constructor(comment: string, is_private: boolean) {
+    this.comment = comment;
+    this.is_private = is_private;
+  }
 }

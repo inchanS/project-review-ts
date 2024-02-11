@@ -35,12 +35,31 @@ export class User extends BaseEntity {
   @Column({ unique: true })
   email: string;
 
-  @OneToMany(type => Comment, comment => comment.user)
+  @OneToMany(() => Comment, comment => comment.user)
   comment: Comment[];
 
-  @OneToMany(type => Feed, feed => feed.user)
+  @OneToMany(() => Feed, feed => feed.user)
   feed: Feed[];
 
-  @OneToMany(type => FeedSymbol, feedSymbol => feedSymbol.user)
-  feedSymbol: [];
+  @OneToMany(() => FeedSymbol, feedSymbol => feedSymbol.user)
+  feedSymbol: FeedSymbol[];
+
+  constructor(
+    id: number,
+    nickname: string,
+    password: string,
+    email: string,
+    comment: Comment[],
+    feed: Feed[],
+    feedSymbol: FeedSymbol[]
+  ) {
+    super();
+    this.id = id;
+    this.nickname = nickname;
+    this.password = password;
+    this.email = email;
+    this.comment = comment;
+    this.feed = feed;
+    this.feedSymbol = feedSymbol;
+  }
 }

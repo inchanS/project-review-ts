@@ -110,4 +110,44 @@ export class FeedList {
 
   @ViewColumn()
   statusId: number;
+
+  constructor(
+    id: number,
+    categoryId: number,
+    category: string,
+    userId: number,
+    userNickname: string,
+    title: string,
+    content: string,
+    imgUrl: string,
+    viewCnt: number,
+    commentCnt: number,
+    likeCnt: number,
+    filesCnt: number,
+    imgCnt: number,
+    createdAt: Date,
+    updatedAt: Date,
+    deletedAt: Date,
+    postedAt: Date,
+    statusId: number
+  ) {
+    this.id = id;
+    this.categoryId = categoryId;
+    this.category = category;
+    this.userId = userId;
+    this.userNickname = userNickname;
+    this.title = title;
+    this.content = content;
+    this.imgUrl = imgUrl;
+    this.viewCnt = viewCnt;
+    this.commentCnt = commentCnt;
+    this.likeCnt = likeCnt;
+    this.filesCnt = filesCnt;
+    this.imgCnt = imgCnt;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+    this.deletedAt = deletedAt;
+    this.postedAt = postedAt;
+    this.statusId = statusId;
+  }
 }
