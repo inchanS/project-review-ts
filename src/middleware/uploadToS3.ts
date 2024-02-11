@@ -12,10 +12,10 @@ const upload: multer.Multer = multer({
 // AWS S3 객체를 생성합니다.
 const s3: S3Client = new S3Client({
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
   },
-  region: process.env.AWS_REGION,
+  region: process.env.AWS_REGION as string,
 });
 
 export { upload, s3 };
