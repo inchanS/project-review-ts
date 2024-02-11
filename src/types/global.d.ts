@@ -1,3 +1,5 @@
+import { request } from 'express';
+
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
@@ -11,8 +13,13 @@ declare global {
 
   namespace Express {
     interface Request {
-      id?: number;
-      userInfo?: userInfo;
+      id: number;
+      userInfo: {
+        id: number;
+      };
+      param: {
+        id: number;
+      };
     }
   }
 
@@ -30,4 +37,3 @@ declare global {
     }
   }
 }
-export {};
