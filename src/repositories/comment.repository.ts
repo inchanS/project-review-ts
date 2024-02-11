@@ -78,10 +78,12 @@ export class CommentRepository extends Repository<Comment> {
     userId: number,
     page: Pagination
   ): Promise<Comment[]> {
-    let pageCondition: {
-      skip: number;
-      take: number;
-    };
+    let pageCondition:
+      | {
+          skip: number;
+          take: number;
+        }
+      | undefined;
 
     if (page) {
       pageCondition = {

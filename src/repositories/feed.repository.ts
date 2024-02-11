@@ -26,14 +26,17 @@ export class FeedRepository extends Repository<Feed> {
     return this.instance;
   }
 
-  async createFeed(feedInfo: Feed, queryRunner: QueryRunner): Promise<Feed> {
+  async createFeed(
+    feedInfo: Feed,
+    queryRunner: QueryRunner
+  ): Promise<Feed | null> {
     // typeORM의 save, update 등의 메소드는 호출할때마다 새로운 트랜잭션을 자체적으로 시작한다.
     // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
     // 다른 방법으로 처리해준다.
     const feed = queryRunner.manager.create(Feed, feedInfo);
     await queryRunner.manager.save(feed);
 
-    const result = await queryRunner.manager.findOne(Feed, {
+    const result: Feed | null = await queryRunner.manager.findOne(Feed, {
       loadRelationIds: true,
       where: { user: { id: feedInfo.user.id } },
       order: { id: 'DESC' },
@@ -46,7 +49,7 @@ export class FeedRepository extends Repository<Feed> {
     feedId: number,
     feedInfo: Feed,
     queryRunner: QueryRunner
-  ): Promise<Feed> {
+  ): Promise<Feed | null> {
     await queryRunner.manager.update(Feed, feedId, feedInfo);
 
     return await queryRunner.manager.findOne(Feed, {

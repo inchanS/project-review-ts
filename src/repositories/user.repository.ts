@@ -47,7 +47,7 @@ export class UserRepository extends Repository<User> {
     return super.findOneOrFail(options);
   }
 
-  async findOne(options: FindOneOptions): Promise<User> {
+  async findOne(options: FindOneOptions): Promise<User | null> {
     return super.findOne(options);
   }
 
