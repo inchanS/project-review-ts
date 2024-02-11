@@ -4,6 +4,8 @@ import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import { FeedsService } from '../services/feeds.service';
 import { CustomError } from '../utils/util';
+import { Estimation } from '../entities/estimation.entity';
+import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -14,7 +16,7 @@ export class FeedsController {
     this.feedsService = new FeedsService();
   }
   getTempFeedList = async (req: Request, res: Response): Promise<void> => {
-    const user = req.userInfo.id;
+    const user: number = req.userInfo.id;
     const result = await this.feedsService.getTempFeedList(user);
 
     res.status(200).json({ message: `check temporary feed success`, result });
@@ -22,7 +24,7 @@ export class FeedsController {
 
   // 임시저장 게시글 불러오기 -----------------------------------------------------------
   getFeed = async (req: Request, res: Response): Promise<void> => {
-    const user = req.userInfo.id;
+    const user: number = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
 
     const result = await this.feedsService.getFeed(user, feedId, {
@@ -34,7 +36,7 @@ export class FeedsController {
 
   // 게시글 임시저장 -----------------------------------------------------------
   createTempFeed = async (req: Request, res: Response): Promise<void> => {
-    const user = req.userInfo.id;
+    const user: number = req.userInfo.id;
     const { title, content, estimation, category }: TempFeedDto = req.body;
     const fileLinks: string[] = req.body.fileLinks;
 
@@ -65,7 +67,7 @@ export class FeedsController {
 
   // 게시글 임시저장 수정 -----------------------------------------------------------
   updateTempFeed = async (req: Request, res: Response): Promise<void> => {
-    const user = req.userInfo.id;
+    const user: number = req.userInfo.id;
     const feedId: number = req.body.feedId;
     const { title, content, estimation, category }: TempFeedDto = req.body;
     const fileLinks: string[] = req.body.fileLinks;
@@ -78,7 +80,7 @@ export class FeedsController {
       category,
     };
 
-    const result = await this.feedsService.updateFeed(
+    const result: Feed = await this.feedsService.updateFeed(
       user,
       feedInfo,
       feedId,
@@ -94,7 +96,7 @@ export class FeedsController {
   // 게시글 ==================================================================
   // 게시글 작성 --------------------------------------------------------------
   createFeed = async (req: Request, res: Response): Promise<void> => {
-    const user = req.userInfo.id;
+    const user: number = req.userInfo.id;
     const fileLinks: string[] = req.body.fileLinks;
     const { title, content, estimation, category }: FeedDto = req.body;
     const feedId: number = req.body.feedId;
@@ -146,7 +148,7 @@ export class FeedsController {
       category,
     };
 
-    const result = await this.feedsService.updateFeed(
+    const result: Feed = await this.feedsService.updateFeed(
       user,
       feedInfo,
       feedId,
@@ -157,7 +159,7 @@ export class FeedsController {
   };
 
   deleteFeed = async (req: Request, res: Response): Promise<void> => {
-    const userId = req.userInfo.id;
+    const userId: number = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
 
     await this.feedsService.deleteFeed(userId, feedId);
@@ -172,7 +174,7 @@ export class FeedsController {
     const index: number = Number(req.query.index);
     const limit: number = Number(req.query.limit);
 
-    const result = await this.feedsService.getFeedList(
+    const result: FeedList[] = await this.feedsService.getFeedList(
       categoryId,
       index,
       limit
@@ -182,7 +184,7 @@ export class FeedsController {
   };
 
   getEstimations = async (_req: Request, res: Response): Promise<void> => {
-    const result = await this.feedsService.getEstimations();
+    const result: Estimation[] = await this.feedsService.getEstimations();
 
     res.status(200).json(result);
   };

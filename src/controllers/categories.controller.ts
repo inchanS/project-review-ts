@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CategoriesService } from '../services/categories.service';
+import { Category } from '../entities/category.entity';
 
 class CategoriesController {
   private categoriesService: CategoriesService;
@@ -8,8 +9,8 @@ class CategoriesController {
     this.categoriesService = new CategoriesService();
   }
 
-  getCategoriesList = async (req: Request, res: Response): Promise<void> => {
-    const result = await this.categoriesService.getCategoriesList();
+  getCategoriesList = async (_req: Request, res: Response): Promise<void> => {
+    const result: Category[] = await this.categoriesService.getCategoriesList();
     res.status(200).json(result);
   };
 }

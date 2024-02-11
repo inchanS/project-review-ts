@@ -21,7 +21,10 @@ class AuthController {
   signIn = async (req: Request, res: Response): Promise<void> => {
     const { email, password }: UserDto = req.body;
 
-    const result = await this.authService.signIn(email, password);
+    const result: { token: string } = await this.authService.signIn(
+      email,
+      password
+    );
     res.status(200).json({ message: `SIGNIN_SUCCESS`, result });
   };
 
