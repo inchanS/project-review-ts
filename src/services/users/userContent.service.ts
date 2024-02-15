@@ -91,7 +91,7 @@ export class UserContentService {
     options?: FeedListOptions
   ): Promise<FeedListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
-    page ? this.validatePage(page) : undefined;
+    page = page ? this.validatePage(page) : undefined;
 
     // 유저의 게시글 수 조회
     const feedCntByUserId: number =
