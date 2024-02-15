@@ -17,8 +17,11 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     }
     return this.instance;
   }
-  async getFeedSymbol(feedId: number, userId: number): Promise<FeedSymbol> {
-    return await this.findOneOrFail({
+  async getFeedSymbol(
+    feedId: number,
+    userId: number
+  ): Promise<FeedSymbol | null> {
+    return await this.findOne({
       loadRelationIds: true,
       where: {
         feed: { id: feedId },

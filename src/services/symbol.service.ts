@@ -44,10 +44,8 @@ export class SymbolService {
     feedId: number,
     userId: number
   ): Promise<CheckSymbolResult> => {
-    const result: FeedSymbol = await this.feedSymbolRepository.getFeedSymbol(
-      feedId,
-      userId
-    );
+    const result: FeedSymbol | null =
+      await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
 
     let newResult: CheckSymbolResult = {
       checkValue: false,
@@ -93,10 +91,11 @@ export class SymbolService {
       });
 
     // 피드 심볼 중복검사
-    const checkFeedSymbol = await this.feedSymbolRepository.getFeedSymbol(
-      feedSymbolInfo.feed,
-      feedSymbolInfo.user
-    );
+    const checkFeedSymbol: FeedSymbol | null =
+      await this.feedSymbolRepository.getFeedSymbol(
+        feedSymbolInfo.feed,
+        feedSymbolInfo.user
+      );
 
     // create와 update에 따른 sort 값 조정으로 controller에서 res.statusCode를 조정한다.
     let sort: AddAndUpdateSymbolToFeedResult['sort'] = 'add';
@@ -116,10 +115,8 @@ export class SymbolService {
 
   removeSymbolFromFeed = async (userId: number, feedId: number) => {
     // 피드 심볼 유효성검사
-    const validateFeedSymbol = await this.feedSymbolRepository.getFeedSymbol(
-      feedId,
-      userId
-    );
+    const validateFeedSymbol: FeedSymbol | null =
+      await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
 
     if (!validateFeedSymbol) {
       throw new CustomError(404, `FEED_SYMBOL_NOT_FOUND`);

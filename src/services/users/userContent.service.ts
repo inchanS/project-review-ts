@@ -148,32 +148,6 @@ export class UserContentService {
         ).format();
       });
 
-    // // CommentFormatter().format 메소드 사용전 원래의 코드
-    // originalCommentListByUserId.map((comment: Comment) => {
-    //   const isPrivate: boolean =
-    //     comment.is_private === true &&
-    //     comment.user.id !== loggedInUserId &&
-    //     (comment.parent
-    //       ? comment.parent.user.id !== loggedInUserId
-    //       : comment.feed.user.id !== loggedInUserId);
-    //   const isDeleted: boolean = comment.deleted_at !== null;
-    //
-    //   return {
-    //     ...comment,
-    //     comment: isDeleted
-    //       ? '## DELETED_COMMENT ##'
-    //       : isPrivate
-    //       ? '## PRIVATE_COMMENT ##'
-    //       : comment.comment,
-    //     // Date타입 재가공
-    //     created_at: DateUtils.formatDate(comment.created_at),
-    //     updated_at: DateUtils.formatDate(comment.updated_at),
-    //     deleted_at: comment.deleted_at
-    //       ? DateUtils.formatDate(comment.deleted_at)
-    //       : null,
-    //   };
-    // });
-
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
   };
 
