@@ -118,8 +118,9 @@ export class UserService {
 
       // 사용자의 email을 변경한다. 추후 해당 email의 재사용을 위한 고민중 230607 수정
       const email: string = `${userInfo.email}.deleted.${Date.now()}`;
-      // 객체 리터럴 단축구문으로 email의 변경내용을 간략하게 표현한다. 230607 수정
-      await queryRunner.manager.update(User, userId, { email });
+      const nickname: string = `${userInfo.nickname}.deleted.${Date.now()}`;
+      // 객체 리터럴 단축구문으로 email과 nickname의 변경내용을 간략하게 표현한다. (230607 수정, 20240215 nickname 추가)
+      await queryRunner.manager.update(User, userId, { email, nickname });
 
       // 사용자의 User entity를 삭제한다.
       await queryRunner.manager.softDelete(User, userId);
