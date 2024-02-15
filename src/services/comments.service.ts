@@ -112,14 +112,14 @@ export class CommentsService {
 
   // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
   getCommentList = async (feedId: number, userId: number) => {
-    const feed: Feed = await this.feedRepository.findOne({
+    const feed: Feed | null = await this.feedRepository.findOne({
       loadRelationIds: true,
       where: { id: feedId },
     });
 
     // TODO 어떤 쿼리가 더 성능이 좋을까??
     // if (!feed || feed.posted_at === null) {
-    const statusId: number = Number(feed.status);
+    const statusId: number = Number(feed?.status);
     if (!feed || statusId === 2) {
       throw new CustomError(404, 'FEED_NOT_FOUND');
     }
@@ -150,7 +150,7 @@ export class CommentsService {
           posted_at: Not(IsNull()),
         },
       })
-      .catch(err => {
+      .catch(() => {
         throw new CustomError(404, "COMMENT'S_FEED_VALIDATION_ERROR");
       });
 
@@ -161,7 +161,7 @@ export class CommentsService {
           loadRelationIds: true,
           where: { id: commentInfo.parent },
         })
-        .catch(err => {
+        .catch(() => {
           throw new CustomError(404, 'COMMENT_PARENT_NOT_FOUND');
         });
 

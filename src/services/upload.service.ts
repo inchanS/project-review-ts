@@ -32,11 +32,11 @@ export class UploadService {
       });
   }
 
-  private async resizeImage(buffer: Buffer) {
-    const image = sharp(buffer);
-    const metadata = await image.metadata();
+  private async resizeImage(buffer: Buffer): Promise<Buffer> {
+    const image: sharp.Sharp = sharp(buffer);
+    const metadata: sharp.Metadata = await image.metadata();
 
-    if (metadata.width < 1920) {
+    if (metadata.width && metadata.width < 1920) {
       return buffer;
     } else {
       return await image.resize({ width: 1920, fit: 'inside' }).toBuffer();
@@ -87,7 +87,7 @@ export class UploadService {
   public uploadFiles = async (
     userId: number,
     files: Express.Multer.File[]
-  ): Promise<object> => {
+  ): Promise<string[]> => {
     // 사용자 유효성 검사
     await this.validatorUserId(userId);
 
@@ -203,7 +203,7 @@ export class UploadService {
       // 230706 현재 방법은 2가지 서버에서 S3에 있는 파일들을 확인하는 방법(checkFileAccess)과 lambda를 통해 확인하는 방법(invokeLambda)이 있다.
       // S3 명령을 위한 param 생성
       param = {
-        Bucket: process.env.AWS_S3_BUCKET,
+        Bucket: process.env.AWS_S3_BUCKET as string,
         Key: findFileResult.file_link.split('.com/')[1],
       };
 

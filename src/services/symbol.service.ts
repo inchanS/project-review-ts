@@ -20,7 +20,7 @@ export class SymbolService {
     this.feedRepository = FeedRepository.getInstance();
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
-  getSymbols = async () =>
+  getSymbols = async (): Promise<Symbol[]> =>
     await dataSource.getRepository(Symbol).find({
       select: ['id', 'symbol'],
     });
@@ -44,7 +44,7 @@ export class SymbolService {
     feedId: number,
     userId: number
   ): Promise<CheckSymbolResult> => {
-    const result = await this.feedSymbolRepository.getFeedSymbol(
+    const result: FeedSymbol = await this.feedSymbolRepository.getFeedSymbol(
       feedId,
       userId
     );
@@ -56,9 +56,7 @@ export class SymbolService {
 
     if (!result) {
       return newResult;
-    }
-
-    if (result) {
+    } else {
       newResult.checkValue = true;
       newResult.result = result;
       return newResult;

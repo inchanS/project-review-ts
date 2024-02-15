@@ -5,13 +5,14 @@ import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { User } from '../../entities/users.entity';
 import { Feed } from '../../entities/feed.entity';
 import { Comment } from '../../entities/comment.entity';
-import { UserContentService } from './userContent.service';
-import { UploadFileService } from '../uploadFile.service';
+import { FeedListByUserId, UserContentService } from './userContent.service';
+import { DeleteUploadFiles, UploadFileService } from '../uploadFile.service';
 import { ValidatorService } from './validator.service';
 import { UserRepository } from '../../repositories/user.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
 import { Pagination } from '../../repositories/feedList.repository';
+import { QueryRunner } from 'typeorm';
 
 export class UserService {
   private userRepository: UserRepository;
@@ -32,9 +33,13 @@ export class UserService {
     userId: number,
     userInfo: UserDto
   ): Promise<User> => {
-    const originUserInfo = await this.userRepository.findOne({
+    const originUserInfo: User = await this.userRepository.findOneOrFail({
       where: { id: userId },
     });
+
+    if (!originUserInfo) {
+      throw new CustomError(404, 'NOT_FOUND_USER');
+    }
 
     if (
       userInfo.nickname === originUserInfo.nickname &&
@@ -62,25 +67,24 @@ export class UserService {
     }
 
     await this.userRepository.update(userId, userInfo);
-    return await this.userRepository.findOne({
+    return await this.userRepository.findOneOrFail({
       where: { id: userId },
     });
   };
 
   public deleteUser = async (userId: number): Promise<void> => {
     // 사용자 정보의 유효성 검사 함수를 불러온다.
-    const userInfo = await this.userContentService.findUserInfoByUserId(userId);
+    const userInfo: User = await this.userContentService.findUserInfoByUserId(
+      userId
+    );
 
-    const page: Pagination = { startIndex: undefined, limit: undefined };
+    const page: Pagination | undefined = undefined;
 
     // 사용자의 모든 게시글을 불러온다.
-    const userFeedsInfo = await this.userContentService.findUserFeedsByUserId(
-      userId,
-      page,
-      {
+    const userFeedsInfo: FeedListByUserId =
+      await this.userContentService.findUserFeedsByUserId(userId, page, {
         includeTempFeeds: true,
-      }
-    );
+      });
 
     // 사용자의 모든 덧글을 불러온다.
     const userCommentsInfo =
@@ -97,21 +101,23 @@ export class UserService {
     });
 
     // transaction을 시작한다.
-    const queryRunner = dataSource.createQueryRunner();
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const userFeedIds = userFeedsInfo.feedListByUserId.map(
+      const userFeedIds: number[] = userFeedsInfo.feedListByUserId.map(
         (feed: { id: number }) => feed.id
       );
-      const userCommentIds = userCommentsInfo.commentListByUserId.map(
+      const userCommentIds: number[] = userCommentsInfo.commentListByUserId.map(
         (comment: { id: number }) => comment.id
       );
-      const userSymbolIds = userSymbols.map(symbol => symbol.id);
+      const userSymbolIds: number[] = userSymbols.map(
+        (symbol: FeedSymbol) => symbol.id
+      );
 
       // 사용자의 email을 변경한다. 추후 해당 email의 재사용을 위한 고민중 230607 수정
-      const email = `${userInfo.email}.deleted.${Date.now()}`;
+      const email: string = `${userInfo.email}.deleted.${Date.now()}`;
       // 객체 리터럴 단축구문으로 email의 변경내용을 간략하게 표현한다. 230607 수정
       await queryRunner.manager.update(User, userId, { email });
 
@@ -124,11 +130,12 @@ export class UserService {
       }
       // feed를 모두 삭제한 후, 사용하지 않는 fileLinks를 삭제한다.
 
-      const unusedFileLinks =
+      const unusedFileLinks: DeleteUploadFiles | undefined =
         await this.uploadFileService.deleteUnusedUploadFiles(
           queryRunner,
           userId
         );
+
       if (unusedFileLinks) {
         await this.uploadFileService.deleteUnconnectedLinks(
           queryRunner,

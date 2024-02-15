@@ -1,5 +1,6 @@
 import { UserRepository } from '../../repositories/user.repository';
 import { CustomError } from '../../utils/util';
+import { User } from '../../entities/users.entity';
 
 export class ValidatorService {
   private userRepository: UserRepository;
@@ -7,18 +8,19 @@ export class ValidatorService {
   constructor() {
     this.userRepository = UserRepository.getInstance();
   }
-  checkDuplicateNickname = async (nickname: string): Promise<object> => {
+  checkDuplicateNickname = async (
+    nickname: string
+  ): Promise<{ message: string }> => {
     if (!nickname) {
       throw new CustomError(400, `NICKNAME_IS_UNDEFINED`);
     }
-    // const checkData = await userRepository.findOneBy({ nickname: nickname });
-    const checkData = await this.userRepository.findByNickname(nickname);
+    const checkData: User | null = await this.userRepository.findByNickname(
+      nickname
+    );
 
     if (!checkData) {
       return { message: 'AVAILABLE_NICKNAME' };
-    }
-
-    if (checkData.nickname === nickname) {
+    } else {
       throw new CustomError(
         409,
         `${checkData.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`
@@ -26,17 +28,15 @@ export class ValidatorService {
     }
   };
 
-  checkDuplicateEmail = async (email: string): Promise<object> => {
+  checkDuplicateEmail = async (email: string): Promise<{ message: string }> => {
     if (!email) {
       throw new CustomError(400, 'EMAIL_IS_UNDEFINED');
     }
-    const checkData = await this.userRepository.findByEmail(email);
+    const checkData: User | null = await this.userRepository.findByEmail(email);
 
     if (!checkData) {
       return { message: 'AVAILABLE_EMAIL' };
-    }
-
-    if (checkData.email === email) {
+    } else {
       throw new CustomError(
         409,
         `${checkData.email}_IS_EMAIL_THAT_ALREADY_EXSITS`

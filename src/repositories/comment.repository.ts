@@ -76,7 +76,7 @@ export class CommentRepository extends Repository<Comment> {
 
   async getCommentListByUserId(
     userId: number,
-    page: Pagination
+    page: Pagination | undefined
   ): Promise<Comment[]> {
     let pageCondition:
       | {

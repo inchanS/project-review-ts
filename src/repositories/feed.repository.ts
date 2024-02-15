@@ -1,5 +1,11 @@
 import { Feed } from '../entities/feed.entity';
-import { IsNull, Not, QueryRunner, Repository } from 'typeorm';
+import {
+  IsNull,
+  Not,
+  QueryRunner,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import dataSource from './data-source';
 
 export interface FeedOption {
@@ -26,17 +32,14 @@ export class FeedRepository extends Repository<Feed> {
     return this.instance;
   }
 
-  async createFeed(
-    feedInfo: Feed,
-    queryRunner: QueryRunner
-  ): Promise<Feed | null> {
+  async createFeed(feedInfo: Feed, queryRunner: QueryRunner): Promise<Feed> {
     // typeORM의 save, update 등의 메소드는 호출할때마다 새로운 트랜잭션을 자체적으로 시작한다.
     // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
     // 다른 방법으로 처리해준다.
-    const feed = queryRunner.manager.create(Feed, feedInfo);
+    const feed: Feed = queryRunner.manager.create(Feed, feedInfo);
     await queryRunner.manager.save(feed);
 
-    const result: Feed | null = await queryRunner.manager.findOne(Feed, {
+    const result: Feed = await queryRunner.manager.findOneOrFail(Feed, {
       loadRelationIds: true,
       where: { user: { id: feedInfo.user.id } },
       order: { id: 'DESC' },
@@ -49,17 +52,19 @@ export class FeedRepository extends Repository<Feed> {
     feedId: number,
     feedInfo: Feed,
     queryRunner: QueryRunner
-  ): Promise<Feed | null> {
+  ): Promise<Feed> {
     await queryRunner.manager.update(Feed, feedId, feedInfo);
 
-    return await queryRunner.manager.findOne(Feed, {
+    return await queryRunner.manager.findOneOrFail(Feed, {
       loadRelationIds: true,
       where: { id: feedId },
     });
   }
 
   async getFeed(feedId: number, options: FeedOption = {}): Promise<Feed> {
-    const queryBuilder = this.createQueryBuilder('feed')
+    const queryBuilder: SelectQueryBuilder<Feed> = this.createQueryBuilder(
+      'feed'
+    )
       .select([
         'feed.id',
         'user.id',

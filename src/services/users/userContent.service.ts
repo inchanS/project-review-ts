@@ -15,19 +15,19 @@ import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { CommentFormatter, ExtendedComment } from '../comments.service';
 
-interface FeedListByUserId {
+export interface FeedListByUserId {
   feedCntByUserId: number;
   totalPage: number;
   feedListByUserId: FeedList[];
 }
 
-interface CommentListByUserId {
+export interface CommentListByUserId {
   commentCntByUserId: number;
   totalScrollCnt: number;
   commentListByUserId: ExtendedComment[];
 }
 
-interface FeedSymbolListByUserId {
+export interface FeedSymbolListByUserId {
   symbolCntByUserId: number;
   totalPage: number;
   symbolListByUserId: FeedSymbol[];
@@ -54,7 +54,7 @@ export class UserContentService {
     }
   }
 
-  private validatePage(page: Pagination): Pagination {
+  private validatePage(page: Pagination): Pagination | undefined {
     if (isNaN(page.startIndex) || isNaN(page.limit)) {
       return undefined;
     } else if (page.startIndex < 1) {
@@ -65,7 +65,7 @@ export class UserContentService {
 
   private calculateTotalPageCount(
     totalItems: number,
-    page: Pagination
+    page: Pagination | undefined
   ): number {
     return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
   }
@@ -87,11 +87,11 @@ export class UserContentService {
   // 유저 정보 확인시 유저의 게시글 조회
   findUserFeedsByUserId = async (
     targetUserId: number,
-    page: Pagination,
+    page: Pagination | undefined,
     options?: FeedListOptions
   ): Promise<FeedListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
-    page = this.validatePage(page);
+    page ? this.validatePage(page) : undefined;
 
     // 유저의 게시글 수 조회
     const feedCntByUserId: number =
@@ -113,15 +113,14 @@ export class UserContentService {
   };
 
   // 유저 정보 확인시 유저의 댓글 조회
-
   findUserCommentsByUserId = async (
     targetUserId: number,
     loggedInUserId: number,
-    page?: Pagination
+    page?: Pagination | undefined
   ): Promise<CommentListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
 
-    if (isNaN(page.startIndex) || isNaN(page.limit)) {
+    if (!page || isNaN(page.startIndex) || isNaN(page.limit)) {
       page = undefined;
     } else if (page.startIndex < 0) {
       throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
@@ -181,10 +180,10 @@ export class UserContentService {
   // 유저 정보 확인시, 유저의 피드 심볼 조회
   findUserFeedSymbolsByUserId = async (
     targetUserId: number,
-    page: Pagination
+    page: Pagination | undefined
   ): Promise<FeedSymbolListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
-    page = this.validatePage(page);
+    page ? this.validatePage(page) : undefined;
 
     const symbolCntByUserId: number =
       await this.feedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);

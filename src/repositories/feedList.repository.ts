@@ -12,6 +12,11 @@ export interface Pagination {
   limit: number;
 }
 
+export interface PageCondition {
+  skip: number;
+  take: number;
+}
+
 export class FeedListRepository extends Repository<FeedList> {
   private static instance: FeedListRepository;
   private constructor() {
@@ -61,7 +66,7 @@ export class FeedListRepository extends Repository<FeedList> {
 
   async getFeedListByUserId(
     userId: number,
-    page: Pagination,
+    page: Pagination | undefined,
     options: FeedListOptions = {}
   ): Promise<FeedList[]> {
     const { includeTempFeeds = false, onlyTempFeeds = false } = options;
@@ -93,10 +98,9 @@ export class FeedListRepository extends Repository<FeedList> {
       orderOption = { postedAt: 'DESC' };
     }
 
-    let pageCondition = {};
+    let pageCondition: PageCondition | undefined;
     if (page) {
       const startIndex: number = (page.startIndex - 1) * page.limit;
-
       pageCondition = {
         skip: startIndex,
         take: page.limit,

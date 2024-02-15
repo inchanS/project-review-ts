@@ -6,7 +6,7 @@ import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import dataSource from '../repositories/data-source';
-import { EntityNotFoundError } from 'typeorm';
+import { EntityNotFoundError, QueryRunner } from 'typeorm';
 import { Estimation } from '../entities/estimation.entity';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { DeleteUploadFiles, UploadFileService } from './uploadFile.service';
@@ -29,6 +29,7 @@ export class FeedsService {
 
   // 임시저장 ==================================================================
   // 임시저장 게시글 리스트 --------------------------------------------------------
+  // FIXME type any 고치기
   public getTempFeedList = async (userId: number) => {
     const results: any = await this.feedListRepository.getFeedListByUserId(
       userId,
@@ -47,23 +48,24 @@ export class FeedsService {
   };
 
   // 임시저장 및 게시글 저장 -----------------------------------------------------------
-  private maxTransactionAttempts = 3;
+  private maxTransactionAttempts: number = 3;
   private executeTransactionWithRetry = async (
     attempt: number,
     feedInfo: TempFeedDto | FeedDto,
     fileLinks: string[],
-    options: FeedOption
+    options?: FeedOption
   ): Promise<Feed> => {
-    const queryRunner = dataSource.createQueryRunner();
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const newFeedInstance = plainToInstance(Feed, feedInfo);
-      const newFeed = await queryRunner.manager
+      const newFeedInstance: Feed = plainToInstance(Feed, feedInfo);
+      const newFeed: Feed = await queryRunner.manager
         .withRepository(this.feedRepository)
         .createFeed(newFeedInstance, queryRunner);
 
+      // TODO 아래 로직을 따로 handleFileOperations 함수로 분리하기
       if (fileLinks && fileLinks.length > 0) {
         await this.uploadFileService.updateFileLinks(
           queryRunner,
@@ -71,7 +73,7 @@ export class FeedsService {
           fileLinks
         );
 
-        const deleteUploadFiles: DeleteUploadFiles =
+        const deleteUploadFiles: DeleteUploadFiles | undefined =
           await this.uploadFileService.deleteUnusedUploadFiles(
             queryRunner,
             Number(newFeedInstance.user)
@@ -93,7 +95,6 @@ export class FeedsService {
         newFeed.id,
         options
       );
-
       return result;
     } catch (err: any) {
       await queryRunner.rollbackTransaction();
@@ -136,7 +137,7 @@ export class FeedsService {
       throw { status: 500, message: errors[0].constraints };
     });
 
-    const result = await this.executeTransactionWithRetry(
+    const result: Feed = await this.executeTransactionWithRetry(
       1,
       feedInfo,
       fileLinks,
@@ -155,7 +156,7 @@ export class FeedsService {
     options?: FeedOption
   ): Promise<Feed> => {
     // 수정 전 기존 feed 정보
-    const originFeed = await this.feedRepository
+    const originFeed: Feed = await this.feedRepository
       .getFeed(feedId, options)
       .catch(() => {
         throw new CustomError(404, 'NOT_FOUND_FEED');
@@ -165,10 +166,10 @@ export class FeedsService {
       throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_EDIT');
     }
 
-    if (originFeed.status.id === 2 && feedInfo.status === 1) {
+    if (originFeed.status?.id === 2 && feedInfo.status === 1) {
       feedInfo = plainToInstance(FeedDto, feedInfo);
       feedInfo.posted_at = new Date();
-    } else if (originFeed.status.id === 2) {
+    } else if (originFeed.status?.id === 2) {
       feedInfo = plainToInstance(TempFeedDto, feedInfo);
     } else {
       feedInfo = plainToInstance(FeedDto, feedInfo);
@@ -191,7 +192,6 @@ export class FeedsService {
       // fildLink가 없다면 기존의 fileLink를 삭제한다.
       await this.uploadFileService.checkUploadFileOfFeed(
         queryRunner,
-        feedId,
         Number(feed.user),
         originFeed,
         fileLinks
@@ -257,7 +257,7 @@ export class FeedsService {
 
   // 게시글 리스트 --------------------------------------------------------------
   public getFeedList = async (
-    categoryId: number,
+    categoryId: number | undefined,
     index: number,
     limit: number
   ): Promise<FeedList[]> => {

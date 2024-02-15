@@ -17,8 +17,8 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     }
     return this.instance;
   }
-  async getFeedSymbol(feedId: number, userId: number) {
-    return await this.findOne({
+  async getFeedSymbol(feedId: number, userId: number): Promise<FeedSymbol> {
+    return await this.findOneOrFail({
       loadRelationIds: true,
       where: {
         feed: { id: feedId },
@@ -34,7 +34,7 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     });
   }
 
-  async getFeedSymbolsByUserId(userId: number, page: Pagination) {
+  async getFeedSymbolsByUserId(userId: number, page: Pagination | undefined) {
     let queryBuilder = this.createQueryBuilder('feedSymbol')
       .select([
         'feedSymbol.id',
@@ -51,7 +51,11 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
       .where('user.id = :userId', { userId: userId })
       .orderBy('feedSymbol.updated_at', 'DESC');
 
-    if (Number.isInteger(page?.startIndex) && Number.isInteger(page?.limit)) {
+    if (
+      page &&
+      Number.isInteger(page?.startIndex) &&
+      Number.isInteger(page?.limit)
+    ) {
       queryBuilder = queryBuilder.skip(page.startIndex - 1).take(page.limit);
     }
 
