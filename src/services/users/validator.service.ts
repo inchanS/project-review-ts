@@ -34,7 +34,7 @@ export class ValidatorService {
     }
     const checkData: User | null = await this.userRepository.findByEmail(email);
 
-    if (!checkData) {
+    if (checkData === null) {
       return { message: 'AVAILABLE_EMAIL' };
     } else {
       throw new CustomError(
