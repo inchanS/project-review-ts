@@ -1,4 +1,4 @@
-import { Brackets, QueryRunner } from 'typeorm';
+import { Brackets, EntityNotFoundError, QueryRunner } from 'typeorm';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import { Feed } from '../entities/feed.entity';
 import { UploadService } from './upload.service';
@@ -57,26 +57,30 @@ export class UploadFileService {
     fileLinks: string[]
   ): Promise<void> => {
     for (const fileLink of fileLinks) {
-      const findUploadFile = await queryRunner.manager.findOne(UploadFiles, {
-        loadRelationIds: true,
-        where: { file_link: fileLink },
-      });
+      try {
+        const findUploadFile: UploadFiles =
+          await queryRunner.manager.findOneOrFail(UploadFiles, {
+            loadRelationIds: true,
+            where: { file_link: fileLink },
+          });
 
-      // 인자로 들어온 fileLink를 데이터베이스에서 찾을 수 없을 때의 에러메세지 반환
-      if (!findUploadFile) {
-        throw new CustomError(404, `NOT_FOUND_UPLOAD_FILE_LINK`);
-      }
-
-      if (findUploadFile.feed !== null) {
-        if (Number(findUploadFile.feed) === feed.id) {
-          continue;
+        if (findUploadFile.feed !== null) {
+          if (Number(findUploadFile.feed) === feed.id) {
+            continue;
+          } else {
+            throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
+          }
         }
-        throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
-      }
 
-      await queryRunner.manager.update(UploadFiles, findUploadFile.id, {
-        feed: feed,
-      });
+        await queryRunner.manager.update(UploadFiles, findUploadFile.id, {
+          feed: feed,
+        });
+      } catch (error) {
+        if (error instanceof EntityNotFoundError) {
+          throw new CustomError(404, `NOT_FOUND_UPLOAD_FILE_LINK`);
+        }
+        throw error;
+      }
     }
   };
 
