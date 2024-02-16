@@ -39,12 +39,12 @@ export class FeedsService {
         onlyTempFeeds: true,
       }
     );
+
     for (const result of results) {
       const updatedAt = result.updatedAt.substring(2);
-      if (result.title === null) {
-        result.title = `${updatedAt}에 임시저장된 글입니다.`;
-      }
+      result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
     }
+
     return results;
   };
 
@@ -236,13 +236,12 @@ export class FeedsService {
     // feed 값 재가공
     result.created_at = DateUtils.formatDate(result.created_at);
     result.updated_at = DateUtils.formatDate(result.updated_at);
-    result.posted_at = DateUtils.formatDate(result.posted_at);
+    result.posted_at = result.posted_at
+      ? DateUtils.formatDate(result.posted_at)
+      : null;
 
     const updatedAt = result.updated_at.substring(2);
-    result.title =
-      result.title === null
-        ? `${updatedAt}에 임시저장된 글입니다.`
-        : result.title;
+    result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
 
     // 임시저장 게시글은 본인만 볼 수 있음
     if (result.status.id === 2 && result.user.id !== userId) {
