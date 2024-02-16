@@ -13,6 +13,7 @@ import { DeleteUploadFiles, UploadFileService } from './uploadFile.service';
 import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
+import { DateUtils } from '../utils/dateUtils';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -233,8 +234,9 @@ export class FeedsService {
       });
 
     // feed 값 재가공
-    result.created_at = result.created_at.substring(0, 19);
-    result.updated_at = result.updated_at.substring(0, 19);
+    result.created_at = DateUtils.formatDate(result.created_at);
+    result.updated_at = DateUtils.formatDate(result.updated_at);
+    result.posted_at = DateUtils.formatDate(result.posted_at);
 
     const updatedAt = result.updated_at.substring(2);
     result.title =
