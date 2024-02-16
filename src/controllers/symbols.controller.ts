@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { FeedSymbolDto } from '../entities/dto/feedSymbol.dto';
-import { AddAndUpdateSymbolToFeedResult } from '../types/feedSymbol';
+import {
+  AddAndUpdateSymbolToFeedResult,
+  CheckSymbolResult,
+} from '../types/feedSymbol';
 import { SymbolService } from '../services/symbol.service';
 import { Symbol } from '../entities/symbol.entity';
 
@@ -30,10 +33,8 @@ class SymbolsController {
     const feedId: number = Number(req.params.feedId);
     const userId: number = req.userInfo.id;
 
-    const result = await this.symbolService.checkUsersSymbolForFeed(
-      feedId,
-      userId
-    );
+    const result: CheckSymbolResult =
+      await this.symbolService.checkUsersSymbolForFeed(feedId, userId);
     res.status(200).json(result);
   };
 

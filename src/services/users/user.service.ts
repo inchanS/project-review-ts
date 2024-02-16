@@ -95,7 +95,7 @@ export class UserService {
       );
 
     // 사용자의 모든 좋아요 정보를 불러온다.
-    const userSymbols = await this.feedSymbolRepository.find({
+    const userSymbols: FeedSymbol[] = await this.feedSymbolRepository.find({
       loadRelationIds: true,
       where: { user: { id: userId } },
     });

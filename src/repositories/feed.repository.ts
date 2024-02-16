@@ -13,7 +13,7 @@ export interface FeedOption {
   isAll?: boolean;
 }
 
-interface FeedSymbolCount {
+export interface FeedSymbolCount {
   feedId: number;
   symbolId: number;
   symbol: string;

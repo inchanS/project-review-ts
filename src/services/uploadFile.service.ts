@@ -8,6 +8,12 @@ export interface DeleteUploadFiles {
   uploadFileWithoutFeedId: number[];
   deleteFileLinksArray: string[];
 }
+
+export interface deletableFilesBasket {
+  uploadFileIdsToDelete: number[];
+  fileLinksToDelete: string[];
+}
+
 export class UploadFileService {
   private uploadService: UploadService;
 
@@ -18,12 +24,14 @@ export class UploadFileService {
   private generateListOfLinksForDeletableFiles: (
     originFeed: Feed,
     fileLinks: string[]
-  ) => Promise<{
-    uploadFileIdsToDelete: number[];
-    fileLinksToDelete: string[];
-  }> = async (originFeed: Feed, fileLinks: string[]) => {
-    let uploadFileIdsToDelete: number[] = [];
-    let fileLinksToDelete: string[] = [];
+  ) => Promise<deletableFilesBasket> = async (
+    originFeed: Feed,
+    fileLinks: string[]
+  ) => {
+    let { uploadFileIdsToDelete, fileLinksToDelete }: deletableFilesBasket = {
+      uploadFileIdsToDelete: [],
+      fileLinksToDelete: [],
+    };
 
     // fileLinks가 없다면 기존 업로드 파일을 모두 삭제할 수 있도록 담아둔다.
     if (originFeed.uploadFiles) {
@@ -107,7 +115,7 @@ export class UploadFileService {
 
     if (uploadFileWithoutFeed.length > 0) {
       const uploadFileWithoutFeedId: number[] = uploadFileWithoutFeed.map(
-        uploadFile => uploadFile.id
+        (uploadFile: UploadFiles) => uploadFile.id
       );
 
       let deleteFileLinksArray: string[] = [];
@@ -126,7 +134,7 @@ export class UploadFileService {
     uploadFileIdsToDelete: number[],
     fileLinksToDelete: string[],
     userId: number
-  ) => {
+  ): Promise<void> => {
     if (uploadFileIdsToDelete.length > 0) {
       await queryRunner.manager.softDelete(UploadFiles, uploadFileIdsToDelete);
       await this.uploadService.deleteUploadFile(userId, fileLinksToDelete);
@@ -137,22 +145,22 @@ export class UploadFileService {
     userId: number,
     originFeed: Feed,
     fileLinks: string[]
-  ) => {
-    let { uploadFileIdsToDelete, fileLinksToDelete } =
+  ): Promise<void> => {
+    let { uploadFileIdsToDelete, fileLinksToDelete }: deletableFilesBasket =
       await this.generateListOfLinksForDeletableFiles(originFeed, fileLinks);
 
     if (fileLinks) {
       await this.updateFileLinks(queryRunner, originFeed, fileLinks);
     }
 
-    const findUnusedUploadFiles = await this.deleteUnusedUploadFiles(
-      queryRunner,
-      userId
-    );
+    const findUnusedUploadFiles: DeleteUploadFiles | undefined =
+      await this.deleteUnusedUploadFiles(queryRunner, userId);
 
     if (findUnusedUploadFiles) {
-      const { uploadFileWithoutFeedId, deleteFileLinksArray } =
-        findUnusedUploadFiles;
+      const {
+        uploadFileWithoutFeedId,
+        deleteFileLinksArray,
+      }: DeleteUploadFiles = findUnusedUploadFiles;
 
       uploadFileIdsToDelete.push(...uploadFileWithoutFeedId);
       fileLinksToDelete.push(...deleteFileLinksArray);

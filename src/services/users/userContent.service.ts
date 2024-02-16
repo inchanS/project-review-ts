@@ -73,7 +73,7 @@ export class UserContentService {
   findUserInfoByUserId = async (targetUserId: number): Promise<User> => {
     this.validateUserId(targetUserId);
 
-    const userInfo = await this.userRepository.findOne({
+    const userInfo: User | null = await this.userRepository.findOne({
       where: { id: targetUserId },
     });
 

@@ -102,7 +102,7 @@ export class AuthService {
       },
     };
 
-    const sendMail = new SendMail(mailOptions);
+    const sendMail: SendMail = new SendMail(mailOptions);
     const mailOption: Mail.Options = {
       from: process.env.EMAIL,
       to: email,

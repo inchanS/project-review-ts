@@ -4,13 +4,17 @@ import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { plainToInstance } from 'class-transformer';
 import { FeedSymbolDto } from '../entities/dto/feedSymbol.dto';
 import { validateOrReject } from 'class-validator';
-import { FeedRepository } from '../repositories/feed.repository';
+import {
+  FeedRepository,
+  FeedSymbolCount,
+} from '../repositories/feed.repository';
 import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
 import {
   AddAndUpdateSymbolToFeedResult,
   CheckSymbolResult,
 } from '../types/feedSymbol';
 import { CustomError } from '../utils/util';
+import { Feed } from '../entities/feed.entity';
 
 export class SymbolService {
   private feedRepository: FeedRepository;
@@ -32,7 +36,8 @@ export class SymbolService {
       throw new CustomError(404, 'INVALID_FEED');
     });
 
-    const result = await this.feedRepository.getFeedSymbolCount(feedId);
+    const result: FeedSymbolCount[] =
+      await this.feedRepository.getFeedSymbolCount(feedId);
 
     return result.map((item: any) => ({
       ...item,
@@ -69,14 +74,14 @@ export class SymbolService {
     });
 
     // 피드 유효성검사
-    const validateFeed = await this.feedRepository
+    const validateFeed: Feed | void = await this.feedRepository
       .getFeed(feedSymbolInfo.feed)
-      .catch(() => {
+      .catch((): void => {
         throw new CustomError(404, 'INVALID_FEED');
       });
 
     // 사용자 유효성검사 (게시글 작성자는 공감할 수 없음)
-    if (validateFeed.user.id === feedSymbolInfo.user) {
+    if (validateFeed && validateFeed.user.id === feedSymbolInfo.user) {
       throw new CustomError(403, 'THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
     }
 
@@ -86,7 +91,7 @@ export class SymbolService {
       .findOneOrFail({
         where: { id: feedSymbolInfo.symbol },
       })
-      .catch(() => {
+      .catch((): void => {
         throw new CustomError(404, 'INVALID_SYMBOL');
       });
 
@@ -104,7 +109,10 @@ export class SymbolService {
       sort = 'update';
     }
 
-    const newFeedSymbol = plainToInstance(FeedSymbol, feedSymbolInfo);
+    const newFeedSymbol: FeedSymbol = plainToInstance(
+      FeedSymbol,
+      feedSymbolInfo
+    );
 
     await this.feedSymbolRepository.upsertFeedSymbol(newFeedSymbol);
 
@@ -124,7 +132,7 @@ export class SymbolService {
 
     await this.feedSymbolRepository.deleteFeedSymbol(validateFeedSymbol.id);
 
-    const message = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
+    const message: string = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
     const result = await this.getFeedSymbolCount(feedId);
     return { message, result };
   };

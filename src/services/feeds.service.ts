@@ -181,13 +181,13 @@ export class FeedsService {
     });
 
     // transaction으로 묶어주기
-    const queryRunner = dataSource.createQueryRunner();
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
       // 수정된 feed 저장
-      const feed = plainToInstance(Feed, feedInfo);
+      const feed: Feed = plainToInstance(Feed, feedInfo);
 
       // 수정내용 중 fileLink가 있는지 확인하고, 있다면 uploadFile에 feed의 ID를 연결해주는 함수
       // fildLink가 없다면 기존의 fileLink를 삭제한다.
@@ -198,13 +198,13 @@ export class FeedsService {
         fileLinks
       );
 
-      const newFeed = await queryRunner.manager
+      const newFeed: Feed = await queryRunner.manager
         .withRepository(this.feedRepository)
         .updateFeed(feedId, feed, queryRunner);
 
       await queryRunner.commitTransaction();
 
-      const result = await this.feedRepository.getFeed(newFeed.id, {
+      const result: Feed = await this.feedRepository.getFeed(newFeed.id, {
         isAll: true,
       });
 
@@ -227,7 +227,7 @@ export class FeedsService {
     // FIXME type any 고치기
     const result: any = await this.feedRepository
       .getFeed(feedId, options)
-      .catch((err: Error) => {
+      .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
           throw new CustomError(404, `NOT_FOUND_FEED`);
         }
@@ -283,7 +283,7 @@ export class FeedsService {
     // FIXME type any 고치기
     const feed: any = await this.feedRepository
       .getFeed(feedId, { isAll: true })
-      .catch((err: Error) => {
+      .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
           throw new CustomError(404, `NOT_FOUND_FEED`);
         }
@@ -295,7 +295,7 @@ export class FeedsService {
     }
 
     // transaction으로 묶어주기
-    const queryRunner = dataSource.createQueryRunner();
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 

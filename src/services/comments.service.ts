@@ -124,7 +124,9 @@ export class CommentsService {
       throw new CustomError(404, 'FEED_NOT_FOUND');
     }
 
-    const result = await this.commentRepository.getCommentList(feedId);
+    const result: Comment[] = await this.commentRepository.getCommentList(
+      feedId
+    );
 
     // 덧글이 없을 경우 빈 배열 반환
     if (result.length === 0) {
@@ -156,7 +158,7 @@ export class CommentsService {
 
     if (commentInfo.parent) {
       // 대댓글의 경우 부모댓글이 없을 때 에러 반환
-      const parentComment = await this.commentRepository
+      const parentComment: Comment = await this.commentRepository
         .findOneOrFail({
           loadRelationIds: true,
           where: { id: commentInfo.parent },
@@ -171,14 +173,14 @@ export class CommentsService {
       }
     }
 
-    const newComment = plainToInstance(Comment, commentInfo);
+    const newComment: Comment = plainToInstance(Comment, commentInfo);
 
     await this.commentRepository.createComment(newComment);
   };
 
   // 수정 또는 삭제시 해당 댓글의 유효성 검사 및 권한 검사를 위한 함수
   validateComment = async (userId: number, commentId: number) => {
-    const result = await this.commentRepository.findOne({
+    const result: Comment | null = await this.commentRepository.findOne({
       loadRelationIds: true,
       where: { id: commentId },
     });
@@ -200,7 +202,10 @@ export class CommentsService {
     commentId: number,
     commentInfo: CommentDto
   ): Promise<void> => {
-    const originComment = await this.validateComment(userId, commentId);
+    const originComment: Comment = await this.validateComment(
+      userId,
+      commentId
+    );
 
     // commentInfo에서 내용 생략시, 원문 내용으로 채우기
     if (commentInfo.is_private === undefined) {
