@@ -57,6 +57,7 @@ export class FeedListRepository extends Repository<FeedList> {
     return await this.find({
       order: {
         postedAt: 'DESC',
+        id: 'DESC',
       },
       skip: startIndex,
       take: limit,
