@@ -4,16 +4,6 @@ import { Feed } from '../entities/feed.entity';
 import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 
-export interface DeleteUploadFiles {
-  uploadFileWithoutFeedId: number[];
-  deleteFileLinksArray: string[];
-}
-
-export interface deletableFilesBasket {
-  uploadFileIdsToDelete: number[];
-  fileLinksToDelete: string[];
-}
-
 export class UploadFileService {
   private uploadService: UploadService;
 

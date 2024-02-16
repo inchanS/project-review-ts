@@ -5,14 +5,14 @@ import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { User } from '../../entities/users.entity';
 import { Feed } from '../../entities/feed.entity';
 import { Comment } from '../../entities/comment.entity';
-import { FeedListByUserId, UserContentService } from './userContent.service';
-import { DeleteUploadFiles, UploadFileService } from '../uploadFile.service';
+import { UserContentService } from './userContent.service';
+import { UploadFileService } from '../uploadFile.service';
 import { ValidatorService } from './validator.service';
 import { UserRepository } from '../../repositories/user.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
-import { Pagination } from '../../repositories/feedList.repository';
 import { QueryRunner } from 'typeorm';
+import { FeedListByUserId } from '../../types/user';
 
 export class UserService {
   private userRepository: UserRepository;

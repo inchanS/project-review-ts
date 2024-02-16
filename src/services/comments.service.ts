@@ -8,24 +8,7 @@ import { Comment } from '../entities/comment.entity';
 import { CustomError } from '../utils/util';
 import { DateUtils } from '../utils/dateUtils';
 import { Feed } from '../entities/feed.entity';
-
-export interface ExtendedComment
-  extends Omit<
-    Comment,
-    'created_at' | 'updated_at' | 'deleted_at' | 'user' | 'children'
-  > {
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-  user: ExtendedUser;
-  children?: ExtendedComment[];
-}
-
-interface ExtendedUser {
-  id: number | null;
-  nickname: string | null;
-  email: string | null;
-}
+import { ExtendedComment, ExtendedUser } from '../types/comment';
 
 export class CommentFormatter {
   private readonly comment: Comment;

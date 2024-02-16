@@ -8,18 +8,6 @@ import {
 } from 'typeorm';
 import dataSource from './data-source';
 
-export interface FeedOption {
-  isTemp?: boolean;
-  isAll?: boolean;
-}
-
-export interface FeedSymbolCount {
-  feedId: number;
-  symbolId: number;
-  symbol: string;
-  count: number;
-}
-
 export class FeedRepository extends Repository<Feed> {
   private static instance: FeedRepository;
   private constructor() {

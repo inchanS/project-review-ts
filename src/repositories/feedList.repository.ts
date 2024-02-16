@@ -3,20 +3,6 @@ import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import dataSource from './data-source';
 import { CustomError } from '../utils/util';
 
-export interface FeedListOptions {
-  includeTempFeeds?: boolean;
-  onlyTempFeeds?: boolean;
-}
-export interface Pagination {
-  startIndex: number;
-  limit: number;
-}
-
-export interface PageCondition {
-  skip: number;
-  take: number;
-}
-
 export class FeedListRepository extends Repository<FeedList> {
   private static instance: FeedListRepository;
   private constructor() {

@@ -46,14 +46,14 @@ function errHandler(
       };
   res.status(errInfo.status).json({ message: errInfo.message });
 }
-function bodyText(req: Request) {
-  let bodyText = '';
+function bodyText(req: Request): string {
+  let bodyText: string = '';
   if (req.method !== 'GET') {
     bodyText =
       `${yellow('BODY\t|')}` +
       Object.keys(req.body)
         .map(
-          (key, index) =>
+          (key: string, index: number): string =>
             `${index === 0 ? '' : '\t' + yellow('|')} ${green.italic(key)} ${
               req.body[key]
             }`
@@ -69,7 +69,7 @@ function morganCustomFormat(
   req: Request,
   res: Response
 ) {
-  let result = [
+  let result: string = [
     `\n= ${red('MESSAGE')} =`,
     '\n',
     `${blue('URL\t| ')}`,

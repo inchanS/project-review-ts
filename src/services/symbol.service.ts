@@ -4,10 +4,7 @@ import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { plainToInstance } from 'class-transformer';
 import { FeedSymbolDto } from '../entities/dto/feedSymbol.dto';
 import { validateOrReject } from 'class-validator';
-import {
-  FeedRepository,
-  FeedSymbolCount,
-} from '../repositories/feed.repository';
+import { FeedRepository } from '../repositories/feed.repository';
 import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
 import {
   AddAndUpdateSymbolToFeedResult,

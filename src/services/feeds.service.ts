@@ -1,7 +1,7 @@
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import { FeedOption, FeedRepository } from '../repositories/feed.repository';
+import { FeedRepository } from '../repositories/feed.repository';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
@@ -9,7 +9,7 @@ import dataSource from '../repositories/data-source';
 import { EntityNotFoundError, QueryRunner } from 'typeorm';
 import { Estimation } from '../entities/estimation.entity';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
-import { DeleteUploadFiles, UploadFileService } from './uploadFile.service';
+import { UploadFileService } from './uploadFile.service';
 import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';

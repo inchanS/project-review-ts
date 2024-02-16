@@ -8,7 +8,6 @@ import { UserRepository } from '../repositories/user.repository';
 import { QueryRunner, Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
 
-export type Params = { Bucket: string; Key: string };
 export class UploadService {
   private userRepository: UserRepository;
   private uploadFilesRepository: Repository<UploadFiles>;

@@ -1,13 +1,12 @@
 // 유저의 가입정보 가져오기
 import { Request, Response } from 'express';
+import { UserContentService } from '../../services/users/userContent.service';
+import { User } from '../../entities/users.entity';
 import {
   CommentListByUserId,
   FeedListByUserId,
   FeedSymbolListByUserId,
-  UserContentService,
-} from '../../services/users/userContent.service';
-import { Pagination } from '../../repositories/feedList.repository';
-import { User } from '../../entities/users.entity';
+} from '../../types/user';
 
 class UserContentController {
   private userContentService: UserContentService;

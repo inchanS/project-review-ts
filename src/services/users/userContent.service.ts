@@ -4,34 +4,18 @@ import { FeedRepository } from '../../repositories/feed.repository';
 import { CommentRepository } from '../../repositories/comment.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
-import {
-  FeedListOptions,
-  FeedListRepository,
-  Pagination,
-} from '../../repositories/feedList.repository';
+import { FeedListRepository } from '../../repositories/feedList.repository';
 import { User } from '../../entities/users.entity';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
-import { CommentFormatter, ExtendedComment } from '../comments.service';
-
-export interface FeedListByUserId {
-  feedCntByUserId: number;
-  totalPage: number;
-  feedListByUserId: FeedList[];
-}
-
-export interface CommentListByUserId {
-  commentCntByUserId: number;
-  totalScrollCnt: number;
-  commentListByUserId: ExtendedComment[];
-}
-
-export interface FeedSymbolListByUserId {
-  symbolCntByUserId: number;
-  totalPage: number;
-  symbolListByUserId: FeedSymbol[];
-}
+import { CommentFormatter } from '../comments.service';
+import {
+  CommentListByUserId,
+  FeedListByUserId,
+  FeedSymbolListByUserId,
+} from '../../types/user';
+import { ExtendedComment } from '../../types/comment';
 
 export class UserContentService {
   private userRepository: UserRepository;
