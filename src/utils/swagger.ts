@@ -5,11 +5,11 @@ const options = {
     openapi: '3.0.2',
     info: {
       title: 'Project_review',
-      version: '1.0.0',
+      version: '3.1.1',
       description: 'project_review API with express',
       license: {
         name: 'MIT',
-        url: 'http://localhost:8000/api-docs/',
+        url: 'https://api-review-dev.codject.com',
       },
       contact: {
         name: 'Inchan Song',
@@ -27,8 +27,8 @@ const options = {
     },
     servers: [
       {
+        url: 'https://api-review-dev.codject.com',
         description: 'project_review AWS RDS Test API document',
-        url: 'http://3.35.117.128:8000',
       },
       {
         url: 'http://localhost:8000',
