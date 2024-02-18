@@ -34,4 +34,22 @@ export class TempFeedDto {
   @IsNumber()
   @IsOptional()
   status?: number;
+
+  @IsString()
+  @IsOptional()
+  fileLinks?: string[];
+
+  constructor(
+    user: number,
+    title: string,
+    content: string,
+    estimation: number,
+    category: number
+  ) {
+    this.user = user;
+    this.title = title;
+    this.content = content;
+    this.estimation = estimation;
+    this.category = category;
+  }
 }

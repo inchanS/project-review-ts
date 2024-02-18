@@ -1,3 +1,5 @@
+import { request } from 'express';
+
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
@@ -11,8 +13,13 @@ declare global {
 
   namespace Express {
     interface Request {
-      id?: number;
-      userInfo?: userInfo;
+      id: number;
+      userInfo: {
+        id: number;
+      };
+      param: {
+        id: number;
+      };
     }
   }
 
@@ -20,14 +27,13 @@ declare global {
     status: number;
   }
 
-  export class MissingDriverError extends Error {
-    name = 'MissingDriverError';
-
-    constructor(driverType: string) {
-      super();
-      Object.setPrototypeOf(this, MissingDriverError.prototype);
-      this.message = `Wrong driver: "${driverType}" given. Supported drivers are: "cordova", "mariadb", "mongodb", "mssql", "mysql", "oracle", "postgres", "sqlite", "sqljs", "react-native".`;
-    }
-  }
+  // export class MissingDriverError extends Error {
+  //   name = 'MissingDriverError';
+  //
+  //   constructor(driverType: string) {
+  //     super();
+  //     Object.setPrototypeOf(this, MissingDriverError.prototype);
+  //     this.message = `Wrong driver: "${driverType}" given. Supported drivers are: "cordova", "mariadb", "mongodb", "mssql", "mysql", "oracle", "postgres", "sqlite", "sqljs", "react-native".`;
+  //   }
+  // }
 }
-export {};

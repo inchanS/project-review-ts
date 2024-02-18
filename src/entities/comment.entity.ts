@@ -1,15 +1,15 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './users.entity';
 import { Feed } from './feed.entity';
-import { Base } from './index.entity';
+import { Base } from './base.entity';
 
 @Entity('comments')
 export class Comment extends Base {
-  @ManyToOne(type => User, users => users.comment, { nullable: false })
+  @ManyToOne(() => User, users => users.comment, { nullable: false })
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(type => Feed, feeds => feeds.comment, { nullable: false })
+  @ManyToOne(() => Feed, feeds => feeds.comment, { nullable: false })
   @JoinColumn({ name: 'feedId' })
   feed: Feed;
 
@@ -19,10 +19,27 @@ export class Comment extends Base {
   @Column('boolean', { default: false })
   is_private: boolean;
 
-  @ManyToOne(type => Comment, comment => comment.children)
+  @ManyToOne(() => Comment, comment => comment.children)
   @JoinColumn({ name: 'parentId' })
   parent: Comment;
 
-  @OneToMany(type => Comment, comment => comment.parent)
+  @OneToMany(() => Comment, comment => comment.parent)
   children: Comment[];
+
+  constructor(
+    user: User,
+    feed: Feed,
+    comment: string,
+    is_private: boolean,
+    parent: Comment,
+    children: Comment[]
+  ) {
+    super();
+    this.user = user;
+    this.feed = feed;
+    this.comment = comment;
+    this.is_private = is_private;
+    this.parent = parent;
+    this.children = children;
+  }
 }

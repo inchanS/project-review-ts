@@ -1,5 +1,6 @@
 import { Router } from 'express';
-const router = Router();
+
+const router: Router = Router();
 
 import { errHandler, notFoundHandler } from '../utils/util';
 import usersRoute from './users.route';

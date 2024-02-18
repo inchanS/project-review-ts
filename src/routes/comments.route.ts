@@ -5,7 +5,8 @@ import {
   authValidateOrNext,
   authValidateOrReject,
 } from '../middleware/jwt.strategy';
-const router = Router();
+
+const router: Router = Router();
 
 // 댓글 생성하기
 router.post(

@@ -5,7 +5,7 @@ import { FeedRepository } from '../repositories/feed.repository';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
 
-const router = Router();
+const router: Router = Router();
 
 // 레포지토리의 단일인스턴스 확인 함수
 function isSingleton<T>(repository: { getInstance(): T }): string {
@@ -18,7 +18,7 @@ function isSingleton<T>(repository: { getInstance(): T }): string {
   return result;
 }
 
-router.get('/singletons', (req: Request, res: Response) => {
+router.get('/singletons', (_req: Request, res: Response) => {
   const testUserRepository = isSingleton(UserRepository);
   const testFeedRepository = isSingleton(FeedRepository);
   const testFeedListRepository = isSingleton(FeedListRepository);

@@ -4,11 +4,18 @@ import { FeedRepository } from '../../repositories/feed.repository';
 import { CommentRepository } from '../../repositories/comment.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
+import { FeedListRepository } from '../../repositories/feedList.repository';
+import { User } from '../../entities/users.entity';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
+import { Comment } from '../../entities/comment.entity';
+import { FeedSymbol } from '../../entities/feedSymbol.entity';
+import { CommentFormatter } from '../comments.service';
 import {
-  FeedListOptions,
-  FeedListRepository,
-  Pagination,
-} from '../../repositories/feedList.repository';
+  CommentListByUserId,
+  FeedListByUserId,
+  FeedSymbolListByUserId,
+} from '../../types/user';
+import { ExtendedComment } from '../../types/comment';
 
 export class UserContentService {
   private userRepository: UserRepository;
@@ -25,13 +32,13 @@ export class UserContentService {
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
 
-  private validateUserId(userId: number) {
+  private validateUserId(userId: number): void {
     if (!userId) {
       throw new CustomError(400, 'USER_ID_IS_UNDEFINED');
     }
   }
 
-  private validatePage(page: Pagination) {
+  private validatePage(page: Pagination): Pagination | undefined {
     if (isNaN(page.startIndex) || isNaN(page.limit)) {
       return undefined;
     } else if (page.startIndex < 1) {
@@ -40,14 +47,17 @@ export class UserContentService {
     return page;
   }
 
-  private calculateTotalPageCount(totalItems: number, page: Pagination) {
+  private calculateTotalPageCount(
+    totalItems: number,
+    page: Pagination | undefined
+  ): number {
     return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
   }
 
-  findUserInfoByUserId = async (targetUserId: number) => {
+  findUserInfoByUserId = async (targetUserId: number): Promise<User> => {
     this.validateUserId(targetUserId);
 
-    const userInfo = await this.userRepository.findOne({
+    const userInfo: User | null = await this.userRepository.findOne({
       where: { id: targetUserId },
     });
 
@@ -61,11 +71,11 @@ export class UserContentService {
   // 유저 정보 확인시 유저의 게시글 조회
   findUserFeedsByUserId = async (
     targetUserId: number,
-    page: Pagination,
+    page: Pagination | undefined,
     options?: FeedListOptions
-  ) => {
+  ): Promise<FeedListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
-    page = this.validatePage(page);
+    page = page ? this.validatePage(page) : undefined;
 
     // 유저의 게시글 수 조회
     const feedCntByUserId: number =
@@ -76,11 +86,12 @@ export class UserContentService {
       feedCntByUserId,
       page
     );
-    const feedListByUserId = await this.feedListRepository.getFeedListByUserId(
-      targetUserId,
-      page,
-      options
-    );
+    const feedListByUserId: FeedList[] =
+      await this.feedListRepository.getFeedListByUserId(
+        targetUserId,
+        page,
+        options
+      );
 
     return { feedCntByUserId, totalPage, feedListByUserId };
   };
@@ -89,17 +100,17 @@ export class UserContentService {
   findUserCommentsByUserId = async (
     targetUserId: number,
     loggedInUserId: number,
-    page?: Pagination
-  ) => {
+    page?: Pagination | undefined
+  ): Promise<CommentListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
 
-    if (isNaN(page.startIndex) || isNaN(page.limit)) {
+    if (!page || isNaN(page.startIndex) || isNaN(page.limit)) {
       page = undefined;
     } else if (page.startIndex < 0) {
       throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
     }
 
-    const commentCntByUserId =
+    const commentCntByUserId: number =
       await this.commentRepository.getCommentCountByUserId(targetUserId);
 
     // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
@@ -108,30 +119,18 @@ export class UserContentService {
       page
     );
 
-    const commentListByUserId: any =
+    const originalCommentListByUserId: Comment[] =
       await this.commentRepository.getCommentListByUserId(targetUserId, page);
 
-    for (const comment of commentListByUserId) {
-      const isPrivate: boolean =
-        comment.is_private === true &&
-        comment.user.id !== loggedInUserId &&
-        (comment.parent
-          ? comment.parent.user.id !== loggedInUserId
-          : comment.feed.user.id !== loggedInUserId);
-      const isDeleted: boolean = comment.deleted_at !== null;
-      comment.comment = isDeleted
-        ? '## DELETED_COMMENT ##'
-        : isPrivate
-        ? '## PRIVATE_COMMENT ##'
-        : comment.comment;
-
-      // Date타입 재가공
-      comment.created_at = comment.created_at.substring(0, 19);
-      comment.updated_at = comment.updated_at.substring(0, 19);
-      comment.deleted_at = comment.deleted_at
-        ? comment.deleted_at.substring(0, 19)
-        : null;
-    }
+    const commentListByUserId: ExtendedComment[] =
+      // TODO CommentFormatter().format 메소드 재사용으로 처리 - 테스트 확인 필요
+      originalCommentListByUserId.map((comment: Comment) => {
+        return new CommentFormatter(
+          comment,
+          loggedInUserId,
+          comment.parent?.user.id
+        ).format();
+      });
 
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
   };
@@ -139,12 +138,12 @@ export class UserContentService {
   // 유저 정보 확인시, 유저의 피드 심볼 조회
   findUserFeedSymbolsByUserId = async (
     targetUserId: number,
-    page: Pagination
-  ) => {
+    page: Pagination | undefined
+  ): Promise<FeedSymbolListByUserId> => {
     await this.findUserInfoByUserId(targetUserId);
-    page = this.validatePage(page);
+    page ? this.validatePage(page) : undefined;
 
-    const symbolCntByUserId =
+    const symbolCntByUserId: number =
       await this.feedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);
 
     // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
@@ -153,7 +152,7 @@ export class UserContentService {
       page
     );
 
-    const symbolListByUserId =
+    const symbolListByUserId: FeedSymbol[] =
       await this.feedSymbolRepository.getFeedSymbolsByUserId(
         targetUserId,
         page

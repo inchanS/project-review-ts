@@ -1,8 +1,12 @@
 import { Feed } from '../entities/feed.entity';
-import { IsNull, Not, QueryRunner, Repository } from 'typeorm';
+import {
+  IsNull,
+  Not,
+  QueryRunner,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import dataSource from './data-source';
-
-export type FeedOption = { isTemp?: boolean; isAll?: boolean };
 
 export class FeedRepository extends Repository<Feed> {
   private static instance: FeedRepository;
@@ -16,14 +20,14 @@ export class FeedRepository extends Repository<Feed> {
     return this.instance;
   }
 
-  async createFeed(feedInfo: Feed, queryRunner: QueryRunner) {
+  async createFeed(feedInfo: Feed, queryRunner: QueryRunner): Promise<Feed> {
     // typeORM의 save, update 등의 메소드는 호출할때마다 새로운 트랜잭션을 자체적으로 시작한다.
     // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
     // 다른 방법으로 처리해준다.
-    const feed = queryRunner.manager.create(Feed, feedInfo);
+    const feed: Feed = queryRunner.manager.create(Feed, feedInfo);
     await queryRunner.manager.save(feed);
 
-    const result = await queryRunner.manager.findOne(Feed, {
+    const result: Feed = await queryRunner.manager.findOneOrFail(Feed, {
       loadRelationIds: true,
       where: { user: { id: feedInfo.user.id } },
       order: { id: 'DESC' },
@@ -32,17 +36,23 @@ export class FeedRepository extends Repository<Feed> {
     return result;
   }
 
-  async updateFeed(feedId: number, feedInfo: Feed, queryRunner: QueryRunner) {
+  async updateFeed(
+    feedId: number,
+    feedInfo: Feed,
+    queryRunner: QueryRunner
+  ): Promise<Feed> {
     await queryRunner.manager.update(Feed, feedId, feedInfo);
 
-    return await queryRunner.manager.findOne(Feed, {
+    return await queryRunner.manager.findOneOrFail(Feed, {
       loadRelationIds: true,
       where: { id: feedId },
     });
   }
 
-  async getFeed(feedId: number, options: FeedOption = {}) {
-    const queryBuilder = this.createQueryBuilder('feed')
+  async getFeed(feedId: number, options: FeedOption = {}): Promise<Feed> {
+    const queryBuilder: SelectQueryBuilder<Feed> = this.createQueryBuilder(
+      'feed'
+    )
       .select([
         'feed.id',
         'user.id',
@@ -71,6 +81,8 @@ export class FeedRepository extends Repository<Feed> {
       .leftJoin('feed.status', 'status')
       .leftJoin('feed.uploadFiles', 'uploadFiles')
       .where('feed.id = :feedId', { feedId: feedId })
+      // TODO typeORM에서는 deleted_at이 null인 것만 가져오는 것이 기본이기 때문에,
+      //  아래와 갈이 별도의 조건을 추가하지 않아도 될것 같은데? 확인 필요
       .andWhere('feed.deleted_at IS NULL');
 
     if (options.isAll) {
@@ -83,7 +95,7 @@ export class FeedRepository extends Repository<Feed> {
   }
 
   // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
-  async getFeedCountByUserId(userId: number) {
+  async getFeedCountByUserId(userId: number): Promise<number> {
     return await this.countBy({
       user: { id: userId },
       posted_at: Not(IsNull()),
@@ -98,7 +110,7 @@ export class FeedRepository extends Repository<Feed> {
   }
 
   // 피드의 symbol id별 count 가져오기
-  async getFeedSymbolCount(feedId: number) {
+  async getFeedSymbolCount(feedId: number): Promise<FeedSymbolCount[]> {
     return await this.createQueryBuilder('feed')
       .select([
         'feed.id AS feedId',
@@ -113,7 +125,7 @@ export class FeedRepository extends Repository<Feed> {
       .getRawMany();
   }
 
-  async addViewCount(feedId: number) {
+  async addViewCount(feedId: number): Promise<void> {
     await this.createQueryBuilder()
       .update(Feed)
       .set({ viewCnt: () => 'viewCnt + 1' })

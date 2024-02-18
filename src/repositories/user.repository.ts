@@ -1,8 +1,7 @@
-import bcrypt from 'bcryptjs';
 import dataSource from './data-source';
 import { User } from '../entities/users.entity';
 import { UserDto } from '../entities/dto/user.dto';
-import { FindOneOptions, Repository } from 'typeorm';
+import { FindOneOptions, Repository, UpdateResult } from 'typeorm';
 
 export class UserRepository extends Repository<User> {
   private static instance: UserRepository;
@@ -18,15 +17,12 @@ export class UserRepository extends Repository<User> {
     return this.instance;
   }
 
-  async createUser(userInfo: UserDto) {
-    const salt = await bcrypt.genSalt();
-    userInfo.password = await bcrypt.hash(userInfo.password, salt);
-
-    const user = this.create(userInfo);
+  async createUser(userInfo: UserDto): Promise<void> {
+    const user: User = this.create(userInfo);
     await this.save(user);
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<User | null> {
     return (
       this.createQueryBuilder('user')
         // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
@@ -38,7 +34,7 @@ export class UserRepository extends Repository<User> {
     );
   }
 
-  async findByNickname(nickname: string) {
+  async findByNickname(nickname: string): Promise<User | null> {
     return this.createQueryBuilder('user')
       .withDeleted()
       .where('nickname = :nickname', {
@@ -51,11 +47,11 @@ export class UserRepository extends Repository<User> {
     return super.findOneOrFail(options);
   }
 
-  async findOne(options: FindOneOptions): Promise<User> {
+  async findOne(options: FindOneOptions): Promise<User | null> {
     return super.findOne(options);
   }
 
-  async update(userId: number, userInfo: UserDto) {
+  async update(userId: number, userInfo: UserDto): Promise<UpdateResult> {
     return super.update(userId, userInfo);
   }
 }

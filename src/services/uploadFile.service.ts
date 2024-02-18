@@ -1,13 +1,9 @@
-import { Brackets, QueryRunner } from 'typeorm';
+import { Brackets, EntityNotFoundError, QueryRunner } from 'typeorm';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import { Feed } from '../entities/feed.entity';
 import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 
-export type DeleteUploadFiles = {
-  uploadFileWithoutFeedId: number[];
-  deleteFileLinksArray: string[];
-};
 export class UploadFileService {
   private uploadService: UploadService;
 
@@ -15,29 +11,36 @@ export class UploadFileService {
     this.uploadService = new UploadService();
   }
 
-  private generateListOfLinksForDeletableFiles = async (
+  private generateListOfLinksForDeletableFiles: (
+    originFeed: Feed,
+    fileLinks: string[]
+  ) => Promise<deletableFilesBasket> = async (
     originFeed: Feed,
     fileLinks: string[]
   ) => {
-    let uploadFileIdsToDelete: number[] = [];
-    let fileLinksToDelete: string[] = [];
+    let { uploadFileIdsToDelete, fileLinksToDelete }: deletableFilesBasket = {
+      uploadFileIdsToDelete: [],
+      fileLinksToDelete: [],
+    };
 
     // fileLinks가 없다면 기존 업로드 파일을 모두 삭제할 수 있도록 담아둔다.
-    if (!fileLinks) {
-      for (const uploadFile of originFeed.uploadFiles) {
-        uploadFileIdsToDelete.push(uploadFile.id);
-        fileLinksToDelete.push(uploadFile.file_link);
-      }
-    } else {
-      // 게시물에 등록된 기존 파일링크 중 새로운 파일링크 배열과 비교하여 없는 링크는 삭제할 수 있도록 찾아서 담아둔다.
-      for (const originFileLink of originFeed.uploadFiles) {
-        const isFileLinkfound = fileLinks.some(
-          fileLink => fileLink === originFileLink.file_link
-        );
+    if (originFeed.uploadFiles) {
+      if (!fileLinks) {
+        for (const uploadFile of originFeed.uploadFiles) {
+          uploadFileIdsToDelete.push(uploadFile.id);
+          fileLinksToDelete.push(uploadFile.file_link);
+        }
+      } else {
+        // 게시물에 등록된 기존 파일링크 중 새로운 파일링크 배열과 비교하여 없는 링크는 삭제할 수 있도록 찾아서 담아둔다.
+        for (const originFileLink of originFeed.uploadFiles) {
+          const isFileLinkfound: boolean = fileLinks.some(
+            fileLink => fileLink === originFileLink.file_link
+          );
 
-        if (!isFileLinkfound) {
-          uploadFileIdsToDelete.push(originFileLink.id);
-          fileLinksToDelete.push(originFileLink.file_link);
+          if (!isFileLinkfound) {
+            uploadFileIdsToDelete.push(originFileLink.id);
+            fileLinksToDelete.push(originFileLink.file_link);
+          }
         }
       }
     }
@@ -52,34 +55,38 @@ export class UploadFileService {
     fileLinks: string[]
   ): Promise<void> => {
     for (const fileLink of fileLinks) {
-      const findUploadFile = await queryRunner.manager.findOne(UploadFiles, {
-        loadRelationIds: true,
-        where: { file_link: fileLink },
-      });
+      try {
+        const findUploadFile: UploadFiles =
+          await queryRunner.manager.findOneOrFail(UploadFiles, {
+            loadRelationIds: true,
+            where: { file_link: fileLink },
+          });
 
-      // 인자로 들어온 fileLink를 데이터베이스에서 찾을 수 없을 때의 에러메세지 반환
-      if (!findUploadFile) {
-        throw new CustomError(404, `NOT_FOUND_UPLOAD_FILE_LINK`);
-      }
-
-      if (findUploadFile.feed !== null) {
-        if (Number(findUploadFile.feed) === feed.id) {
-          continue;
+        if (findUploadFile.feed !== null) {
+          if (Number(findUploadFile.feed) === feed.id) {
+            continue;
+          } else {
+            throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
+          }
         }
-        throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
-      }
 
-      await queryRunner.manager.update(UploadFiles, findUploadFile.id, {
-        feed: feed,
-      });
+        await queryRunner.manager.update(UploadFiles, findUploadFile.id, {
+          feed: feed,
+        });
+      } catch (error) {
+        if (error instanceof EntityNotFoundError) {
+          throw new CustomError(404, `NOT_FOUND_UPLOAD_FILE_LINK`);
+        }
+        throw error;
+      }
     }
   };
 
   public deleteUnusedUploadFiles = async (
     queryRunner: QueryRunner,
     userId: number
-  ): Promise<DeleteUploadFiles> => {
-    const uploadFileWithoutFeed = await queryRunner.manager
+  ): Promise<DeleteUploadFiles | undefined> => {
+    const uploadFileWithoutFeed: UploadFiles[] = await queryRunner.manager
       .getRepository(UploadFiles)
       .createQueryBuilder('uploadFiles')
       .leftJoinAndSelect('uploadFiles.feed', 'feed')
@@ -97,16 +104,18 @@ export class UploadFileService {
       .getMany();
 
     if (uploadFileWithoutFeed.length > 0) {
-      const uploadFileWithoutFeedId = uploadFileWithoutFeed.map(
-        uploadFile => uploadFile.id
+      const uploadFileWithoutFeedId: number[] = uploadFileWithoutFeed.map(
+        (uploadFile: UploadFiles) => uploadFile.id
       );
 
-      let deleteFileLinksArray = [];
+      let deleteFileLinksArray: string[] = [];
       for (const uploadFile of uploadFileWithoutFeed) {
         deleteFileLinksArray.push(uploadFile.file_link);
       }
 
       return { uploadFileWithoutFeedId, deleteFileLinksArray };
+    } else {
+      return undefined;
     }
   };
 
@@ -115,7 +124,7 @@ export class UploadFileService {
     uploadFileIdsToDelete: number[],
     fileLinksToDelete: string[],
     userId: number
-  ) => {
+  ): Promise<void> => {
     if (uploadFileIdsToDelete.length > 0) {
       await queryRunner.manager.softDelete(UploadFiles, uploadFileIdsToDelete);
       await this.uploadService.deleteUploadFile(userId, fileLinksToDelete);
@@ -123,26 +132,25 @@ export class UploadFileService {
   };
   public checkUploadFileOfFeed = async (
     queryRunner: QueryRunner,
-    feedId: number,
     userId: number,
     originFeed: Feed,
     fileLinks: string[]
-  ) => {
-    let { uploadFileIdsToDelete, fileLinksToDelete } =
+  ): Promise<void> => {
+    let { uploadFileIdsToDelete, fileLinksToDelete }: deletableFilesBasket =
       await this.generateListOfLinksForDeletableFiles(originFeed, fileLinks);
 
     if (fileLinks) {
       await this.updateFileLinks(queryRunner, originFeed, fileLinks);
     }
 
-    const findUnusedUploadFiles = await this.deleteUnusedUploadFiles(
-      queryRunner,
-      userId
-    );
+    const findUnusedUploadFiles: DeleteUploadFiles | undefined =
+      await this.deleteUnusedUploadFiles(queryRunner, userId);
 
     if (findUnusedUploadFiles) {
-      const { uploadFileWithoutFeedId, deleteFileLinksArray } =
-        findUnusedUploadFiles;
+      const {
+        uploadFileWithoutFeedId,
+        deleteFileLinksArray,
+      }: DeleteUploadFiles = findUnusedUploadFiles;
 
       uploadFileIdsToDelete.push(...uploadFileWithoutFeedId);
       fileLinksToDelete.push(...deleteFileLinksArray);

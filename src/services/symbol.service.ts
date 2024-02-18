@@ -11,6 +11,7 @@ import {
   CheckSymbolResult,
 } from '../types/feedSymbol';
 import { CustomError } from '../utils/util';
+import { Feed } from '../entities/feed.entity';
 
 export class SymbolService {
   private feedRepository: FeedRepository;
@@ -20,7 +21,7 @@ export class SymbolService {
     this.feedRepository = FeedRepository.getInstance();
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
-  getSymbols = async () =>
+  getSymbols = async (): Promise<Symbol[]> =>
     await dataSource.getRepository(Symbol).find({
       select: ['id', 'symbol'],
     });
@@ -32,7 +33,8 @@ export class SymbolService {
       throw new CustomError(404, 'INVALID_FEED');
     });
 
-    const result = await this.feedRepository.getFeedSymbolCount(feedId);
+    const result: FeedSymbolCount[] =
+      await this.feedRepository.getFeedSymbolCount(feedId);
 
     return result.map((item: any) => ({
       ...item,
@@ -44,10 +46,8 @@ export class SymbolService {
     feedId: number,
     userId: number
   ): Promise<CheckSymbolResult> => {
-    const result = await this.feedSymbolRepository.getFeedSymbol(
-      feedId,
-      userId
-    );
+    const result: FeedSymbol | null =
+      await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
 
     let newResult: CheckSymbolResult = {
       checkValue: false,
@@ -56,9 +56,7 @@ export class SymbolService {
 
     if (!result) {
       return newResult;
-    }
-
-    if (result) {
+    } else {
       newResult.checkValue = true;
       newResult.result = result;
       return newResult;
@@ -73,14 +71,14 @@ export class SymbolService {
     });
 
     // 피드 유효성검사
-    const validateFeed = await this.feedRepository
+    const validateFeed: Feed | void = await this.feedRepository
       .getFeed(feedSymbolInfo.feed)
-      .catch(() => {
+      .catch((): void => {
         throw new CustomError(404, 'INVALID_FEED');
       });
 
     // 사용자 유효성검사 (게시글 작성자는 공감할 수 없음)
-    if (validateFeed.user.id === feedSymbolInfo.user) {
+    if (validateFeed && validateFeed.user.id === feedSymbolInfo.user) {
       throw new CustomError(403, 'THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
     }
 
@@ -90,15 +88,16 @@ export class SymbolService {
       .findOneOrFail({
         where: { id: feedSymbolInfo.symbol },
       })
-      .catch(() => {
+      .catch((): void => {
         throw new CustomError(404, 'INVALID_SYMBOL');
       });
 
     // 피드 심볼 중복검사
-    const checkFeedSymbol = await this.feedSymbolRepository.getFeedSymbol(
-      feedSymbolInfo.feed,
-      feedSymbolInfo.user
-    );
+    const checkFeedSymbol: FeedSymbol | null =
+      await this.feedSymbolRepository.getFeedSymbol(
+        feedSymbolInfo.feed,
+        feedSymbolInfo.user
+      );
 
     // create와 update에 따른 sort 값 조정으로 controller에서 res.statusCode를 조정한다.
     let sort: AddAndUpdateSymbolToFeedResult['sort'] = 'add';
@@ -107,7 +106,10 @@ export class SymbolService {
       sort = 'update';
     }
 
-    const newFeedSymbol = plainToInstance(FeedSymbol, feedSymbolInfo);
+    const newFeedSymbol: FeedSymbol = plainToInstance(
+      FeedSymbol,
+      feedSymbolInfo
+    );
 
     await this.feedSymbolRepository.upsertFeedSymbol(newFeedSymbol);
 
@@ -118,10 +120,8 @@ export class SymbolService {
 
   removeSymbolFromFeed = async (userId: number, feedId: number) => {
     // 피드 심볼 유효성검사
-    const validateFeedSymbol = await this.feedSymbolRepository.getFeedSymbol(
-      feedId,
-      userId
-    );
+    const validateFeedSymbol: FeedSymbol | null =
+      await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
 
     if (!validateFeedSymbol) {
       throw new CustomError(404, `FEED_SYMBOL_NOT_FOUND`);
@@ -129,7 +129,7 @@ export class SymbolService {
 
     await this.feedSymbolRepository.deleteFeedSymbol(validateFeedSymbol.id);
 
-    const message = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
+    const message: string = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
     const result = await this.getFeedSymbolCount(feedId);
     return { message, result };
   };

@@ -12,7 +12,7 @@ export class UserDto {
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(20)
-  nickname?: string;
+  nickname: string;
 
   @IsString()
   @IsNotEmpty()
@@ -27,10 +27,16 @@ export class UserDto {
       message: 'password only accepts english and number 그리고 특수기호',
     }
   )
-  password?: string;
+  password: string;
 
   @IsNotEmpty()
   @IsEmail()
   @MaxLength(50)
-  email?: string;
+  email: string;
+
+  constructor(nickname: string, password: string, email: string) {
+    this.nickname = nickname;
+    this.password = password;
+    this.email = email;
+  }
 }

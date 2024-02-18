@@ -1,14 +1,28 @@
 import { Column, Entity, OneToMany } from 'typeorm';
-import { Base } from './index.entity';
+import { Base } from './base.entity';
 import { Feed } from './feed.entity';
 
-export type estimationType = 'double like' | 'like' | 'dislike';
+enum EstimationType {
+  DoubleLike = 'double like',
+  Like = 'like',
+  Dislike = 'dislike',
+}
 
 @Entity('estimation')
 export class Estimation extends Base {
-  @Column({ type: 'enum', enum: ['double like', 'like', 'dislike'] })
-  estimation: estimationType;
+  @Column({
+    type: 'enum',
+    enum: EstimationType,
+    unique: true,
+  })
+  estimation: EstimationType;
 
-  @OneToMany(type => Feed, feed => feed.estimation)
+  @OneToMany(() => Feed, feed => feed.estimation)
   feed: Feed[];
+
+  constructor(estimation: EstimationType, feed: Feed[]) {
+    super();
+    this.estimation = estimation;
+    this.feed = feed;
+  }
 }

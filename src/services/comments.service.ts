@@ -6,6 +6,83 @@ import { FeedRepository } from '../repositories/feed.repository';
 import { IsNull, Not } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CustomError } from '../utils/util';
+import { DateUtils } from '../utils/dateUtils';
+import { Feed } from '../entities/feed.entity';
+import { ExtendedComment, ExtendedUser } from '../types/comment';
+
+export class CommentFormatter {
+  private readonly comment: Comment;
+  private readonly userId: number;
+  private readonly parentUserId?: number;
+
+  constructor(comment: Comment, userId: number, parentUserId?: number) {
+    this.comment = comment;
+    this.userId = userId;
+    this.parentUserId = parentUserId;
+  }
+
+  isPrivate = (): boolean => {
+    return (
+      this.comment.is_private === true &&
+      this.comment.user.id !== this.userId &&
+      (this.parentUserId
+        ? this.parentUserId !== this.userId
+        : this.comment.feed.user.id !== this.userId)
+    );
+  };
+
+  isDeleted = (): boolean => this.comment.deleted_at !== null;
+
+  formatUser = (): ExtendedUser => {
+    let formattedUser: ExtendedUser = this.comment.user;
+    if (this.isDeleted() || this.isPrivate()) {
+      formattedUser = { id: null, nickname: null, email: null };
+
+      return formattedUser;
+    }
+
+    return formattedUser;
+  };
+
+  formatChildren = (): ExtendedComment[] =>
+    this.comment.children
+      ? this.comment.children.map(child =>
+          new CommentFormatter(
+            child,
+            this.userId,
+            this.comment.user.id
+          ).format()
+        )
+      : [];
+
+  public format = (): ExtendedComment => {
+    return {
+      id: this.comment.id,
+      parent: this.comment.parent,
+      feed: this.comment.feed,
+      is_private: this.comment.is_private,
+      comment: this.isDeleted()
+        ? '## DELETED_COMMENT ##'
+        : this.isPrivate()
+        ? '## PRIVATE_COMMENT ##'
+        : this.comment.comment,
+      user: this.formatUser(),
+      created_at: DateUtils.formatDate(this.comment.created_at),
+      updated_at: DateUtils.formatDate(this.comment.updated_at),
+      deleted_at: this.comment.deleted_at
+        ? DateUtils.formatDate(this.comment.deleted_at)
+        : null,
+    };
+  };
+
+  public formatWithChildren = (): ExtendedComment => {
+    const basicFormat: ExtendedComment = this.format();
+    return {
+      ...basicFormat,
+      children: this.formatChildren(),
+    };
+  };
+}
 
 export class CommentsService {
   private feedRepository: FeedRepository;
@@ -17,66 +94,30 @@ export class CommentsService {
   }
 
   // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
-  private formatComment = (
-    comment: any,
-    userId: number,
-    feedUserId: number,
-    parentUserId?: number
-  ): any => {
-    const isPrivate =
-      comment.is_private === true &&
-      comment.user.id !== userId &&
-      (parentUserId ? parentUserId !== userId : feedUserId !== userId);
-    const isDeleted = comment.deleted_at !== null;
-
-    return {
-      ...comment,
-      // 로그인 사용자의 비밀덧글 조회시 유효성 확인 및 삭제된 덧글 필터링
-      comment: isDeleted
-        ? '## DELETED_COMMENT ##'
-        : isPrivate
-        ? '## PRIVATE_COMMENT ##'
-        : comment.comment,
-
-      user: isDeleted
-        ? { id: null, nickname: null, email: null }
-        : isPrivate
-        ? { id: null, nickname: null, email: null }
-        : comment.user,
-
-      // Date 타입의 컬럼에서 불필요한 밀리초 부분 제외
-      created_at: comment.created_at.substring(0, 19),
-      updated_at: comment.updated_at.substring(0, 19),
-      deleted_at: comment.deleted_at
-        ? comment.deleted_at.substring(0, 19)
-        : null,
-
-      // 대댓글 영역
-      children: comment.children
-        ? comment.children.map((child: any) =>
-            this.formatComment(child, userId, feedUserId, comment.user.id)
-          )
-        : [],
-    };
-  };
-
   getCommentList = async (feedId: number, userId: number) => {
-    const feed = await this.feedRepository.findOne({
+    const feed: Feed | null = await this.feedRepository.findOne({
+      loadRelationIds: true,
       where: { id: feedId },
     });
-    // FIXME 임시게시글의 덧글 목록은 가져오지 않게하고 에러핸들링하기!!
-    if (!feed) throw new CustomError(404, 'FEED_NOT_FOUND');
 
-    const result = await this.commentRepository.getCommentList(feedId);
+    // TODO 어떤 쿼리가 더 성능이 좋을까??
+    // if (!feed || feed.posted_at === null) {
+    const statusId: number = Number(feed?.status);
+    if (!feed || statusId === 2) {
+      throw new CustomError(404, 'FEED_NOT_FOUND');
+    }
+
+    const result: Comment[] = await this.commentRepository.getCommentList(
+      feedId
+    );
 
     // 덧글이 없을 경우 빈 배열 반환
     if (result.length === 0) {
       return [];
     }
 
-    const feedUserId = result[0].feed.user.id;
     return [...result].map((comment: any) =>
-      this.formatComment(comment, userId, feedUserId)
+      new CommentFormatter(comment, userId).formatWithChildren()
     );
   };
 
@@ -94,18 +135,18 @@ export class CommentsService {
           posted_at: Not(IsNull()),
         },
       })
-      .catch(err => {
+      .catch(() => {
         throw new CustomError(404, "COMMENT'S_FEED_VALIDATION_ERROR");
       });
 
     if (commentInfo.parent) {
       // 대댓글의 경우 부모댓글이 없을 때 에러 반환
-      const parentComment = await this.commentRepository
+      const parentComment: Comment = await this.commentRepository
         .findOneOrFail({
           loadRelationIds: true,
           where: { id: commentInfo.parent },
         })
-        .catch(err => {
+        .catch(() => {
           throw new CustomError(404, 'COMMENT_PARENT_NOT_FOUND');
         });
 
@@ -115,14 +156,14 @@ export class CommentsService {
       }
     }
 
-    const newComment = plainToInstance(Comment, commentInfo);
+    const newComment: Comment = plainToInstance(Comment, commentInfo);
 
     await this.commentRepository.createComment(newComment);
   };
 
   // 수정 또는 삭제시 해당 댓글의 유효성 검사 및 권한 검사를 위한 함수
   validateComment = async (userId: number, commentId: number) => {
-    const result = await this.commentRepository.findOne({
+    const result: Comment | null = await this.commentRepository.findOne({
       loadRelationIds: true,
       where: { id: commentId },
     });
@@ -144,7 +185,10 @@ export class CommentsService {
     commentId: number,
     commentInfo: CommentDto
   ): Promise<void> => {
-    const originComment = await this.validateComment(userId, commentId);
+    const originComment: Comment = await this.validateComment(
+      userId,
+      commentId
+    );
 
     // commentInfo에서 내용 생략시, 원문 내용으로 채우기
     if (commentInfo.is_private === undefined) {
@@ -171,8 +215,4 @@ export class CommentsService {
 
     await this.commentRepository.softDelete(commentId);
   };
-
-  // TODO 이 함수 왜 안쓰고 있지??
-  getCommentsById = async (userId: number) =>
-    await this.commentRepository.getCommentListByUserId(userId, undefined);
 }

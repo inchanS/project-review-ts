@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { asyncWrap } from '../utils/util';
 import symbolsController from '../controllers/symbols.controller';
 import { authValidateOrReject } from '../middleware/jwt.strategy';
-const router = Router();
+
+const router: Router = Router();
 
 // symbol 조회하기
 router.get('', asyncWrap(symbolsController.getSymbols));

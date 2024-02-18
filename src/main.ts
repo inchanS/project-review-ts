@@ -14,6 +14,10 @@ const startApp = async () => {
       .then(() => {
         if (process.env.NODE_ENV === 'develop') {
           console.log('Data Source has been initialized!');
+
+          const offset = new Date().getTimezoneOffset();
+          const offsetHours = offset / 60;
+          console.log(`Current timezone offset: ${offsetHours} hours`);
         }
 
         if (process.env.NODE_ENV === 'test') {

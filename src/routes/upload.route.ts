@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { asyncWrap } from '../utils/util';
-const router = Router();
+
+const router: Router = Router();
 
 import { authValidateOrReject } from '../middleware/jwt.strategy';
 import { upload } from '../middleware/uploadToS3';
