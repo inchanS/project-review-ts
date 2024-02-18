@@ -18,7 +18,7 @@ export class UserRepository extends Repository<User> {
   }
 
   async createUser(userInfo: UserDto): Promise<void> {
-    const user = this.create(userInfo);
+    const user: User = this.create(userInfo);
     await this.save(user);
   }
 
@@ -47,7 +47,7 @@ export class UserRepository extends Repository<User> {
     return super.findOneOrFail(options);
   }
 
-  async findOne(options: FindOneOptions): Promise<User> {
+  async findOne(options: FindOneOptions): Promise<User | null> {
     return super.findOne(options);
   }
 

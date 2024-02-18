@@ -11,7 +11,7 @@ import { User } from '../users.entity';
 export class FeedDto {
   @IsNotEmpty()
   @IsNumber()
-  user: User;
+  user: User | number;
 
   @IsNotEmpty()
   @IsString()
@@ -38,4 +38,18 @@ export class FeedDto {
 
   @IsOptional()
   posted_at?: Date;
+
+  constructor(
+    user: User,
+    title: string,
+    content: string,
+    estimation: number,
+    category: number
+  ) {
+    this.user = user;
+    this.title = title;
+    this.content = content;
+    this.estimation = estimation;
+    this.category = category;
+  }
 }

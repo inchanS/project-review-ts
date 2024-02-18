@@ -16,6 +16,6 @@ export class FeedStatus extends Base {
   })
   is_status?: feedStatusType;
 
-  @OneToMany(type => Feed, feed => feed.status)
+  @OneToMany(() => Feed, feed => feed.status)
   feed?: Feed[];
 }

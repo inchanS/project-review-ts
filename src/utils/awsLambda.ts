@@ -3,9 +3,8 @@ import {
   InvokeCommandOutput,
   LambdaClient,
 } from '@aws-sdk/client-lambda';
-import { Params } from '../services/upload.service';
 
-const awsLambda = new LambdaClient({
+const awsLambda: LambdaClient = new LambdaClient({
   region: process.env.AWS_REGION,
 });
 

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { UserDto } from '../../entities/dto/user.dto';
 import { ValidatorService } from '../../services/users/validator.service';
 
 // Version 1
@@ -43,17 +42,29 @@ class ValidatorController {
     req: Request,
     res: Response
   ): Promise<void> => {
-    const { nickname }: UserDto = req.query;
+    // 타입 단언(type assertions)을 사용한 타입에러 우회
+    const nickname: string = req.query.nickname as string;
 
-    const result = await this.validatorService.checkDuplicateNickname(nickname);
+    // type Guard를 사용한 타입에러 우회
+    // if (typeof nickname !== 'string') {
+    //   throw new CustomError(
+    //     400,
+    //     "Query param 'nickname' has to be of type string"
+    //   );
+    // }
 
-    res.status(200).json(result /**/);
+    // const result = await this.validatorService.checkDuplicateNickname(nickname);
+    const result: { message: string } =
+      await this.validatorService.checkDuplicateNickname(nickname);
+
+    res.status(200).json(result);
   };
 
   checkDuplicateEmail = async (req: Request, res: Response): Promise<void> => {
-    const { email }: UserDto = req.query;
+    const email: string = req.query.email as string;
 
-    const result = await this.validatorService.checkDuplicateEmail(email);
+    const result: { message: string } =
+      await this.validatorService.checkDuplicateEmail(email);
     res.status(200).json(result);
   };
 }

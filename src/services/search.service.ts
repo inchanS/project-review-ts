@@ -22,8 +22,8 @@ export class SearchService {
     }
     const startIndex: number = (index - 1) * limit;
 
-    const titleSnippetLength = 10;
-    const contentSnippetLength = 20;
+    const titleSnippetLength: number = 10;
+    const contentSnippetLength: number = 20;
 
     const result = await this.feedRepository
       .createQueryBuilder('feed')
@@ -99,7 +99,7 @@ export class SearchService {
     }
     const startIndex: number = (index - 1) * limit;
 
-    let result = await this.feedListRepository.getFeedList(
+    let result: FeedList[] = await this.feedListRepository.getFeedList(
       undefined,
       startIndex,
       limit,
@@ -107,17 +107,17 @@ export class SearchService {
     );
 
     result = result.map((feed: FeedList) => {
-      const lowerQuery = query.toLowerCase();
+      const lowerQuery: string = query.toLowerCase();
 
-      let titleSnippet = feed.title;
-      const titleIndex = titleSnippet.toLowerCase().indexOf(lowerQuery);
+      let titleSnippet: string = feed.title;
+      const titleIndex: number = titleSnippet.toLowerCase().indexOf(lowerQuery);
 
       if (titleIndex === -1) {
         titleSnippet = feed.title;
       } else {
         if (titleIndex >= 0) {
-          const start = Math.max(titleIndex - 10, 0);
-          const end = Math.min(
+          const start: number = Math.max(titleIndex - 10, 0);
+          const end: number = Math.min(
             titleIndex + lowerQuery.length + 10,
             titleSnippet.length
           );
@@ -131,14 +131,17 @@ export class SearchService {
         }
       }
 
-      let contentSnippet = feed.content;
-      const contentIndex = contentSnippet.toLowerCase().indexOf(lowerQuery);
+      let contentSnippet: string = feed.content;
+      const contentIndex: number = contentSnippet
+        .toLowerCase()
+        .indexOf(lowerQuery);
+
       if (contentIndex === -1) {
         contentSnippet = feed.content;
       } else {
         if (contentIndex >= 0) {
-          const start = Math.max(contentIndex - 30, 0);
-          const end = Math.min(
+          const start: number = Math.max(contentIndex - 30, 0);
+          const end: number = Math.min(
             contentIndex + lowerQuery.length + 30,
             contentSnippet.length
           );

@@ -35,7 +35,9 @@ class AuthValidator {
   // 토큰이 없으면 에러를 반환하는 유효성 검사 함수
   public async validateOrReject(): Promise<void> {
     try {
-      const decoder = new TokenDecoder(this.req.headers.authorization);
+      const decoder: TokenDecoder = new TokenDecoder(
+        this.req.headers.authorization as string
+      );
       const decodedToken = await decoder.decodeToken();
 
       if (!decodedToken.id) {
@@ -51,7 +53,9 @@ class AuthValidator {
   // 토큰이 없어도 다음으로 넘어가는 유효성 검사 함수
   public async validateOrNext(): Promise<void> {
     try {
-      const decoder = new TokenDecoder(this.req.headers.authorization);
+      const decoder: TokenDecoder = new TokenDecoder(
+        this.req.headers.authorization as string
+      );
       const decodedToken = await decoder.decodeToken();
 
       this.req.userInfo = { id: decodedToken.id };
@@ -66,7 +70,7 @@ export async function authValidateOrReject(
   _: any,
   next: NextFunction
 ): Promise<void> {
-  const validator = new AuthValidator(req, next);
+  const validator: AuthValidator = new AuthValidator(req, next);
   await validator.validateOrReject();
 }
 
@@ -75,6 +79,6 @@ export async function authValidateOrNext(
   _: any,
   next: NextFunction
 ): Promise<void> {
-  const validator = new AuthValidator(req, next);
+  const validator: AuthValidator = new AuthValidator(req, next);
   await validator.validateOrNext();
 }

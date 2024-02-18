@@ -1,7 +1,12 @@
 // 유저의 가입정보 가져오기
 import { Request, Response } from 'express';
 import { UserContentService } from '../../services/users/userContent.service';
-import { Pagination } from '../../repositories/feedList.repository';
+import { User } from '../../entities/users.entity';
+import {
+  CommentListByUserId,
+  FeedListByUserId,
+  FeedSymbolListByUserId,
+} from '../../types/user';
 
 class UserContentController {
   private userContentService: UserContentService;
@@ -10,13 +15,13 @@ class UserContentController {
     this.userContentService = new UserContentService();
   }
   getUserInfo = async (req: Request, res: Response): Promise<void> => {
-    let targetUserId = Number(req.params.id);
-    const loggedInUserId = req.userInfo.id;
+    let targetUserId: number = Number(req.params.id);
+    const loggedInUserId: number = req.userInfo.id;
 
     if (!targetUserId) {
       targetUserId = loggedInUserId;
     }
-    const result = await this.userContentService.findUserInfoByUserId(
+    const result: User = await this.userContentService.findUserInfoByUserId(
       targetUserId
     );
 
@@ -25,64 +30,64 @@ class UserContentController {
 
   // 유저의 모든 게시물 가져오기
   getUserFeeds = async (req: Request, res: Response): Promise<void> => {
-    let targetUserId = Number(req.params.id);
-    const loggedInUserId = req.userInfo.id;
+    let targetUserId: number = Number(req.params.id);
+    const loggedInUserId: number = req.userInfo.id;
 
     if (!targetUserId) {
       targetUserId = loggedInUserId;
     }
 
-    const startIndex = Number(req.query.page);
-    const limit = Number(req.query.limit);
+    const startIndex: number = Number(req.query.page);
+    const limit: number = Number(req.query.limit);
     const page: Pagination = { startIndex, limit };
 
-    const result = await this.userContentService.findUserFeedsByUserId(
-      targetUserId,
-      page
-    );
+    const result: FeedListByUserId =
+      await this.userContentService.findUserFeedsByUserId(targetUserId, page);
 
     res.status(200).json(result);
   };
 
   // 유저의 모든 덧글 가져오기
   getUserComments = async (req: Request, res: Response): Promise<void> => {
-    let targetUserId = Number(req.params.id);
-    const loggedInUserId = req.userInfo.id;
+    let targetUserId: number = Number(req.params.id);
+    const loggedInUserId: number = req.userInfo.id;
 
     if (!targetUserId) {
       targetUserId = loggedInUserId;
     }
 
-    const startIndex = Number(req.query.index);
-    const limit = Number(req.query.limit);
+    const startIndex: number = Number(req.query.index);
+    const limit: number = Number(req.query.limit);
     const page: Pagination = { startIndex, limit };
 
-    const result = await this.userContentService.findUserCommentsByUserId(
-      targetUserId,
-      loggedInUserId,
-      page
-    );
+    const result: CommentListByUserId =
+      await this.userContentService.findUserCommentsByUserId(
+        targetUserId,
+        loggedInUserId,
+        page
+      );
 
     res.status(200).json(result);
   };
 
   // 유저의 모든 좋아요 가져오기
   getUserFeedSymbols = async (req: Request, res: Response): Promise<void> => {
-    let targetUserId = Number(req.params.id);
-    const loggedInUserId = req.userInfo.id;
+    let targetUserId: number = Number(req.params.id);
+    const loggedInUserId: number = req.userInfo.id;
 
     if (!targetUserId) {
       targetUserId = loggedInUserId;
     }
 
-    const startIndex = Number(req.query.page);
-    const limit = Number(req.query.limit);
+    const startIndex: number = Number(req.query.page);
+    const limit: number = Number(req.query.limit);
     const page: Pagination = { startIndex, limit };
 
-    const result = await this.userContentService.findUserFeedSymbolsByUserId(
-      targetUserId,
-      page
-    );
+    const result: FeedSymbolListByUserId =
+      await this.userContentService.findUserFeedSymbolsByUserId(
+        targetUserId,
+        page
+      );
 
     res.status(200).json(result);
   };

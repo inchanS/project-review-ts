@@ -12,6 +12,7 @@ class CommentsController {
     const feedId: number = Number(req.params.id);
     const userId: number = req.userInfo.id;
 
+    // TODO 무한스크롤
     const result = await this.commentsService.getCommentList(feedId, userId);
     res.status(200).json(result);
   };

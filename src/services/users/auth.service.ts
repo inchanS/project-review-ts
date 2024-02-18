@@ -51,7 +51,9 @@ export class AuthService {
     // typeORM 문법으로 삭제된 유저, 즉 deleted_at이 not null인 유저는 제외하고 리턴한다.
     // 하지만 softDelete로 삭제된 유저의 경우에도 findByEmail을 통해 찾아야 실제 가입시 Entity Duplicated 에러를 방지할 수 있다.
 
-    const checkUserbyEmail: User = await this.userRepository.findByEmail(email);
+    const checkUserbyEmail: User | null = await this.userRepository.findByEmail(
+      email
+    );
 
     if (!checkUserbyEmail || checkUserbyEmail.deleted_at) {
       throw new CustomError(404, `${email}_IS_NOT_FOUND`);
@@ -95,12 +97,12 @@ export class AuthService {
       port: 587,
       secure: false,
       auth: {
-        user: process.env.NODEMAILER_USER,
-        pass: process.env.NODEMAILER_PASS,
+        user: process.env.NODEMAILER_USER as string,
+        pass: process.env.NODEMAILER_PASS as string,
       },
     };
 
-    const sendMail = new SendMail(mailOptions);
+    const sendMail: SendMail = new SendMail(mailOptions);
     const mailOption: Mail.Options = {
       from: process.env.EMAIL,
       to: email,

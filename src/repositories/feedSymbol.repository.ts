@@ -2,7 +2,6 @@ import { FeedSymbol } from '../entities/feedSymbol.entity';
 import dataSource from './data-source';
 import { Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
-import { Pagination } from './feedList.repository';
 
 export class FeedSymbolRepository extends Repository<FeedSymbol> {
   private static instance: FeedSymbolRepository;
@@ -17,7 +16,10 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     }
     return this.instance;
   }
-  async getFeedSymbol(feedId: number, userId: number) {
+  async getFeedSymbol(
+    feedId: number,
+    userId: number
+  ): Promise<FeedSymbol | null> {
     return await this.findOne({
       loadRelationIds: true,
       where: {
@@ -34,7 +36,7 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     });
   }
 
-  async getFeedSymbolsByUserId(userId: number, page: Pagination) {
+  async getFeedSymbolsByUserId(userId: number, page: Pagination | undefined) {
     let queryBuilder = this.createQueryBuilder('feedSymbol')
       .select([
         'feedSymbol.id',
@@ -51,7 +53,11 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
       .where('user.id = :userId', { userId: userId })
       .orderBy('feedSymbol.updated_at', 'DESC');
 
-    if (Number.isInteger(page?.startIndex) && Number.isInteger(page?.limit)) {
+    if (
+      page &&
+      Number.isInteger(page?.startIndex) &&
+      Number.isInteger(page?.limit)
+    ) {
       queryBuilder = queryBuilder.skip(page.startIndex - 1).take(page.limit);
     }
 

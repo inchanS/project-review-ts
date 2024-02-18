@@ -18,7 +18,7 @@ function isSingleton<T>(repository: { getInstance(): T }): string {
   return result;
 }
 
-router.get('/singletons', (req: Request, res: Response) => {
+router.get('/singletons', (_req: Request, res: Response) => {
   const testUserRepository = isSingleton(UserRepository);
   const testFeedRepository = isSingleton(FeedRepository);
   const testFeedListRepository = isSingleton(FeedListRepository);

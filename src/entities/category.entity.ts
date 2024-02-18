@@ -10,6 +10,13 @@ export class Category extends Base {
   @Column({ length: 250, nullable: true })
   description: string;
 
-  @OneToMany(type => Feed, feed => feed.category)
+  @OneToMany(() => Feed, feed => feed.category)
   feed: Feed[];
+
+  constructor(category: string, description: string, feed: Feed[]) {
+    super();
+    this.category = category;
+    this.description = description;
+    this.feed = feed;
+  }
 }

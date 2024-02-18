@@ -3,15 +3,6 @@ import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import dataSource from './data-source';
 import { CustomError } from '../utils/util';
 
-export interface FeedListOptions {
-  includeTempFeeds?: boolean;
-  onlyTempFeeds?: boolean;
-}
-export interface Pagination {
-  startIndex: number;
-  limit: number;
-}
-
 export class FeedListRepository extends Repository<FeedList> {
   private static instance: FeedListRepository;
   private constructor() {
@@ -52,6 +43,7 @@ export class FeedListRepository extends Repository<FeedList> {
     return await this.find({
       order: {
         postedAt: 'DESC',
+        id: 'DESC',
       },
       skip: startIndex,
       take: limit,
@@ -61,7 +53,7 @@ export class FeedListRepository extends Repository<FeedList> {
 
   async getFeedListByUserId(
     userId: number,
-    page: Pagination,
+    page: Pagination | undefined,
     options: FeedListOptions = {}
   ): Promise<FeedList[]> {
     const { includeTempFeeds = false, onlyTempFeeds = false } = options;
@@ -93,10 +85,9 @@ export class FeedListRepository extends Repository<FeedList> {
       orderOption = { postedAt: 'DESC' };
     }
 
-    let pageCondition = {};
+    let pageCondition: PageCondition | undefined;
     if (page) {
       const startIndex: number = (page.startIndex - 1) * page.limit;
-
       pageCondition = {
         skip: startIndex,
         take: page.limit,

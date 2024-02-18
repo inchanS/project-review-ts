@@ -1,18 +1,19 @@
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import { FeedOption, FeedRepository } from '../repositories/feed.repository';
+import { FeedRepository } from '../repositories/feed.repository';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
 import dataSource from '../repositories/data-source';
-import { EntityNotFoundError } from 'typeorm';
+import { EntityNotFoundError, QueryRunner } from 'typeorm';
 import { Estimation } from '../entities/estimation.entity';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
-import { DeleteUploadFiles, UploadFileService } from './uploadFile.service';
+import { UploadFileService } from './uploadFile.service';
 import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
+import { DateUtils } from '../utils/dateUtils';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -29,6 +30,7 @@ export class FeedsService {
 
   // 임시저장 ==================================================================
   // 임시저장 게시글 리스트 --------------------------------------------------------
+  // FIXME type any 고치기
   public getTempFeedList = async (userId: number) => {
     const results: any = await this.feedListRepository.getFeedListByUserId(
       userId,
@@ -37,33 +39,34 @@ export class FeedsService {
         onlyTempFeeds: true,
       }
     );
+
     for (const result of results) {
       const updatedAt = result.updatedAt.substring(2);
-      if (result.title === null) {
-        result.title = `${updatedAt}에 임시저장된 글입니다.`;
-      }
+      result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
     }
+
     return results;
   };
 
   // 임시저장 및 게시글 저장 -----------------------------------------------------------
-  private maxTransactionAttempts = 3;
+  private maxTransactionAttempts: number = 3;
   private executeTransactionWithRetry = async (
     attempt: number,
     feedInfo: TempFeedDto | FeedDto,
     fileLinks: string[],
-    options: FeedOption
+    options?: FeedOption
   ): Promise<Feed> => {
-    const queryRunner = dataSource.createQueryRunner();
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const newFeedInstance = plainToInstance(Feed, feedInfo);
-      const newFeed = await queryRunner.manager
+      const newFeedInstance: Feed = plainToInstance(Feed, feedInfo);
+      const newFeed: Feed = await queryRunner.manager
         .withRepository(this.feedRepository)
         .createFeed(newFeedInstance, queryRunner);
 
+      // TODO 아래 로직을 따로 handleFileOperations 함수로 분리하기
       if (fileLinks && fileLinks.length > 0) {
         await this.uploadFileService.updateFileLinks(
           queryRunner,
@@ -71,7 +74,7 @@ export class FeedsService {
           fileLinks
         );
 
-        const deleteUploadFiles: DeleteUploadFiles =
+        const deleteUploadFiles: DeleteUploadFiles | undefined =
           await this.uploadFileService.deleteUnusedUploadFiles(
             queryRunner,
             Number(newFeedInstance.user)
@@ -93,7 +96,6 @@ export class FeedsService {
         newFeed.id,
         options
       );
-
       return result;
     } catch (err: any) {
       await queryRunner.rollbackTransaction();
@@ -136,7 +138,7 @@ export class FeedsService {
       throw { status: 500, message: errors[0].constraints };
     });
 
-    const result = await this.executeTransactionWithRetry(
+    const result: Feed = await this.executeTransactionWithRetry(
       1,
       feedInfo,
       fileLinks,
@@ -155,7 +157,7 @@ export class FeedsService {
     options?: FeedOption
   ): Promise<Feed> => {
     // 수정 전 기존 feed 정보
-    const originFeed = await this.feedRepository
+    const originFeed: Feed = await this.feedRepository
       .getFeed(feedId, options)
       .catch(() => {
         throw new CustomError(404, 'NOT_FOUND_FEED');
@@ -165,10 +167,10 @@ export class FeedsService {
       throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_EDIT');
     }
 
-    if (originFeed.status.id === 2 && feedInfo.status === 1) {
+    if (originFeed.status?.id === 2 && feedInfo.status === 1) {
       feedInfo = plainToInstance(FeedDto, feedInfo);
       feedInfo.posted_at = new Date();
-    } else if (originFeed.status.id === 2) {
+    } else if (originFeed.status?.id === 2) {
       feedInfo = plainToInstance(TempFeedDto, feedInfo);
     } else {
       feedInfo = plainToInstance(FeedDto, feedInfo);
@@ -179,31 +181,30 @@ export class FeedsService {
     });
 
     // transaction으로 묶어주기
-    const queryRunner = dataSource.createQueryRunner();
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
       // 수정된 feed 저장
-      const feed = plainToInstance(Feed, feedInfo);
+      const feed: Feed = plainToInstance(Feed, feedInfo);
 
       // 수정내용 중 fileLink가 있는지 확인하고, 있다면 uploadFile에 feed의 ID를 연결해주는 함수
       // fildLink가 없다면 기존의 fileLink를 삭제한다.
       await this.uploadFileService.checkUploadFileOfFeed(
         queryRunner,
-        feedId,
         Number(feed.user),
         originFeed,
         fileLinks
       );
 
-      const newFeed = await queryRunner.manager
+      const newFeed: Feed = await queryRunner.manager
         .withRepository(this.feedRepository)
         .updateFeed(feedId, feed, queryRunner);
 
       await queryRunner.commitTransaction();
 
-      const result = await this.feedRepository.getFeed(newFeed.id, {
+      const result: Feed = await this.feedRepository.getFeed(newFeed.id, {
         isAll: true,
       });
 
@@ -226,21 +227,21 @@ export class FeedsService {
     // FIXME type any 고치기
     const result: any = await this.feedRepository
       .getFeed(feedId, options)
-      .catch((err: Error) => {
+      .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
           throw new CustomError(404, `NOT_FOUND_FEED`);
         }
       });
 
     // feed 값 재가공
-    result.created_at = result.created_at.substring(0, 19);
-    result.updated_at = result.updated_at.substring(0, 19);
+    result.created_at = DateUtils.formatDate(result.created_at);
+    result.updated_at = DateUtils.formatDate(result.updated_at);
+    result.posted_at = result.posted_at
+      ? DateUtils.formatDate(result.posted_at)
+      : null;
 
     const updatedAt = result.updated_at.substring(2);
-    result.title =
-      result.title === null
-        ? `${updatedAt}에 임시저장된 글입니다.`
-        : result.title;
+    result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
 
     // 임시저장 게시글은 본인만 볼 수 있음
     if (result.status.id === 2 && result.user.id !== userId) {
@@ -257,7 +258,7 @@ export class FeedsService {
 
   // 게시글 리스트 --------------------------------------------------------------
   public getFeedList = async (
-    categoryId: number,
+    categoryId: number | undefined,
     index: number,
     limit: number
   ): Promise<FeedList[]> => {
@@ -282,7 +283,7 @@ export class FeedsService {
     // FIXME type any 고치기
     const feed: any = await this.feedRepository
       .getFeed(feedId, { isAll: true })
-      .catch((err: Error) => {
+      .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
           throw new CustomError(404, `NOT_FOUND_FEED`);
         }
@@ -294,7 +295,7 @@ export class FeedsService {
     }
 
     // transaction으로 묶어주기
-    const queryRunner = dataSource.createQueryRunner();
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
