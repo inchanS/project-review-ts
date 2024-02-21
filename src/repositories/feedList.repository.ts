@@ -2,6 +2,13 @@ import { IsNull, Like, Not, Repository } from 'typeorm';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import dataSource from './data-source';
 import { CustomError } from '../utils/util';
+import { DateUtils } from '../utils/dateUtils';
+import {
+  ExtendedFeedlist,
+  FeedListOptions,
+  PageCondition,
+  Pagination,
+} from '../types/feedList';
 
 export class FeedListRepository extends Repository<FeedList> {
   private static instance: FeedListRepository;
@@ -20,7 +27,7 @@ export class FeedListRepository extends Repository<FeedList> {
     startIndex: number,
     limit: number,
     query?: string
-  ): Promise<FeedList[]> {
+  ): Promise<ExtendedFeedlist[]> {
     let where: any = {
       categoryId: categoryId,
       postedAt: Not(IsNull()),
@@ -40,7 +47,7 @@ export class FeedListRepository extends Repository<FeedList> {
       ];
     }
 
-    return await this.find({
+    const originalResult: FeedList[] = await this.find({
       order: {
         postedAt: 'DESC',
         id: 'DESC',
@@ -49,13 +56,18 @@ export class FeedListRepository extends Repository<FeedList> {
       take: limit,
       where,
     });
+
+    const formatDateResult: ExtendedFeedlist[] =
+      this.formatDateOfFeedList(originalResult);
+
+    return formatDateResult;
   }
 
   async getFeedListByUserId(
     userId: number,
     page: Pagination | undefined,
     options: FeedListOptions = {}
-  ): Promise<FeedList[]> {
+  ): Promise<ExtendedFeedlist[]> {
     const { includeTempFeeds = false, onlyTempFeeds = false } = options;
 
     let feedListCondition = {};
@@ -100,25 +112,26 @@ export class FeedListRepository extends Repository<FeedList> {
       ...pageCondition,
     };
 
-    return await this.find(findOption);
+    const originalResult: FeedList[] = await this.find(findOption);
+    const formatDateResult: ExtendedFeedlist[] =
+      this.formatDateOfFeedList(originalResult);
 
-    // --------------------------------------------------------------------------
-    // 아래의 2 코드를 위 코드로 리팩토링 함 (2023.03.24) ---------------------------------
+    return formatDateResult;
+  }
 
-    //   if (includeTempFeeds) {
-    //     return await this.find({
-    //       where: { userId: userId, deletedAt: IsNull() },
-    //     });
-    //   } else {
-    //     return await this.find({
-    //       where: { userId: userId, postedAt: Not(IsNull()), deletedAt: IsNull() },
-    //     });
-    //   }
-    // },
-    //
-    // async getTempFeedList(userId: number) {
-    //   return await this.find({
-    //     where: { userId: userId, postedAt: IsNull() },
-    //   });
+  formatDateOfFeedList(feedLists: FeedList[]): ExtendedFeedlist[] {
+    return feedLists.map(
+      (feedList: FeedList): ExtendedFeedlist => ({
+        ...feedList,
+        createdAt: DateUtils.formatDate(feedList.createdAt),
+        updatedAt: DateUtils.formatDate(feedList.updatedAt),
+        postedAt: feedList.postedAt
+          ? DateUtils.formatDate(feedList.postedAt)
+          : null,
+        deletedAt: feedList.deletedAt
+          ? DateUtils.formatDate(feedList.deletedAt)
+          : null,
+      })
+    );
   }
 }

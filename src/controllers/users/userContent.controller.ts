@@ -7,6 +7,7 @@ import {
   FeedListByUserId,
   FeedSymbolListByUserId,
 } from '../../types/user';
+import { Pagination } from '../../types/feedList';
 
 class UserContentController {
   constructor(private userContentService: UserContentService) {}

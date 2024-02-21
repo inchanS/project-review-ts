@@ -1,6 +1,5 @@
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { FeedRepository } from '../repositories/feed.repository';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
@@ -14,6 +13,7 @@ import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { DateUtils } from '../utils/dateUtils';
+import { ExtendedFeedlist } from '../types/feedList';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -30,18 +30,14 @@ export class FeedsService {
 
   // 임시저장 ==================================================================
   // 임시저장 게시글 리스트 --------------------------------------------------------
-  // FIXME type any 고치기
   public getTempFeedList = async (userId: number) => {
-    const results: any = await this.feedListRepository.getFeedListByUserId(
-      userId,
-      undefined,
-      {
+    const results: ExtendedFeedlist[] =
+      await this.feedListRepository.getFeedListByUserId(userId, undefined, {
         onlyTempFeeds: true,
-      }
-    );
+      });
 
     for (const result of results) {
-      const updatedAt = result.updatedAt.substring(2);
+      const updatedAt: string = result.updatedAt.substring(2);
       result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
     }
 
@@ -261,7 +257,7 @@ export class FeedsService {
     categoryId: number | undefined,
     index: number,
     limit: number
-  ): Promise<FeedList[]> => {
+  ): Promise<ExtendedFeedlist[]> => {
     // query로 전달된 categoryId가 0이거나 없을 경우 undefined로 변경 처리
     if (!categoryId || categoryId === 0) {
       categoryId = undefined;

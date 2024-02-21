@@ -14,16 +14,19 @@ import { ViewColumn, ViewEntity } from 'typeorm';
                             IN (SELECT feedId,
                                        MIN(id)
                                 FROM upload_files
-                                WHERE is_img = TRUE and deleted_at is null
+                                WHERE is_img = TRUE
+                                  AND deleted_at IS NULL
                                 GROUP BY feedId)),
            t3 AS (SELECT feedId AS feedId, COUNT(id) AS files_cnt
                   FROM upload_files
-                  WHERE is_img = FALSE AND deleted_at is NULL
+                  WHERE is_img = FALSE
+                    AND deleted_at IS NULL
                   GROUP BY feedId),
            t4 AS (SELECT feedId, COUNT(*) AS like_cnt FROM feed_symbol fs WHERE symbolId = 1 GROUP BY feedId),
            t5 AS (SELECT feedId AS feedId, COUNT(id) AS img_cnt
                   FROM upload_files
-                  WHERE is_img = TRUE AND deleted_at is NULL
+                  WHERE is_img = TRUE
+                    AND deleted_at IS NULL
                   GROUP BY feedId)
 
 
@@ -31,20 +34,20 @@ import { ViewColumn, ViewEntity } from 'typeorm';
              f.statusId,
              f.categoryId,
              c2.category,
-             u2.id                          AS userId,
-             u2.nickname                    AS userNickname,
+             u2.id                     AS userId,
+             u2.nickname               AS userNickname,
              f.title,
              f.content,
-             t2.img_url                     AS imgUrl,
+             t2.img_url                AS imgUrl,
              f.viewCnt,
-             IFNULL(t1.comment_cnt, 0)      AS commentCnt,
-             IFNULL(t4.like_cnt, 0)         AS likeCnt,
-             IFNULL(t3.files_cnt, 0)        AS filesCnt,
-             IFNULL(t5.img_cnt, 0)          AS imgCnt,
-             SUBSTRING(f.created_at, 1, 19) AS createdAt,
-             SUBSTRING(f.updated_at, 1, 19) AS updatedAt,
-             SUBSTRING(f.posted_at, 1, 19)  AS postedAt,
-             SUBSTRING(f.deleted_at, 1, 19) AS deletedAt
+             IFNULL(t1.comment_cnt, 0) AS commentCnt,
+             IFNULL(t4.like_cnt, 0)    AS likeCnt,
+             IFNULL(t3.files_cnt, 0)   AS filesCnt,
+             IFNULL(t5.img_cnt, 0)     AS imgCnt,
+             f.created_at              AS createdAt,
+             f.updated_at              AS updatedAt,
+             f.posted_at               AS postedAt,
+             f.deleted_at              AS deletedAt
       FROM feeds f
                LEFT JOIN estimation e ON f.estimationId = e.id
                LEFT JOIN t1 ON t1.feedId = f.id

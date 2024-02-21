@@ -13,6 +13,7 @@ import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
 import { QueryRunner } from 'typeorm';
 import { FeedListByUserId } from '../../types/user';
+import { Pagination } from '../../types/feedList';
 
 export class UserService {
   private userRepository: UserRepository;
