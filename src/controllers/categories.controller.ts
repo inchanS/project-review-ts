@@ -3,11 +3,7 @@ import { CategoriesService } from '../services/categories.service';
 import { Category } from '../entities/category.entity';
 
 class CategoriesController {
-  private categoriesService: CategoriesService;
-
-  constructor() {
-    this.categoriesService = new CategoriesService();
-  }
+  constructor(private categoriesService: CategoriesService) {}
 
   getCategoriesList = async (_req: Request, res: Response): Promise<void> => {
     const result: Category[] = await this.categoriesService.getCategoriesList();
@@ -15,4 +11,4 @@ class CategoriesController {
   };
 }
 
-export default new CategoriesController();
+export default new CategoriesController(new CategoriesService());

@@ -2,11 +2,7 @@ import { Request, Response } from 'express';
 import { UploadService } from '../services/upload.service';
 
 class UploadController {
-  private uploadService: UploadService;
-
-  constructor() {
-    this.uploadService = new UploadService();
-  }
+  constructor(private uploadService: UploadService) {}
   // 파일 업로드를 처리하는 API 엔드포인트 ----------------------
   uploadFiles = async (req: Request, res: Response): Promise<void> => {
     const userId: number = req.userInfo.id;
@@ -35,4 +31,4 @@ class UploadController {
   };
 }
 
-export default new UploadController();
+export default new UploadController(new UploadService());

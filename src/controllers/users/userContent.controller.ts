@@ -9,11 +9,7 @@ import {
 } from '../../types/user';
 
 class UserContentController {
-  private userContentService: UserContentService;
-
-  constructor() {
-    this.userContentService = new UserContentService();
-  }
+  constructor(private userContentService: UserContentService) {}
   getUserInfo = async (req: Request, res: Response): Promise<void> => {
     let targetUserId: number = Number(req.params.id);
     const loggedInUserId: number = req.userInfo.id;
@@ -93,4 +89,4 @@ class UserContentController {
   };
 }
 
-export default new UserContentController();
+export default new UserContentController(new UserContentService());

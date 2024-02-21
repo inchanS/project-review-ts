@@ -10,11 +10,7 @@ import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
 export class FeedsController {
-  private feedsService: FeedsService;
-
-  constructor() {
-    this.feedsService = new FeedsService();
-  }
+  constructor(private feedsService: FeedsService) {}
   getTempFeedList = async (req: Request, res: Response): Promise<void> => {
     const user: number = req.userInfo.id;
     const result = await this.feedsService.getTempFeedList(user);
@@ -190,4 +186,4 @@ export class FeedsController {
   };
 }
 
-export default new FeedsController();
+export default new FeedsController(new FeedsService());
