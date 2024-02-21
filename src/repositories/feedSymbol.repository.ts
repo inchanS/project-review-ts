@@ -80,8 +80,10 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     await this.delete(feedSymbolId);
   }
 
-  // TODO 이거 지워도 되는 코드인가?? OOP 리팩토링 중 발견
-  // async find(options: FindManyOptions) {
-  //   return await this.find(options);
-  // }
+  async findByUserId(userId: number): Promise<FeedSymbol[]> {
+    return await this.find({
+      loadRelationIds: true,
+      where: { user: { id: userId } },
+    });
+  }
 }
