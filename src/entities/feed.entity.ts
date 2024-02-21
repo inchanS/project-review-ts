@@ -37,7 +37,7 @@ export class Feed extends Base {
 
   @ManyToOne(() => FeedStatus, feed_status => feed_status.feed)
   @JoinColumn({ name: 'statusId' })
-  status?: FeedStatus;
+  status: FeedStatus;
 
   @Column({ type: 'timestamp', nullable: true })
   posted_at?: Date;
@@ -57,7 +57,8 @@ export class Feed extends Base {
     content: string,
     viewCnt: number,
     estimation: Estimation,
-    category: Category
+    category: Category,
+    status: FeedStatus
   ) {
     super();
     this.user = user;
@@ -66,5 +67,6 @@ export class Feed extends Base {
     this.viewCnt = viewCnt;
     this.estimation = estimation;
     this.category = category;
+    this.status = status;
   }
 }

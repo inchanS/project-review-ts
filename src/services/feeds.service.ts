@@ -14,6 +14,7 @@ import { CustomError } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { DateUtils } from '../utils/dateUtils';
 import { ExtendedFeedlist } from '../types/feedList';
+import { ExtendedFeed, FeedOption } from '../types/feed';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -218,10 +219,9 @@ export class FeedsService {
     userId: number,
     feedId: number,
     options?: FeedOption
-  ) => {
+  ): Promise<ExtendedFeed> => {
     // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
-    // FIXME type any 고치기
-    const result: any = await this.feedRepository
+    const feed: Feed | void = await this.feedRepository
       .getFeed(feedId, options)
       .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
@@ -229,14 +229,9 @@ export class FeedsService {
         }
       });
 
-    // feed 값 재가공
-    result.created_at = DateUtils.formatDate(result.created_at);
-    result.updated_at = DateUtils.formatDate(result.updated_at);
-    result.posted_at = result.posted_at
-      ? DateUtils.formatDate(result.posted_at)
-      : null;
+    const result: ExtendedFeed = this.formatFeed(feed!);
 
-    const updatedAt = result.updated_at.substring(2);
+    const updatedAt: string = result.updated_at.substring(2);
     result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
 
     // 임시저장 게시글은 본인만 볼 수 있음
@@ -248,9 +243,24 @@ export class FeedsService {
     if (result.status.id === 1) {
       await this.feedRepository.addViewCount(feedId);
     }
-
     return result;
   };
+
+  formatFeed(feed: Feed): ExtendedFeed {
+    return {
+      id: feed.id,
+      user: feed.user,
+      title: feed.title,
+      viewCnt: feed.viewCnt,
+      content: feed.content,
+      estimation: feed.estimation,
+      category: feed.category,
+      status: feed.status,
+      created_at: DateUtils.formatDate(feed.created_at),
+      updated_at: DateUtils.formatDate(feed.updated_at),
+      posted_at: feed.posted_at ? DateUtils.formatDate(feed.posted_at) : null,
+    };
+  }
 
   // 게시글 리스트 --------------------------------------------------------------
   public getFeedList = async (
