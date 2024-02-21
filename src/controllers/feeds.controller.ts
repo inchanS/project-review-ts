@@ -18,7 +18,7 @@ export class FeedsController {
     res.status(200).json({ message: `check temporary feed success`, result });
   };
 
-  // 임시저장 게시글 불러오기 -----------------------------------------------------------
+  // 임시저장 및 정식 게시글 불러오기 -----------------------------------------------------------
   getFeed = async (req: Request, res: Response): Promise<void> => {
     const user: number = req.userInfo.id;
     const feedId: number = Number(req.params.feedId);
