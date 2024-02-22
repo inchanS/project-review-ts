@@ -18,6 +18,7 @@ class SearchController {
     const query: string = req.query.query as string;
     const limit: number = Number(req.query.limit);
     const index: number = Number(req.query.index);
+
     const result: ExtendedFeedlist[] =
       await this.searchService.searchContentList(query, index, limit);
 

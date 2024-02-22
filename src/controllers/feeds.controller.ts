@@ -11,6 +11,7 @@ import { ExtendedFeedlist } from '../types/feedList';
 // 임시저장 게시글 리스트 --------------------------------------------------------
 export class FeedsController {
   constructor(private feedsService: FeedsService) {}
+
   getTempFeedList = async (req: Request, res: Response): Promise<void> => {
     const user: number = req.userInfo.id;
     const result = await this.feedsService.getTempFeedList(user);

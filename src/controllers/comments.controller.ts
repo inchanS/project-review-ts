@@ -4,6 +4,7 @@ import { CommentsService } from '../services/comments.service';
 
 class CommentsController {
   constructor(private commentsService: CommentsService) {}
+
   getCommentList = async (req: Request, res: Response): Promise<void> => {
     const feedId: number = Number(req.params.id);
     const userId: number = req.userInfo.id;

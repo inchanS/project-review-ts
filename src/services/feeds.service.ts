@@ -31,6 +31,7 @@ export class FeedsService {
 
   // 임시저장 ==================================================================
   // 임시저장 게시글 리스트 --------------------------------------------------------
+  // FIXME type any 고치기
   public getTempFeedList = async (userId: number) => {
     const results: ExtendedFeedlist[] =
       await this.feedListRepository.getFeedListByUserId(userId, undefined, {
