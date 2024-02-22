@@ -12,7 +12,7 @@ import { UserRepository } from '../../repositories/user.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
 import { QueryRunner } from 'typeorm';
-import { FeedListByUserId } from '../../types/user';
+import { CommentListByUserId, FeedListByUserId } from '../../types/user';
 import { Pagination } from '../../types/feedList';
 
 export class UserService {
@@ -88,7 +88,7 @@ export class UserService {
       });
 
     // 사용자의 모든 덧글을 불러온다.
-    const userCommentsInfo =
+    const userCommentsInfo: CommentListByUserId =
       await this.userContentService.findUserCommentsByUserId(
         userId,
         userId,
@@ -126,6 +126,9 @@ export class UserService {
 
       // 사용자의 Feed entity를 모두 삭제한다.
       if (userFeedIds.length > 0) {
+        await queryRunner.manager.update(Feed, userFeedIds, {
+          status: { id: 3 },
+        });
         await queryRunner.manager.softDelete(Feed, userFeedIds);
       }
       // feed를 모두 삭제한 후, 사용하지 않는 fileLinks를 삭제한다.
