@@ -1,4 +1,3 @@
-import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { ExtendedComment } from '../services/comments.service';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { ExtendedFeedlist } from './feedList';
