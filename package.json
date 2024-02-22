@@ -15,7 +15,8 @@
     "dev": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
     "distribute": "npm i --verbose && NODE_ENV=production pm2 start dist/main.js --name review -i max",
     "distribute-dev": "npm i --verbose && NODE_ENV=develop pm2 start dist/main.js --name review-dev -i max",
-    "typeorm": "NODE_ENV=develop ts-node ./node_modules/typeorm/cli.js migration:run -d ./src/repositories/data-source.ts",
+    "typeorm-dev": "NODE_ENV=develop ts-node ./node_modules/typeorm/cli.js migration:run -d ./src/repositories/data-source.ts",
+    "typeorm-product": "NODE_ENV=production ts-node ./node_modules/typeorm/cli.js migration:run -d ./src/repositories/data-source.ts",
     "inspect": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"node --inspect dist/main.js\""
   },
   "repository": {
