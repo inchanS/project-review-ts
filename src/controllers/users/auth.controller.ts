@@ -3,11 +3,7 @@ import { UserDto } from '../../entities/dto/user.dto';
 import { AuthService } from '../../services/users/auth.service';
 
 class AuthController {
-  private authService: AuthService;
-
-  constructor() {
-    this.authService = new AuthService();
-  }
+  constructor(private authService: AuthService) {}
   signUp = async (req: Request, res: Response): Promise<void> => {
     const { nickname, password, email }: UserDto = req.body;
     // type을 Entity에서 가져오지 말고, DTO로 처리하여 가져오는게 더 편하다.
@@ -37,4 +33,4 @@ class AuthController {
   };
 }
 
-export default new AuthController();
+export default new AuthController(new AuthService());

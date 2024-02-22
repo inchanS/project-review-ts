@@ -6,7 +6,6 @@ import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
 import { FeedListRepository } from '../../repositories/feedList.repository';
 import { User } from '../../entities/users.entity';
-import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { CommentFormatter } from '../comments.service';
@@ -16,6 +15,11 @@ import {
   FeedSymbolListByUserId,
 } from '../../types/user';
 import { ExtendedComment } from '../../types/comment';
+import {
+  ExtendedFeedlist,
+  FeedListOptions,
+  Pagination,
+} from '../../types/feedList';
 
 export class UserContentService {
   private userRepository: UserRepository;
@@ -86,7 +90,7 @@ export class UserContentService {
       feedCntByUserId,
       page
     );
-    const feedListByUserId: FeedList[] =
+    const feedListByUserId: ExtendedFeedlist[] =
       await this.feedListRepository.getFeedListByUserId(
         targetUserId,
         page,

@@ -8,11 +8,7 @@ import { SymbolService } from '../services/symbol.service';
 import { Symbol } from '../entities/symbol.entity';
 
 class SymbolsController {
-  private symbolService: SymbolService;
-
-  constructor() {
-    this.symbolService = new SymbolService();
-  }
+  constructor(private symbolService: SymbolService) {}
 
   getSymbols = async (_req: Request, res: Response): Promise<void> => {
     const result: Symbol[] = await this.symbolService.getSymbols();
@@ -78,4 +74,4 @@ class SymbolsController {
   };
 }
 
-export default new SymbolsController();
+export default new SymbolsController(new SymbolService());

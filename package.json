@@ -13,7 +13,6 @@
     "predev": "npm run api-docs",
     "start": "npm i --verbose && NODE_ENV=develop node dist/main.js",
     "dev": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
-    "nodemon": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"nodemon -q dist/main.js\"",
     "distribute": "npm i --verbose && NODE_ENV=production pm2 start dist/main.js --name review -i max",
     "distribute-dev": "npm i --verbose && NODE_ENV=develop pm2 start dist/main.js --name review-dev -i max",
     "typeorm": "NODE_ENV=develop ts-node ./node_modules/typeorm/cli.js migration:run -d ./src/repositories/data-source.ts",

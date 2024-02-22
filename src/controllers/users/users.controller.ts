@@ -4,11 +4,7 @@ import { UserService } from '../../services/users/user.service';
 import { User } from '../../entities/users.entity';
 
 class UserController {
-  private userService: UserService;
-
-  constructor() {
-    this.userService = new UserService();
-  }
+  constructor(private userService: UserService) {}
 
   updateUserInfo = async (req: Request, res: Response): Promise<void> => {
     const { nickname, password, email }: UserDto = req.body;
@@ -29,4 +25,4 @@ class UserController {
   };
 }
 
-export default new UserController();
+export default new UserController(new UserService());

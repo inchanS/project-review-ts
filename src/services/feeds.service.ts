@@ -1,6 +1,5 @@
 import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { FeedRepository } from '../repositories/feed.repository';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
@@ -14,6 +13,8 @@ import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { DateUtils } from '../utils/dateUtils';
+import { ExtendedFeedlist } from '../types/feedList';
+import { ExtendedFeed, FeedOption } from '../types/feed';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -32,16 +33,13 @@ export class FeedsService {
   // 임시저장 게시글 리스트 --------------------------------------------------------
   // FIXME type any 고치기
   public getTempFeedList = async (userId: number) => {
-    const results: any = await this.feedListRepository.getFeedListByUserId(
-      userId,
-      undefined,
-      {
+    const results: ExtendedFeedlist[] =
+      await this.feedListRepository.getFeedListByUserId(userId, undefined, {
         onlyTempFeeds: true,
-      }
-    );
+      });
 
     for (const result of results) {
-      const updatedAt = result.updatedAt.substring(2);
+      const updatedAt: string = result.updatedAt.substring(2);
       result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
     }
 
@@ -222,10 +220,9 @@ export class FeedsService {
     userId: number,
     feedId: number,
     options?: FeedOption
-  ) => {
+  ): Promise<ExtendedFeed> => {
     // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
-    // FIXME type any 고치기
-    const result: any = await this.feedRepository
+    const feed: Feed | void = await this.feedRepository
       .getFeed(feedId, options)
       .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
@@ -233,14 +230,9 @@ export class FeedsService {
         }
       });
 
-    // feed 값 재가공
-    result.created_at = DateUtils.formatDate(result.created_at);
-    result.updated_at = DateUtils.formatDate(result.updated_at);
-    result.posted_at = result.posted_at
-      ? DateUtils.formatDate(result.posted_at)
-      : null;
+    const result: ExtendedFeed = this.formatFeed(feed!);
 
-    const updatedAt = result.updated_at.substring(2);
+    const updatedAt: string = result.updated_at.substring(2);
     result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
 
     // 임시저장 게시글은 본인만 볼 수 있음
@@ -252,16 +244,31 @@ export class FeedsService {
     if (result.status.id === 1) {
       await this.feedRepository.addViewCount(feedId);
     }
-
     return result;
   };
+
+  formatFeed(feed: Feed): ExtendedFeed {
+    return {
+      id: feed.id,
+      user: feed.user,
+      title: feed.title,
+      viewCnt: feed.viewCnt,
+      content: feed.content,
+      estimation: feed.estimation,
+      category: feed.category,
+      status: feed.status,
+      created_at: DateUtils.formatDate(feed.created_at),
+      updated_at: DateUtils.formatDate(feed.updated_at),
+      posted_at: feed.posted_at ? DateUtils.formatDate(feed.posted_at) : null,
+    };
+  }
 
   // 게시글 리스트 --------------------------------------------------------------
   public getFeedList = async (
     categoryId: number | undefined,
     index: number,
     limit: number
-  ): Promise<FeedList[]> => {
+  ): Promise<ExtendedFeedlist[]> => {
     // query로 전달된 categoryId가 0이거나 없을 경우 undefined로 변경 처리
     if (!categoryId || categoryId === 0) {
       categoryId = undefined;
@@ -280,8 +287,7 @@ export class FeedsService {
   };
 
   public deleteFeed = async (userId: number, feedId: number): Promise<void> => {
-    // FIXME type any 고치기
-    const feed: any = await this.feedRepository
+    const feed: Feed | void = await this.feedRepository
       .getFeed(feedId, { isAll: true })
       .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
@@ -289,8 +295,10 @@ export class FeedsService {
         }
       });
 
+    const feedToDelete: Feed = feed!;
+
     // 사용자 유효성 검사
-    if (feed.user.id !== userId) {
+    if (feedToDelete.user.id !== userId) {
       throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_DELETE');
     }
 
@@ -300,13 +308,13 @@ export class FeedsService {
     await queryRunner.startTransaction();
 
     try {
-      if (feed.uploadFiles.length > 0) {
-        const deleteFileLinksArray = [];
+      if (feedToDelete.uploadFiles && feedToDelete.uploadFiles.length > 0) {
+        const deleteFileLinksArray: string[] = [];
         // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
         deleteFileLinksArray.push('DELETE_FROM_UPLOAD_FILES_TABLE');
 
         // 게시물의 모든 uploadFile 삭제
-        for (const uploadFile of feed.uploadFiles) {
+        for (const uploadFile of feedToDelete.uploadFiles) {
           deleteFileLinksArray.push(uploadFile.file_link);
         }
         await this.uploadService
@@ -316,18 +324,14 @@ export class FeedsService {
           });
       }
 
-      // FIXME feed 삭제시 feed.status.id를 3(deleted)으로 변경하는 로직이 추가되어야 한다.
-      //  아래 transaction 코드 확인해보기 20240207
-      feed.status = 3;
+      feedToDelete.status.id = 3;
       await queryRunner.manager.update(
         Feed,
         { id: feedId },
-        { status: feed.status }
+        { status: feedToDelete.status }
       );
-      await queryRunner.manager.softDelete(Feed, { id: feedId });
 
-      // feed 삭제
-      // await queryRunner.manager.softDelete(Feed, feedId);
+      await queryRunner.manager.softDelete(Feed, { id: feedId });
 
       // feedSymbol 삭제
       await queryRunner.manager.softDelete(FeedSymbol, { feed: feedId });

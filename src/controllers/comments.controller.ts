@@ -3,11 +3,8 @@ import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentsService } from '../services/comments.service';
 
 class CommentsController {
-  private commentsService: CommentsService;
+  constructor(private commentsService: CommentsService) {}
 
-  constructor() {
-    this.commentsService = new CommentsService();
-  }
   getCommentList = async (req: Request, res: Response): Promise<void> => {
     const feedId: number = Number(req.params.id);
     const userId: number = req.userInfo.id;
@@ -57,4 +54,4 @@ class CommentsController {
   };
 }
 
-export default new CommentsController();
+export default new CommentsController(new CommentsService());
