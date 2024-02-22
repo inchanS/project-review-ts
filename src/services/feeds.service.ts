@@ -286,8 +286,7 @@ export class FeedsService {
   };
 
   public deleteFeed = async (userId: number, feedId: number): Promise<void> => {
-    // FIXME type any 고치기
-    const feed: any = await this.feedRepository
+    const feed: Feed | void = await this.feedRepository
       .getFeed(feedId, { isAll: true })
       .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
@@ -295,8 +294,10 @@ export class FeedsService {
         }
       });
 
+    const feedToDelete: Feed = feed!;
+
     // 사용자 유효성 검사
-    if (feed.user.id !== userId) {
+    if (feedToDelete.user.id !== userId) {
       throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_DELETE');
     }
 
@@ -306,13 +307,13 @@ export class FeedsService {
     await queryRunner.startTransaction();
 
     try {
-      if (feed.uploadFiles.length > 0) {
-        const deleteFileLinksArray = [];
+      if (feedToDelete.uploadFiles && feedToDelete.uploadFiles.length > 0) {
+        const deleteFileLinksArray: string[] = [];
         // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
         deleteFileLinksArray.push('DELETE_FROM_UPLOAD_FILES_TABLE');
 
         // 게시물의 모든 uploadFile 삭제
-        for (const uploadFile of feed.uploadFiles) {
+        for (const uploadFile of feedToDelete.uploadFiles) {
           deleteFileLinksArray.push(uploadFile.file_link);
         }
         await this.uploadService
@@ -322,18 +323,14 @@ export class FeedsService {
           });
       }
 
-      // FIXME feed 삭제시 feed.status.id를 3(deleted)으로 변경하는 로직이 추가되어야 한다.
-      //  아래 transaction 코드 확인해보기 20240207
-      feed.status = 3;
+      feedToDelete.status.id = 3;
       await queryRunner.manager.update(
         Feed,
         { id: feedId },
-        { status: feed.status }
+        { status: feedToDelete.status }
       );
-      await queryRunner.manager.softDelete(Feed, { id: feedId });
 
-      // feed 삭제
-      // await queryRunner.manager.softDelete(Feed, feedId);
+      await queryRunner.manager.softDelete(Feed, { id: feedId });
 
       // feedSymbol 삭제
       await queryRunner.manager.softDelete(FeedSymbol, { feed: feedId });
