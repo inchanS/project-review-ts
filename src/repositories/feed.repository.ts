@@ -7,6 +7,7 @@ import {
   SelectQueryBuilder,
 } from 'typeorm';
 import dataSource from './data-source';
+import { FeedOption, FeedSymbolCount } from '../types/feed';
 
 export class FeedRepository extends Repository<Feed> {
   private static instance: FeedRepository;
@@ -80,10 +81,9 @@ export class FeedRepository extends Repository<Feed> {
       .leftJoin('feed.estimation', 'estimation')
       .leftJoin('feed.status', 'status')
       .leftJoin('feed.uploadFiles', 'uploadFiles')
-      .where('feed.id = :feedId', { feedId: feedId })
-      // TODO typeORM에서는 deleted_at이 null인 것만 가져오는 것이 기본이기 때문에,
-      //  아래와 갈이 별도의 조건을 추가하지 않아도 될것 같은데? 확인 필요
-      .andWhere('feed.deleted_at IS NULL');
+      .where('feed.id = :feedId', { feedId: feedId });
+    // typeORM에서는 deleted_at이 null인 것만 가져오는 것이 default이기에 추가적인 where 구문을 입력할 필요가 없다.
+    // 만약 deleted_at 컬럼 값이 있는 데이터도 가져오고 싶다면 .withDeleted() 메소드를 추가해주면 된다.
 
     if (options.isAll) {
     } else if (options.isTemp) {

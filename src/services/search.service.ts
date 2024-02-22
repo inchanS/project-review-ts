@@ -1,7 +1,7 @@
 import { FeedRepository } from '../repositories/feed.repository';
 import { Brackets } from 'typeorm';
-import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { FeedListRepository } from '../repositories/feedList.repository';
+import { ExtendedFeedlist } from '../types/feedList';
 
 export class SearchService {
   private feedRepository: FeedRepository;
@@ -99,14 +99,14 @@ export class SearchService {
     }
     const startIndex: number = (index - 1) * limit;
 
-    let result: FeedList[] = await this.feedListRepository.getFeedList(
+    let result: ExtendedFeedlist[] = await this.feedListRepository.getFeedList(
       undefined,
       startIndex,
       limit,
       query
     );
 
-    result = result.map((feed: FeedList) => {
+    result = result.map((feed: ExtendedFeedlist) => {
       const lowerQuery: string = query.toLowerCase();
 
       let titleSnippet: string = feed.title;

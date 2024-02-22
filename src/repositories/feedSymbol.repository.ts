@@ -2,6 +2,7 @@ import { FeedSymbol } from '../entities/feedSymbol.entity';
 import dataSource from './data-source';
 import { Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
+import { Pagination } from '../types/feedList';
 
 export class FeedSymbolRepository extends Repository<FeedSymbol> {
   private static instance: FeedSymbolRepository;
@@ -80,8 +81,10 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
     await this.delete(feedSymbolId);
   }
 
-  // TODO 이거 지워도 되는 코드인가?? OOP 리팩토링 중 발견
-  // async find(options: FindManyOptions) {
-  //   return await this.find(options);
-  // }
+  async findByUserId(userId: number): Promise<FeedSymbol[]> {
+    return await this.find({
+      loadRelationIds: true,
+      where: { user: { id: userId } },
+    });
+  }
 }
