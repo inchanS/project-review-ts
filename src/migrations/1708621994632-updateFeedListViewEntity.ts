@@ -4,7 +4,7 @@ export class UpdateFeedListViewEntity1708621994632
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`
+    await queryRunner.query(`CREATE OR REPLACE VIEW FeedList AS
          WITH t1 AS (SELECT c.feedId AS feedId, COUNT(c.id) AS comment_cnt
                   FROM comments c
                   GROUP BY c.feedId),
