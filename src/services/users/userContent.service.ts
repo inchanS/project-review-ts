@@ -127,7 +127,6 @@ export class UserContentService {
       await this.commentRepository.getCommentListByUserId(targetUserId, page);
 
     const commentListByUserId: ExtendedComment[] =
-      // TODO CommentFormatter().format 메소드 재사용으로 처리 - 테스트 확인 필요
       originalCommentListByUserId.map((comment: Comment) => {
         return new CommentFormatter(
           comment,
