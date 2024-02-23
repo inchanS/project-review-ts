@@ -260,6 +260,7 @@ export class FeedsService {
       created_at: DateUtils.formatDate(feed.created_at),
       updated_at: DateUtils.formatDate(feed.updated_at),
       posted_at: feed.posted_at ? DateUtils.formatDate(feed.posted_at) : null,
+      uploadFiles: feed.uploadFiles,
     };
   }
 
