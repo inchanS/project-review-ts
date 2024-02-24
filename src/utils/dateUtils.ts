@@ -1,11 +1,39 @@
 export class DateUtils {
-  // TODO Date타입 반환되는 API에서 모두 아래 메서드 처리하기
   // 애플리케이션 서버의 타임존을 고려하여 Date타입을 재가공 (ex. 2021-08-01T00:00:00.000Z -> 2021-08-01 00:00:00)
-  static formatDate(date: Date): string {
+  // TODO Date타입 반환되는 API에서 모두 아래 메서드 처리하기
+  //  formatDate의 public은 지우고 (private는 아님, 굳이 숨길필요는 없지만 내보내는 용도도 아니라는 뜻)
+  //  현재의 DateInterceptor 클래스의 함수를 이 클래스 안으로 이동하고, 함수명 변경
+  public static formatDate(date: Date): string {
     const localDateTime: Date = new Date(
       date.getTime() - date.getTimezoneOffset() * 60 * 1000
     );
 
     return localDateTime.toISOString().substring(0, 19).replace('T', ' ');
+  }
+}
+
+export class DateInterceptor {
+  public static async intercept(result: any): Promise<any> {
+    // 쿼리 실행 후에 반환된 결과를 가공
+    if (Array.isArray(result)) {
+      // 반환된 결과가 배열인 경우
+      return result.map(item => this.processItem(item));
+    } else {
+      // 반환된 결과가 단일 객체인 경우
+      return this.processItem(result);
+    }
+  }
+
+  private static processItem(item: any): any {
+    // 객체의 모든 속성을 순회하면서 Date 타입인 경우에만 가공
+    for (const key in item) {
+      if (item.hasOwnProperty(key) && item[key] instanceof Date) {
+        item[key] = DateUtils.formatDate(item[key]);
+      } else if (typeof item[key] === 'object') {
+        // 객체인 경우 재귀적으로 processItem 호출
+        item[key] = this.processItem(item[key]);
+      }
+    }
+    return item;
   }
 }
