@@ -2,7 +2,6 @@ import dataSource from './data-source';
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { Repository } from 'typeorm';
-import { Pagination } from '../types/feedList';
 
 export class CommentRepository extends Repository<Comment> {
   private static instance: CommentRepository;
@@ -17,6 +16,7 @@ export class CommentRepository extends Repository<Comment> {
   }
 
   async getCommentList(id: number): Promise<Comment[]> {
+    // TODO 무한대댓글 만들기
     return await this.createQueryBuilder('comment')
       .withDeleted()
       .addSelect(['user.id', 'user.nickname', 'user.email'])

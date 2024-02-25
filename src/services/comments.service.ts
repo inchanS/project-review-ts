@@ -6,9 +6,8 @@ import { FeedRepository } from '../repositories/feed.repository';
 import { IsNull, Not } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CustomError } from '../utils/util';
-import { DateUtils } from '../utils/dateUtils';
 import { Feed } from '../entities/feed.entity';
-import { ExtendedComment, ExtendedUser } from '../types/comment';
+import { ExtendedUser } from '../types/comment';
 
 export class CommentFormatter {
   private readonly comment: Comment;
@@ -36,51 +35,59 @@ export class CommentFormatter {
   formatUser = (): ExtendedUser => {
     let formattedUser: ExtendedUser = this.comment.user;
     if (this.isDeleted() || this.isPrivate()) {
-      formattedUser = { id: null, nickname: null, email: null };
-
+      formattedUser = {
+        ...formattedUser,
+        id: null,
+        nickname: null,
+        email: null,
+      };
       return formattedUser;
     }
 
     return formattedUser;
   };
 
-  formatChildren = (): ExtendedComment[] =>
-    this.comment.children
-      ? this.comment.children.map(child =>
-          new CommentFormatter(
-            child,
-            this.userId,
-            this.comment.user.id
-          ).format()
-        )
-      : [];
+  formatChildren = (): Comment[] => {
+    let result: Comment[] = this.comment.children;
 
-  public format = (): ExtendedComment => {
-    return {
-      id: this.comment.id,
-      parent: this.comment.parent,
-      feed: this.comment.feed,
-      is_private: this.comment.is_private,
-      comment: this.isDeleted()
-        ? '## DELETED_COMMENT ##'
-        : this.isPrivate()
-        ? '## PRIVATE_COMMENT ##'
-        : this.comment.comment,
-      user: this.formatUser(),
-      created_at: DateUtils.formatDate(this.comment.created_at),
-      updated_at: DateUtils.formatDate(this.comment.updated_at),
-      deleted_at: this.comment.deleted_at
-        ? DateUtils.formatDate(this.comment.deleted_at)
-        : null,
-    };
+    // FIXME comment.repository에서 무한대댓글을 지원하지 않는다면 아래 코드는 에러가 난다.
+    //  if (result && result.length > 0 )로 바꿔줘야 한다.
+    if (result.length > 0) {
+      result.map((child: Comment) => {
+        const parentId =
+          this.comment.user && this.comment.user.id !== null
+            ? this.comment.user.id
+            : undefined;
+
+        return new CommentFormatter(
+          child,
+          this.userId,
+          parentId
+        ).formatWithChildren();
+      });
+      return result;
+    }
+    return [];
   };
 
-  public formatWithChildren = (): ExtendedComment => {
-    const basicFormat: ExtendedComment = this.format();
-    return {
-      ...basicFormat,
-      children: this.formatChildren(),
-    };
+  public format = (): Comment => {
+    let result: Comment = this.comment;
+    result.comment = this.isDeleted()
+      ? '## DELETED_COMMENT ##'
+      : this.isPrivate()
+      ? '## PRIVATE_COMMENT ##'
+      : this.comment.comment;
+
+    result.user = this.formatUser();
+
+    return result;
+  };
+
+  public formatWithChildren = (): Comment => {
+    let result: Comment = this.format();
+    result.children = this.formatChildren();
+
+    return result;
   };
 }
 
@@ -116,7 +123,7 @@ export class CommentsService {
       return [];
     }
 
-    return [...result].map((comment: any) =>
+    return [...result].map((comment: Comment) =>
       new CommentFormatter(comment, userId).formatWithChildren()
     );
   };

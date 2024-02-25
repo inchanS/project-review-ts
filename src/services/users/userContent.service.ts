@@ -14,12 +14,7 @@ import {
   FeedListByUserId,
   FeedSymbolListByUserId,
 } from '../../types/user';
-import { ExtendedComment } from '../../types/comment';
-import {
-  ExtendedFeedlist,
-  FeedListOptions,
-  Pagination,
-} from '../../types/feedList';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 
 export class UserContentService {
   private userRepository: UserRepository;
@@ -90,7 +85,7 @@ export class UserContentService {
       feedCntByUserId,
       page
     );
-    const feedListByUserId: ExtendedFeedlist[] =
+    const feedListByUserId: FeedList[] =
       await this.feedListRepository.getFeedListByUserId(
         targetUserId,
         page,
@@ -126,14 +121,14 @@ export class UserContentService {
     const originalCommentListByUserId: Comment[] =
       await this.commentRepository.getCommentListByUserId(targetUserId, page);
 
-    const commentListByUserId: ExtendedComment[] =
-      originalCommentListByUserId.map((comment: Comment) => {
-        return new CommentFormatter(
-          comment,
-          loggedInUserId,
-          comment.parent?.user.id
-        ).format();
-      });
+    const commentListByUserId: Comment[] = originalCommentListByUserId.map(
+      (comment: Comment) => {
+        const parentId: number | undefined =
+          comment.parent?.user.id ?? undefined;
+
+        return new CommentFormatter(comment, loggedInUserId, parentId).format();
+      }
+    );
 
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
   };

@@ -10,10 +10,10 @@ export class DateUtils {
 
     return localDateTime.toISOString().substring(0, 19).replace('T', ' ');
   }
-}
 
-export class DateInterceptor {
-  public static async intercept(result: any): Promise<any> {
+  // DB에서 가져오는 반환 값 중 Date 타입의 모든 값을 formatDate 함수로 처리해주는 클래스 및 함수
+  // typeORM Entities의 options 중 transformer를 사용하지 않고 service 로직에서 처리를 할 때 사용
+  public static async processDateValues(result: any): Promise<any> {
     // 쿼리 실행 후에 반환된 결과를 가공
     if (Array.isArray(result)) {
       // 반환된 결과가 배열인 경우

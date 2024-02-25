@@ -7,7 +7,6 @@ import {
   SelectQueryBuilder,
 } from 'typeorm';
 import dataSource from './data-source';
-import { FeedOption, FeedSymbolCount } from '../types/feed';
 
 export class FeedRepository extends Repository<Feed> {
   private static instance: FeedRepository;

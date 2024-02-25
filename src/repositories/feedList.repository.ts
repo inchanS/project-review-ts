@@ -2,13 +2,6 @@ import { IsNull, Like, Not, Repository } from 'typeorm';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import dataSource from './data-source';
 import { CustomError } from '../utils/util';
-import { DateUtils } from '../utils/dateUtils';
-import {
-  ExtendedFeedlist,
-  FeedListOptions,
-  PageCondition,
-  Pagination,
-} from '../types/feedList';
 
 export class FeedListRepository extends Repository<FeedList> {
   private static instance: FeedListRepository;
@@ -27,7 +20,7 @@ export class FeedListRepository extends Repository<FeedList> {
     startIndex: number,
     limit: number,
     query?: string
-  ): Promise<ExtendedFeedlist[]> {
+  ): Promise<FeedList[]> {
     let where: any = {
       categoryId: categoryId,
       postedAt: Not(IsNull()),
@@ -47,7 +40,7 @@ export class FeedListRepository extends Repository<FeedList> {
       ];
     }
 
-    const originalResult: FeedList[] = await this.find({
+    const result: FeedList[] = await this.find({
       order: {
         postedAt: 'DESC',
         id: 'DESC',
@@ -57,17 +50,14 @@ export class FeedListRepository extends Repository<FeedList> {
       where,
     });
 
-    const formatDateResult: ExtendedFeedlist[] =
-      this.formatDateOfFeedList(originalResult);
-
-    return formatDateResult;
+    return result;
   }
 
   async getFeedListByUserId(
     userId: number,
     page: Pagination | undefined,
     options: FeedListOptions = {}
-  ): Promise<ExtendedFeedlist[]> {
+  ): Promise<FeedList[]> {
     const { includeTempFeeds = false, onlyTempFeeds = false } = options;
 
     let feedListCondition = {};
@@ -112,26 +102,8 @@ export class FeedListRepository extends Repository<FeedList> {
       ...pageCondition,
     };
 
-    const originalResult: FeedList[] = await this.find(findOption);
-    const formatDateResult: ExtendedFeedlist[] =
-      this.formatDateOfFeedList(originalResult);
+    const result: FeedList[] = await this.find(findOption);
 
-    return formatDateResult;
-  }
-
-  formatDateOfFeedList(feedLists: FeedList[]): ExtendedFeedlist[] {
-    return feedLists.map(
-      (feedList: FeedList): ExtendedFeedlist => ({
-        ...feedList,
-        createdAt: DateUtils.formatDate(feedList.createdAt),
-        updatedAt: DateUtils.formatDate(feedList.updatedAt),
-        postedAt: feedList.postedAt
-          ? DateUtils.formatDate(feedList.postedAt)
-          : null,
-        deletedAt: feedList.deletedAt
-          ? DateUtils.formatDate(feedList.deletedAt)
-          : null,
-      })
-    );
+    return result;
   }
 }
