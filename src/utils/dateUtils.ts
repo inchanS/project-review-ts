@@ -1,8 +1,5 @@
 export class DateUtils {
   // 애플리케이션 서버의 타임존을 고려하여 Date타입을 재가공 (ex. 2021-08-01T00:00:00.000Z -> 2021-08-01 00:00:00)
-  // TODO Date타입 반환되는 API에서 모두 아래 메서드 처리하기
-  //  formatDate의 public은 지우고 (private는 아님, 굳이 숨길필요는 없지만 내보내는 용도도 아니라는 뜻)
-  //  현재의 DateInterceptor 클래스의 함수를 이 클래스 안으로 이동하고, 함수명 변경
   public static formatDate(date: Date): string {
     const localDateTime: Date = new Date(
       date.getTime() - date.getTimezoneOffset() * 60 * 1000
