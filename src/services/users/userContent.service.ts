@@ -79,6 +79,10 @@ export class UserContentService {
     loggedInUserId: number,
     page?: Pagination | undefined
   ): Promise<CommentListByUserId> => {
+    if (!targetUserId) {
+      throw new CustomError(400, 'NOT_FOUND_TARGET_USER_ID');
+    }
+
     if (!page || isNaN(page.startIndex) || isNaN(page.limit)) {
       page = undefined;
     } else if (page.startIndex < 0) {
