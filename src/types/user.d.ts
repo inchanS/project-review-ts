@@ -1,17 +1,16 @@
-import { ExtendedComment } from '../services/comments.service';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
-import { ExtendedFeedlist } from './feedList';
+import { Comment } from '../entities/comment.entity';
 
 interface FeedListByUserId {
   feedCntByUserId: number;
   totalPage: number;
-  feedListByUserId: ExtendedFeedlist[];
+  feedListByUserId: Feedlist[];
 }
 
 interface CommentListByUserId {
   commentCntByUserId: number;
   totalScrollCnt: number;
-  commentListByUserId: ExtendedComment[];
+  commentListByUserId: Comment[];
 }
 
 interface FeedSymbolListByUserId {

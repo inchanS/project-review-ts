@@ -1,11 +1,9 @@
 // 유저 정보 찾기시 유저 정보의 확인
-import { UserRepository } from '../../repositories/user.repository';
 import { FeedRepository } from '../../repositories/feed.repository';
 import { CommentRepository } from '../../repositories/comment.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
 import { FeedListRepository } from '../../repositories/feedList.repository';
-import { User } from '../../entities/users.entity';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { CommentFormatter } from '../comments.service';
@@ -14,32 +12,19 @@ import {
   FeedListByUserId,
   FeedSymbolListByUserId,
 } from '../../types/user';
-import { ExtendedComment } from '../../types/comment';
-import {
-  ExtendedFeedlist,
-  FeedListOptions,
-  Pagination,
-} from '../../types/feedList';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 
 export class UserContentService {
-  private userRepository: UserRepository;
   private feedRepository: FeedRepository;
   private feedListRepository: FeedListRepository;
   private commentRepository: CommentRepository;
   private feedSymbolRepository: FeedSymbolRepository;
 
   constructor() {
-    this.userRepository = UserRepository.getInstance();
     this.feedRepository = FeedRepository.getInstance();
     this.feedListRepository = FeedListRepository.getInstance();
     this.commentRepository = CommentRepository.getInstance();
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
-  }
-
-  private validateUserId(userId: number): void {
-    if (!userId) {
-      throw new CustomError(400, 'USER_ID_IS_UNDEFINED');
-    }
   }
 
   private validatePage(page: Pagination): Pagination | undefined {
@@ -57,28 +42,16 @@ export class UserContentService {
   ): number {
     return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
   }
-
-  findUserInfoByUserId = async (targetUserId: number): Promise<User> => {
-    this.validateUserId(targetUserId);
-
-    const userInfo: User | null = await this.userRepository.findOne({
-      where: { id: targetUserId },
-    });
-
-    if (!userInfo) {
-      throw new CustomError(404, 'USER_IS_NOT_FOUND');
-    }
-
-    return userInfo;
-  };
-
   // 유저 정보 확인시 유저의 게시글 조회
   findUserFeedsByUserId = async (
     targetUserId: number,
     page: Pagination | undefined,
     options?: FeedListOptions
   ): Promise<FeedListByUserId> => {
-    await this.findUserInfoByUserId(targetUserId);
+    if (!targetUserId) {
+      throw new CustomError(400, 'NOT_FOUND_TARGET_USER_ID');
+    }
+
     page = page ? this.validatePage(page) : undefined;
 
     // 유저의 게시글 수 조회
@@ -90,7 +63,7 @@ export class UserContentService {
       feedCntByUserId,
       page
     );
-    const feedListByUserId: ExtendedFeedlist[] =
+    const feedListByUserId: FeedList[] =
       await this.feedListRepository.getFeedListByUserId(
         targetUserId,
         page,
@@ -106,7 +79,9 @@ export class UserContentService {
     loggedInUserId: number,
     page?: Pagination | undefined
   ): Promise<CommentListByUserId> => {
-    await this.findUserInfoByUserId(targetUserId);
+    if (!targetUserId) {
+      throw new CustomError(400, 'NOT_FOUND_TARGET_USER_ID');
+    }
 
     if (!page || isNaN(page.startIndex) || isNaN(page.limit)) {
       page = undefined;
@@ -126,15 +101,14 @@ export class UserContentService {
     const originalCommentListByUserId: Comment[] =
       await this.commentRepository.getCommentListByUserId(targetUserId, page);
 
-    const commentListByUserId: ExtendedComment[] =
-      // TODO CommentFormatter().format 메소드 재사용으로 처리 - 테스트 확인 필요
-      originalCommentListByUserId.map((comment: Comment) => {
-        return new CommentFormatter(
-          comment,
-          loggedInUserId,
-          comment.parent?.user.id
-        ).format();
-      });
+    const commentListByUserId: Comment[] = originalCommentListByUserId.map(
+      (comment: Comment) => {
+        const parentId: number | undefined =
+          comment.parent?.user.id ?? undefined;
+
+        return new CommentFormatter(comment, loggedInUserId, parentId).format();
+      }
+    );
 
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
   };
@@ -144,7 +118,6 @@ export class UserContentService {
     targetUserId: number,
     page: Pagination | undefined
   ): Promise<FeedSymbolListByUserId> => {
-    await this.findUserInfoByUserId(targetUserId);
     page ? this.validatePage(page) : undefined;
 
     const symbolCntByUserId: number =

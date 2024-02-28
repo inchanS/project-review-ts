@@ -1,8 +1,23 @@
 import { Request, Response } from 'express';
 import { ValidatorService } from '../../services/users/validator.service';
+import { User } from '../../entities/users.entity';
 
 class ValidatorController {
   constructor(private validatorService: ValidatorService) {}
+  getUserInfo = async (req: Request, res: Response): Promise<void> => {
+    let targetUserId: number = Number(req.params.id);
+    const loggedInUserId: number = req.userInfo?.id;
+
+    if (!targetUserId) {
+      targetUserId = loggedInUserId;
+    }
+    const result: User = await this.validatorService.validateUserInfo(
+      targetUserId
+    );
+
+    res.status(200).json(result);
+  };
+
   checkDuplicateNickname = async (
     req: Request,
     res: Response

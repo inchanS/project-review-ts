@@ -12,9 +12,7 @@ import { UploadFileService } from './uploadFile.service';
 import { UploadService } from './upload.service';
 import { CustomError } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
-import { DateUtils } from '../utils/dateUtils';
-import { ExtendedFeedlist } from '../types/feedList';
-import { ExtendedFeed, FeedOption } from '../types/feed';
+import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -31,15 +29,14 @@ export class FeedsService {
 
   // 임시저장 ==================================================================
   // 임시저장 게시글 리스트 --------------------------------------------------------
-  // FIXME type any 고치기
   public getTempFeedList = async (userId: number) => {
-    const results: ExtendedFeedlist[] =
+    const results: FeedList[] =
       await this.feedListRepository.getFeedListByUserId(userId, undefined, {
         onlyTempFeeds: true,
       });
 
     for (const result of results) {
-      const updatedAt: string = result.updatedAt.substring(2);
+      const updatedAt: string = result.updatedAt.toString().substring(2);
       result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
     }
 
@@ -220,7 +217,7 @@ export class FeedsService {
     userId: number,
     feedId: number,
     options?: FeedOption
-  ): Promise<ExtendedFeed> => {
+  ): Promise<Feed | undefined> => {
     // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
     const feed: Feed | void = await this.feedRepository
       .getFeed(feedId, options)
@@ -230,46 +227,30 @@ export class FeedsService {
         }
       });
 
-    const result: ExtendedFeed = this.formatFeed(feed!);
+    if (feed) {
+      const updatedAt: string = feed.updated_at.toString().substring(2);
+      feed.title = feed.title ?? `${updatedAt}에 임시저장된 글입니다.`;
 
-    const updatedAt: string = result.updated_at.substring(2);
-    result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
+      // 임시저장 게시글은 본인만 볼 수 있음
+      if (feed.status.id === 2 && feed.user.id !== userId) {
+        throw new CustomError(403, `UNAUTHORIZED_TO_ACCESS_THE_POST`);
+      }
 
-    // 임시저장 게시글은 본인만 볼 수 있음
-    if (result.status.id === 2 && result.user.id !== userId) {
-      throw new CustomError(403, `UNAUTHORIZED_TO_ACCESS_THE_POST`);
+      // 등록된 정식 게시글의 경우 호출시 조회수 +1 증가
+      if (feed.status.id === 1) {
+        await this.feedRepository.addViewCount(feedId);
+      }
+      return feed;
     }
-
-    // 등록된 정식 게시글의 경우 호출시 조회수 +1 증가
-    if (result.status.id === 1) {
-      await this.feedRepository.addViewCount(feedId);
-    }
-    return result;
+    return;
   };
-
-  formatFeed(feed: Feed): ExtendedFeed {
-    return {
-      id: feed.id,
-      user: feed.user,
-      title: feed.title,
-      viewCnt: feed.viewCnt,
-      content: feed.content,
-      estimation: feed.estimation,
-      category: feed.category,
-      status: feed.status,
-      created_at: DateUtils.formatDate(feed.created_at),
-      updated_at: DateUtils.formatDate(feed.updated_at),
-      posted_at: feed.posted_at ? DateUtils.formatDate(feed.posted_at) : null,
-      uploadFiles: feed.uploadFiles,
-    };
-  }
 
   // 게시글 리스트 --------------------------------------------------------------
   public getFeedList = async (
     categoryId: number | undefined,
     index: number,
     limit: number
-  ): Promise<ExtendedFeedlist[]> => {
+  ): Promise<FeedList[]> => {
     // query로 전달된 categoryId가 0이거나 없을 경우 undefined로 변경 처리
     if (!categoryId || categoryId === 0) {
       categoryId = undefined;

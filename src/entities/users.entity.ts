@@ -1,31 +1,11 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  DeleteDateColumn,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { Comment } from './comment.entity';
 import { Feed } from './feed.entity';
 import { FeedSymbol } from './feedSymbol.entity';
+import { Base } from './base.entity';
 
 @Entity('users')
-export class User extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @CreateDateColumn({ type: 'timestamp' })
-  created_at?: Date;
-
-  @UpdateDateColumn({ type: 'timestamp' })
-  updated_at?: Date;
-
-  @DeleteDateColumn({ type: 'timestamp' })
-  deleted_at?: Date;
-
+export class User extends Base {
   @Column({ unique: true })
   nickname: string;
 
@@ -45,7 +25,6 @@ export class User extends BaseEntity {
   feedSymbol: FeedSymbol[];
 
   constructor(
-    id: number,
     nickname: string,
     password: string,
     email: string,
@@ -54,7 +33,6 @@ export class User extends BaseEntity {
     feedSymbol: FeedSymbol[]
   ) {
     super();
-    this.id = id;
     this.nickname = nickname;
     this.password = password;
     this.email = email;
