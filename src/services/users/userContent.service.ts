@@ -48,6 +48,10 @@ export class UserContentService {
     page: Pagination | undefined,
     options?: FeedListOptions
   ): Promise<FeedListByUserId> => {
+    if (!targetUserId) {
+      throw new CustomError(400, 'NOT_FOUND_TARGET_USER_ID');
+    }
+
     page = page ? this.validatePage(page) : undefined;
 
     // 유저의 게시글 수 조회
