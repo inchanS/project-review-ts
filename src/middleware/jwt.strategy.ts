@@ -51,7 +51,7 @@ class AuthValidator {
         if (
           typeof decodedToken === 'object' &&
           'id' in decodedToken &&
-          decodedToken.id === 'number'
+          typeof decodedToken.id === 'number'
         ) {
           // decodedToken.id가 현재 시점에도 유효한지 검사하는 로직
           await this.validatorService.validateUserInfo(decodedToken.id);
@@ -81,7 +81,7 @@ class AuthValidator {
         if (
           typeof decodedToken === 'object' &&
           decodedToken.hasOwnProperty('id') &&
-          decodedToken.id === 'number'
+          typeof decodedToken.id === 'number'
         ) {
           // decodedToken.id가 현재 시점에도 유효한지 검사하는 로직
           const userId: number = decodedToken.id;
