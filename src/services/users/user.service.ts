@@ -74,6 +74,8 @@ export class UserService {
 
   public deleteUser = async (userId: number): Promise<void> => {
     // 사용자 정보의 유효성 검사 함수를 불러온다.
+    // 현재 아래 함수는 미들웨어 validateOrReject()에서 토큰의 현재 시점에 대한 유효성 검사를 위해 실행되고 있으나,
+    // 사용자 정보를 가져오기 위해 한번 더 중복 실행되고 있는 상태이다.
     const userInfo: User = await this.validatorService.validateUserInfo(userId);
 
     const page: Pagination | undefined = undefined;
