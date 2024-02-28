@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SearchService } from '../services/search.service';
-import { ExtendedFeedlist } from '../types/feedList';
+import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 
 class SearchController {
   constructor(private searchService: SearchService) {}
@@ -19,8 +19,11 @@ class SearchController {
     const limit: number = Number(req.query.limit);
     const index: number = Number(req.query.index);
 
-    const result: ExtendedFeedlist[] =
-      await this.searchService.searchContentList(query, index, limit);
+    const result: FeedList[] = await this.searchService.searchContentList(
+      query,
+      index,
+      limit
+    );
 
     res.status(200).json(result);
   };

@@ -12,7 +12,6 @@ import {
 } from '../types/feedSymbol';
 import { CustomError } from '../utils/util';
 import { Feed } from '../entities/feed.entity';
-import { FeedSymbolCount } from '../types/feed';
 
 export class SymbolService {
   private feedRepository: FeedRepository;

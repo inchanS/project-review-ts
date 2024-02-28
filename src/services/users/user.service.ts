@@ -13,7 +13,6 @@ import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
 import { QueryRunner } from 'typeorm';
 import { CommentListByUserId, FeedListByUserId } from '../../types/user';
-import { Pagination } from '../../types/feedList';
 
 export class UserService {
   private userRepository: UserRepository;
@@ -75,9 +74,7 @@ export class UserService {
 
   public deleteUser = async (userId: number): Promise<void> => {
     // 사용자 정보의 유효성 검사 함수를 불러온다.
-    const userInfo: User = await this.userContentService.findUserInfoByUserId(
-      userId
-    );
+    const userInfo: User = await this.validatorService.validateUserInfo(userId);
 
     const page: Pagination | undefined = undefined;
 

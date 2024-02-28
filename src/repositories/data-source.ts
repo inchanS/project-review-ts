@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === 'production') {
   throw new Error('process.env.NODE_ENV IS_NOT_SET!!');
 }
 
-const dataSource = new DataSource({
+const dataSource: DataSource = new DataSource({
   type: process.env.TYPEORM_CONNECTION,
   host: process.env.TYPEORM_HOST,
   port: process.env.TYPEORM_PORT,

@@ -5,7 +5,7 @@ import { Feed } from '../entities/feed.entity';
 import { FeedsService } from '../services/feeds.service';
 import { CustomError } from '../utils/util';
 import { Estimation } from '../entities/estimation.entity';
-import { ExtendedFeedlist } from '../types/feedList';
+import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -21,7 +21,7 @@ export class FeedsController {
 
   // 임시저장 및 정식 게시글 불러오기 -----------------------------------------------------------
   getFeed = async (req: Request, res: Response): Promise<void> => {
-    const user: number = req.userInfo.id;
+    const user: number = req.userInfo?.id;
     const feedId: number = Number(req.params.feedId);
 
     const result = await this.feedsService.getFeed(user, feedId, {
@@ -171,7 +171,7 @@ export class FeedsController {
     const index: number = Number(req.query.index);
     const limit: number = Number(req.query.limit);
 
-    const result: ExtendedFeedlist[] = await this.feedsService.getFeedList(
+    const result: FeedList[] = await this.feedsService.getFeedList(
       categoryId,
       index,
       limit

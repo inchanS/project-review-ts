@@ -1,34 +1,18 @@
 // 유저의 가입정보 가져오기
 import { Request, Response } from 'express';
 import { UserContentService } from '../../services/users/userContent.service';
-import { User } from '../../entities/users.entity';
 import {
   CommentListByUserId,
   FeedListByUserId,
   FeedSymbolListByUserId,
 } from '../../types/user';
-import { Pagination } from '../../types/feedList';
 
 class UserContentController {
   constructor(private userContentService: UserContentService) {}
-  getUserInfo = async (req: Request, res: Response): Promise<void> => {
-    let targetUserId: number = Number(req.params.id);
-    const loggedInUserId: number = req.userInfo.id;
-
-    if (!targetUserId) {
-      targetUserId = loggedInUserId;
-    }
-    const result: User = await this.userContentService.findUserInfoByUserId(
-      targetUserId
-    );
-
-    res.status(200).json(result);
-  };
-
   // 유저의 모든 게시물 가져오기
   getUserFeeds = async (req: Request, res: Response): Promise<void> => {
     let targetUserId: number = Number(req.params.id);
-    const loggedInUserId: number = req.userInfo.id;
+    const loggedInUserId: number = req.userInfo?.id;
 
     if (!targetUserId) {
       targetUserId = loggedInUserId;
@@ -47,7 +31,7 @@ class UserContentController {
   // 유저의 모든 덧글 가져오기
   getUserComments = async (req: Request, res: Response): Promise<void> => {
     let targetUserId: number = Number(req.params.id);
-    const loggedInUserId: number = req.userInfo.id;
+    const loggedInUserId: number = req.userInfo?.id;
 
     if (!targetUserId) {
       targetUserId = loggedInUserId;
@@ -70,7 +54,7 @@ class UserContentController {
   // 유저의 모든 좋아요 가져오기
   getUserFeedSymbols = async (req: Request, res: Response): Promise<void> => {
     let targetUserId: number = Number(req.params.id);
-    const loggedInUserId: number = req.userInfo.id;
+    const loggedInUserId: number = req.userInfo?.id;
 
     if (!targetUserId) {
       targetUserId = loggedInUserId;

@@ -1,12 +1,10 @@
-import dataSource from '../repositories/data-source';
-import { Category } from '../entities/category.entity';
-import { Repository } from 'typeorm';
+import { CategoriesRepository } from '../repositories/categories.repository';
 
 export class CategoriesService {
-  private repository: Repository<Category>;
+  private repository: CategoriesRepository;
 
   constructor() {
-    this.repository = dataSource.getRepository(Category);
+    this.repository = CategoriesRepository.getInstance();
   }
 
   getCategoriesList = async () => {

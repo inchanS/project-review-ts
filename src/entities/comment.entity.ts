@@ -2,12 +2,13 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './users.entity';
 import { Feed } from './feed.entity';
 import { Base } from './base.entity';
+import { ExtendedUser } from '../types/comment';
 
 @Entity('comments')
 export class Comment extends Base {
   @ManyToOne(() => User, users => users.comment, { nullable: false })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user: ExtendedUser;
 
   @ManyToOne(() => Feed, feeds => feeds.comment, { nullable: false })
   @JoinColumn({ name: 'feedId' })

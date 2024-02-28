@@ -1,20 +1,29 @@
 import {
+  BaseEntity,
   CreateDateColumn,
   DeleteDateColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  ValueTransformer,
 } from 'typeorm';
+import { DateUtils } from '../utils/dateUtils';
 
-export abstract class Base {
+export const transformer: ValueTransformer = {
+  from: (value: Date) =>
+    value instanceof Date ? DateUtils.formatDate(value) : null,
+  to: (value: Date) => value,
+};
+
+export abstract class Base extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamp', transformer: transformer })
   created_at!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'timestamp', transformer: transformer })
   updated_at!: Date;
 
-  @DeleteDateColumn({ type: 'timestamp' })
-  deleted_at?: Date;
+  @DeleteDateColumn({ type: 'timestamp', transformer: transformer })
+  deleted_at?: Date | null;
 }

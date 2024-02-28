@@ -1,4 +1,5 @@
 import { ViewColumn, ViewEntity } from 'typeorm';
+import { transformer } from '../base.entity';
 
 @ViewEntity({
   expression: `
@@ -99,16 +100,16 @@ export class FeedList {
   @ViewColumn()
   imgCnt: number;
 
-  @ViewColumn()
+  @ViewColumn({ transformer: transformer })
   createdAt: Date;
 
-  @ViewColumn()
+  @ViewColumn({ transformer: transformer })
   updatedAt: Date;
 
-  @ViewColumn()
+  @ViewColumn({ transformer: transformer })
   postedAt: Date;
 
-  @ViewColumn()
+  @ViewColumn({ transformer: transformer })
   deletedAt: Date;
 
   @ViewColumn()
