@@ -7,7 +7,7 @@ class CommentsController {
 
   getCommentList = async (req: Request, res: Response): Promise<void> => {
     const feedId: number = Number(req.params.id);
-    const userId: number = req.userInfo.id;
+    const userId: number = req.userInfo?.id;
 
     // TODO 무한스크롤
     const result = await this.commentsService.getCommentList(feedId, userId);

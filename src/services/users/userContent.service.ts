@@ -1,11 +1,9 @@
 // 유저 정보 찾기시 유저 정보의 확인
-import { UserRepository } from '../../repositories/user.repository';
 import { FeedRepository } from '../../repositories/feed.repository';
 import { CommentRepository } from '../../repositories/comment.repository';
 import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
 import { CustomError } from '../../utils/util';
 import { FeedListRepository } from '../../repositories/feedList.repository';
-import { User } from '../../entities/users.entity';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { CommentFormatter } from '../comments.service';
@@ -17,24 +15,16 @@ import {
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 
 export class UserContentService {
-  private userRepository: UserRepository;
   private feedRepository: FeedRepository;
   private feedListRepository: FeedListRepository;
   private commentRepository: CommentRepository;
   private feedSymbolRepository: FeedSymbolRepository;
 
   constructor() {
-    this.userRepository = UserRepository.getInstance();
     this.feedRepository = FeedRepository.getInstance();
     this.feedListRepository = FeedListRepository.getInstance();
     this.commentRepository = CommentRepository.getInstance();
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
-  }
-
-  private validateUserId(userId: number): void {
-    if (!userId) {
-      throw new CustomError(400, 'USER_ID_IS_UNDEFINED');
-    }
   }
 
   private validatePage(page: Pagination): Pagination | undefined {
@@ -52,28 +42,12 @@ export class UserContentService {
   ): number {
     return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
   }
-
-  findUserInfoByUserId = async (targetUserId: number): Promise<User> => {
-    this.validateUserId(targetUserId);
-
-    const userInfo: User | null = await this.userRepository.findOne({
-      where: { id: targetUserId },
-    });
-
-    if (!userInfo) {
-      throw new CustomError(404, 'USER_IS_NOT_FOUND');
-    }
-
-    return userInfo;
-  };
-
   // 유저 정보 확인시 유저의 게시글 조회
   findUserFeedsByUserId = async (
     targetUserId: number,
     page: Pagination | undefined,
     options?: FeedListOptions
   ): Promise<FeedListByUserId> => {
-    await this.findUserInfoByUserId(targetUserId);
     page = page ? this.validatePage(page) : undefined;
 
     // 유저의 게시글 수 조회
@@ -101,8 +75,6 @@ export class UserContentService {
     loggedInUserId: number,
     page?: Pagination | undefined
   ): Promise<CommentListByUserId> => {
-    await this.findUserInfoByUserId(targetUserId);
-
     if (!page || isNaN(page.startIndex) || isNaN(page.limit)) {
       page = undefined;
     } else if (page.startIndex < 0) {
@@ -138,7 +110,6 @@ export class UserContentService {
     targetUserId: number,
     page: Pagination | undefined
   ): Promise<FeedSymbolListByUserId> => {
-    await this.findUserInfoByUserId(targetUserId);
     page ? this.validatePage(page) : undefined;
 
     const symbolCntByUserId: number =

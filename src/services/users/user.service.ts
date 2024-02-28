@@ -74,9 +74,7 @@ export class UserService {
 
   public deleteUser = async (userId: number): Promise<void> => {
     // 사용자 정보의 유효성 검사 함수를 불러온다.
-    const userInfo: User = await this.userContentService.findUserInfoByUserId(
-      userId
-    );
+    const userInfo: User = await this.validatorService.validateUserInfo(userId);
 
     const page: Pagination | undefined = undefined;
 

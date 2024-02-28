@@ -21,7 +21,7 @@ export class FeedsController {
 
   // 임시저장 및 정식 게시글 불러오기 -----------------------------------------------------------
   getFeed = async (req: Request, res: Response): Promise<void> => {
-    const user: number = req.userInfo.id;
+    const user: number = req.userInfo?.id;
     const feedId: number = Number(req.params.feedId);
 
     const result = await this.feedsService.getFeed(user, feedId, {

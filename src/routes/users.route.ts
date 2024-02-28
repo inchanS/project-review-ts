@@ -49,7 +49,7 @@ router.get(
 router.get(
   '/userinfo/:id?',
   asyncWrap(authValidateOrNext),
-  asyncWrap(UserContentController.getUserInfo) // authValidateOrNext
+  asyncWrap(ValidatorController.getUserInfo) // authValidateOrNext
 );
 
 // 유저 정보 수정하기

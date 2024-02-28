@@ -1,6 +1,7 @@
 import { UserRepository } from '../../repositories/user.repository';
 import { CustomError } from '../../utils/util';
 import { User } from '../../entities/users.entity';
+import { EntityNotFoundError } from 'typeorm';
 
 export class ValidatorService {
   private userRepository: UserRepository;
@@ -8,7 +9,30 @@ export class ValidatorService {
   constructor() {
     this.userRepository = UserRepository.getInstance();
   }
-  checkDuplicateNickname = async (
+
+  private validateUserId(userId: number): void {
+    if (!userId) {
+      throw new CustomError(400, 'USER_ID_IS_UNDEFINED');
+    }
+  }
+  public validateUserInfo = async (targetUserId: number): Promise<User> => {
+    this.validateUserId(targetUserId);
+
+    const userInfo: User = await this.userRepository
+      .findOneOrFail({
+        where: { id: targetUserId },
+      })
+      .catch((err: Error) => {
+        if (err instanceof EntityNotFoundError) {
+          throw new CustomError(404, `NOT_FOUND_USER`);
+        }
+        throw err;
+      });
+
+    return userInfo;
+  };
+
+  public checkDuplicateNickname = async (
     nickname: string
   ): Promise<{ message: string }> => {
     if (!nickname) {
@@ -28,7 +52,9 @@ export class ValidatorService {
     }
   };
 
-  checkDuplicateEmail = async (email: string): Promise<{ message: string }> => {
+  public checkDuplicateEmail = async (
+    email: string
+  ): Promise<{ message: string }> => {
     if (!email) {
       throw new CustomError(400, 'EMAIL_IS_UNDEFINED');
     }
