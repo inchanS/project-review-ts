@@ -10,7 +10,7 @@ import { DateUtils } from '../utils/dateUtils';
 
 export const transformer: ValueTransformer = {
   from: (value: Date) =>
-    value instanceof Date ? DateUtils.formatDate(value) : null,
+    value instanceof Date ? DateUtils.formatDate(value) : value,
   to: (value: Date) => value,
 };
 

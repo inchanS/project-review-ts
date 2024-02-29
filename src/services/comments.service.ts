@@ -50,9 +50,7 @@ export class CommentFormatter {
   formatChildren = (): Comment[] => {
     let result: Comment[] = this.comment.children;
 
-    // FIXME comment.repository에서 무한대댓글을 지원하지 않는다면 아래 코드는 에러가 난다.
-    //  if (result && result.length > 0 )로 바꿔줘야 한다.
-    if (result.length > 0) {
+    if (result && result.length > 0) {
       result.map((child: Comment) => {
         const parentId =
           this.comment.user && this.comment.user.id !== null
@@ -128,7 +126,7 @@ export class CommentsService {
     );
   };
 
-  createComment = async (commentInfo: CommentDto): Promise<void> => {
+  createComment = async (commentInfo: CommentDto): Promise<Comment> => {
     commentInfo = plainToInstance(CommentDto, commentInfo);
     await validateOrReject(commentInfo).catch(errors => {
       throw { status: 500, message: errors[0].constraints };
@@ -152,6 +150,7 @@ export class CommentsService {
         .findOneOrFail({
           loadRelationIds: true,
           where: { id: commentInfo.parent },
+          withDeleted: true,
         })
         .catch(() => {
           throw new CustomError(404, 'COMMENT_PARENT_NOT_FOUND');
@@ -161,11 +160,31 @@ export class CommentsService {
       if (Number(parentComment.feed) !== commentInfo.feed) {
         throw new CustomError(400, 'COMMENT_PARENT_VALIDATION_ERROR');
       }
+
+      // depth 3이상의 댓글 생성을 막기 위한 에러 반환
+      if (parentComment.parent) {
+        const grandparentId: number = Number(parentComment.parent);
+
+        const grandparentComment: Comment | null =
+          await this.commentRepository.findOne({
+            loadRelationIds: true,
+            where: { id: grandparentId },
+            withDeleted: true,
+          });
+
+        if (grandparentComment && grandparentComment.parent) {
+          throw new CustomError(400, 'CANNOT_CREATE_A_COMMENT_BEYOND_DEPTH_2');
+        }
+      }
     }
 
     const newComment: Comment = plainToInstance(Comment, commentInfo);
 
-    await this.commentRepository.createComment(newComment);
+    const result: Comment = await this.commentRepository.createComment(
+      newComment
+    );
+
+    return result;
   };
 
   // 수정 또는 삭제시 해당 댓글의 유효성 검사 및 권한 검사를 위한 함수
@@ -191,7 +210,7 @@ export class CommentsService {
     userId: number,
     commentId: number,
     commentInfo: CommentDto
-  ): Promise<void> => {
+  ): Promise<Comment> => {
     const originComment: Comment = await this.validateComment(
       userId,
       commentId
@@ -213,7 +232,12 @@ export class CommentsService {
       throw new CustomError(405, `COMMENT_IS_NOT_CHANGED`);
     }
 
-    await this.commentRepository.updateComment(commentId, commentInfo);
+    const result: Comment = await this.commentRepository.updateComment(
+      commentId,
+      commentInfo
+    );
+
+    return result;
   };
 
   deleteComment = async (commentId: number, userId: number) => {
