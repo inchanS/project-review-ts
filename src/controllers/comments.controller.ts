@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentsService } from '../services/comments.service';
+import { Comment } from '../entities/comment.entity';
 
 class CommentsController {
   constructor(private commentsService: CommentsService) {}
@@ -25,10 +26,12 @@ class CommentsController {
       parent,
     };
 
-    await this.commentsService.createComment(commentInfo);
+    const result: Comment = await this.commentsService.createComment(
+      commentInfo
+    );
     res
       .status(201)
-      .json({ message: 'THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED' });
+      .json({ message: 'THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_CREATED', result });
   };
 
   updateComment = async (req: Request, res: Response): Promise<void> => {
@@ -37,10 +40,14 @@ class CommentsController {
     const commentId: number = req.body.commentId;
     const userId: number = req.userInfo.id;
 
-    await this.commentsService.updateComment(userId, commentId, commentInfo);
+    const result: Comment = await this.commentsService.updateComment(
+      userId,
+      commentId,
+      commentInfo
+    );
     res
       .status(201)
-      .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_UPDATED` });
+      .json({ message: `THIS_COMMENT_HAS_BEEN_SUCCESSFULLY_UPDATED`, result });
   };
 
   deleteComment = async (req: Request, res: Response): Promise<void> => {
