@@ -113,7 +113,7 @@ export class CommentRepository extends Repository<Comment> {
     return await this.createQueryBuilder('comment')
       .withDeleted()
       .addSelect('user.id')
-      .addSelect(['feed.id', 'feedUser.id'])
+      .addSelect(['feed.id', 'feed.title', 'feedUser.id'])
       .addSelect(['parent.id', 'parentUser.id'])
       .leftJoin('comment.user', 'user')
       .leftJoin('comment.feed', 'feed')
