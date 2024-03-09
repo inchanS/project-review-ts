@@ -298,15 +298,13 @@ export class FeedsService {
     try {
       if (feedToDelete.uploadFiles && feedToDelete.uploadFiles.length > 0) {
         const deleteFileLinksArray: string[] = [];
-        // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
-        deleteFileLinksArray.push('DELETE_FROM_UPLOAD_FILES_TABLE');
 
         // 게시물의 모든 uploadFile 삭제
         for (const uploadFile of feedToDelete.uploadFiles) {
           deleteFileLinksArray.push(uploadFile.file_link);
         }
         await this.uploadService
-          .deleteUploadFile(userId, deleteFileLinksArray)
+          .deleteUploadFile(userId, deleteFileLinksArray, queryRunner)
           .catch(err => {
             throw new Error(`deleteUploadFile error: ${err}`);
           });
