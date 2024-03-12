@@ -19,6 +19,7 @@ export class UpdateUploadFilesTable1710222149703 implements MigrationInterface {
     await queryRunner.createForeignKey(
       'upload_files',
       new TableForeignKey({
+        name: 'fk_upload_files_userId',
         columnNames: ['userId'],
         referencedColumnNames: ['id'],
         referencedTableName: 'users',
