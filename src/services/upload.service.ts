@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { UserRepository } from '../repositories/user.repository';
 import { QueryRunner, Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
+import { User } from '../entities/users.entity';
 
 export class UploadService {
   private userRepository: UserRepository;
@@ -21,12 +22,12 @@ export class UploadService {
   // 때문에 함수를 분리하고 간단하게 이 함수들을 테스트하고 모킹한다.
 
   // 사용자 유효성 검사 (로그인 유저의 경우, 현재 시점에서의 유효성을 검사한다.)
-  private async validatorUserId(userId: number) {
+  private async validatorUserId(userId: number): Promise<User> {
     return await this.userRepository
       .findOneOrFail({
         where: { id: userId },
       })
-      .catch((): void => {
+      .catch(() => {
         throw new CustomError(400, 'INVALID_USER');
       });
   }
@@ -92,7 +93,7 @@ export class UploadService {
     files: Express.Multer.File[]
   ): Promise<string[]> => {
     // 사용자 유효성 검사
-    await this.validatorUserId(userId);
+    const userInfo: User = await this.validatorUserId(userId);
 
     // aws S3는 동일한 이름의 파일을 업로드하면 덮어쓰기를 한다. 이에 대한 대비책으로 파일 이름을 랜덤하게 생성한다.
     let files_link: string[] = [];
@@ -151,7 +152,7 @@ export class UploadService {
       const decodedFilename: string = decodeURIComponent(file.originalname);
 
       const newUploadFile: UploadFiles = this.uploadFilesRepository.create({
-        user: userId,
+        user: userInfo,
         file_link: file_link,
         is_img: isImage,
         file_name: decodedFilename,
@@ -205,7 +206,7 @@ export class UploadService {
         const findFileResult: UploadFiles = await this.findFileLink(file_link);
 
         // 찾은 파일의 사용자를 확인한다.
-        const filesUserId: number = findFileResult.user;
+        const filesUserId: number = findFileResult.user.id;
 
         // 파일의 사용자와 요청한 사용자가 같은지 확인한다.
         if (filesUserId !== userId) {

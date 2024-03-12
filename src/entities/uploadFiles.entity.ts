@@ -19,18 +19,18 @@ export class UploadFiles extends Base {
 
   @ManyToOne(() => Feed, feed => feed.uploadFiles, { nullable: true })
   @JoinColumn({ name: 'feedId' })
-  feed: number;
+  feed: Feed;
 
   @ManyToOne(() => User, user => user.uploadFiles, { nullable: false })
   @JoinColumn({ name: 'userId' })
-  user: number;
+  user: User;
 
   constructor(
     file_link: string,
     file_name: string,
     file_size: string,
-    feed: number,
-    user: number
+    feed: Feed,
+    user: User
   ) {
     super();
     this.file_link = file_link;
