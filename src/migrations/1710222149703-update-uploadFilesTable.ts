@@ -55,16 +55,6 @@ export class UpdateUploadFilesTable1710222149703 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.changeColumn(
-      'upload_files',
-      'userId',
-      new TableColumn({
-        name: 'userId',
-        type: 'int',
-        isNullable: true,
-      })
-    );
-
     await queryRunner.dropForeignKey('upload_files', 'fk_upload_files_userId');
 
     await queryRunner.dropColumn('upload_files', 'userId');
