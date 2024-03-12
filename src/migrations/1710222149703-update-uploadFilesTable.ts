@@ -21,7 +21,7 @@ export class UpdateUploadFilesTable1710222149703 implements MigrationInterface {
       new TableForeignKey({
         columnNames: ['userId'],
         referencedColumnNames: ['id'],
-        referencedTableName: 'user',
+        referencedTableName: 'users',
       })
     );
 
