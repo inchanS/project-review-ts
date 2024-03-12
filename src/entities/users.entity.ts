@@ -3,6 +3,7 @@ import { Comment } from './comment.entity';
 import { Feed } from './feed.entity';
 import { FeedSymbol } from './feedSymbol.entity';
 import { Base } from './base.entity';
+import { UploadFiles } from './uploadFiles.entity';
 
 @Entity('users')
 export class User extends Base {
@@ -24,13 +25,17 @@ export class User extends Base {
   @OneToMany(() => FeedSymbol, feedSymbol => feedSymbol.user)
   feedSymbol: FeedSymbol[];
 
+  @OneToMany(() => UploadFiles, uploadFiles => uploadFiles.user)
+  uploadFiles: UploadFiles[];
+
   constructor(
     nickname: string,
     password: string,
     email: string,
     comment: Comment[],
     feed: Feed[],
-    feedSymbol: FeedSymbol[]
+    feedSymbol: FeedSymbol[],
+    uploadFiles: UploadFiles[]
   ) {
     super();
     this.nickname = nickname;
@@ -39,5 +44,6 @@ export class User extends Base {
     this.comment = comment;
     this.feed = feed;
     this.feedSymbol = feedSymbol;
+    this.uploadFiles = uploadFiles;
   }
 }

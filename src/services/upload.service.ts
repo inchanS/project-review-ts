@@ -151,6 +151,7 @@ export class UploadService {
       const decodedFilename: string = decodeURIComponent(file.originalname);
 
       const newUploadFile: UploadFiles = this.uploadFilesRepository.create({
+        user: userId,
         file_link: file_link,
         is_img: isImage,
         file_name: decodedFilename,
@@ -167,6 +168,7 @@ export class UploadService {
   private findFileLink = async (file_link: string): Promise<UploadFiles> => {
     try {
       return await this.uploadFilesRepository.findOneOrFail({
+        loadRelationIds: true,
         where: { file_link: file_link },
       });
     } catch (err) {
@@ -203,12 +205,10 @@ export class UploadService {
         const findFileResult: UploadFiles = await this.findFileLink(file_link);
 
         // 찾은 파일의 사용자를 확인한다.
-        const file_userId: number = Number(
-          findFileResult.file_link.split('/')[3]
-        );
+        const filesUserId: number = findFileResult.user;
 
         // 파일의 사용자와 요청한 사용자가 같은지 확인한다.
-        if (file_userId !== userId) {
+        if (filesUserId !== userId) {
           throw new CustomError(403, 'DELETE_UPLOADED_FILE_IS_NOT_YOURS');
         }
 
@@ -237,19 +237,14 @@ export class UploadService {
   // 파일 삭제 함수
   public deleteUploadFile = async (
     userId: number,
-    file_links: string[]
+    fileLinks: string[],
+    queryRunner?: QueryRunner
   ): Promise<void> => {
     // 사용자 유효성 검사
     await this.validatorUserId(userId);
 
-    // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
-    const newFileLinks: string[] = file_links.filter(
-      (file_link: string): boolean =>
-        file_link !== 'DELETE_FROM_UPLOAD_FILES_TABLE'
-    );
-
     // deleteFiles 함수를 호출하여 S3에서 해당 파일들을 삭제하고 DB에서도 삭제할 수 있도록 keyArray와 uploadFileIdArray를 반환받는다.
-    const checkDeleteFiles = await this.checkDeleteFiles(newFileLinks, userId);
+    const checkDeleteFiles = await this.checkDeleteFiles(fileLinks, userId);
 
     const params: { Delete: { Objects: { Key: string }[] }; Bucket: string } = {
       Bucket: process.env.AWS_S3_BUCKET as string,
@@ -263,24 +258,19 @@ export class UploadService {
     // AWS S3에서 개체 삭제
     await this.commandToS3(command);
 
-    // file_links에 'DELETE_FROM_UPLOAD_FILES_TABLE'가 포함되어있으면 mySQL 테이블에서도 개체 삭제
-    // TODO  230706 굳이 transaction 안해도 되는거 아닌가??
-    if (file_links.includes('DELETE_FROM_UPLOAD_FILES_TABLE')) {
-      // mySQL에서 개체 삭제
-      const queryRunner: QueryRunner = dataSource.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-      try {
-        await this.uploadFilesRepository.softDelete(
-          checkDeleteFiles.uploadFileIdArray
-        );
-        await queryRunner.commitTransaction();
-      } catch (err) {
-        await queryRunner.rollbackTransaction();
-        throw new Error(`DELETE_UPLOAD_FILE_FAIL: ${err}`);
-      } finally {
-        await queryRunner.release();
-      }
+    // DB uploadFiles table에서 해당 데이터 삭제
+    if (queryRunner) {
+      // 함수의 인자로 queryRunner가 있다면 해당 Transaction 내에서 mySQL의 uploadFiles테이블의 파일 삭제를 진행한다.
+      // feed.service에서 본 함수 이용시 Transaction 내에서 함수 처리
+      await queryRunner.manager.softDelete(
+        UploadFiles,
+        checkDeleteFiles.uploadFileIdArray
+      );
+    } else {
+      // DELETE url/upload API 사용시(파일 링크 직접 삭제 API) Transaction이 필요하지 않으므로 repository에서 직접 삭제 진행
+      await this.uploadFilesRepository.softDelete(
+        checkDeleteFiles.uploadFileIdArray
+      );
     }
   };
 }

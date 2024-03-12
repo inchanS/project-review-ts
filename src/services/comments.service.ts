@@ -99,7 +99,10 @@ export class CommentsService {
   }
 
   // 무한 대댓글의 경우, 재귀적으로 호출되는 함수
-  getCommentList = async (feedId: number, userId: number) => {
+  getCommentList = async (
+    feedId: number,
+    userId: number
+  ): Promise<Comment[]> => {
     const feed: Feed | null = await this.feedRepository.findOne({
       loadRelationIds: true,
       where: { id: feedId },
@@ -188,7 +191,10 @@ export class CommentsService {
   };
 
   // 수정 또는 삭제시 해당 댓글의 유효성 검사 및 권한 검사를 위한 함수
-  validateComment = async (userId: number, commentId: number) => {
+  validateComment = async (
+    userId: number,
+    commentId: number
+  ): Promise<Comment> => {
     const result: Comment | null = await this.commentRepository.findOne({
       loadRelationIds: true,
       where: { id: commentId },
@@ -240,7 +246,7 @@ export class CommentsService {
     return result;
   };
 
-  deleteComment = async (commentId: number, userId: number) => {
+  deleteComment = async (commentId: number, userId: number): Promise<void> => {
     // 원댓글 유효성 검사
     await this.validateComment(userId, commentId);
 

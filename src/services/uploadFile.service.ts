@@ -11,13 +11,10 @@ export class UploadFileService {
     this.uploadService = new UploadService();
   }
 
-  private generateListOfLinksForDeletableFiles: (
+  private generateListOfLinksForDeletableFiles = async (
     originFeed: Feed,
     fileLinks: string[]
-  ) => Promise<deletableFilesBasket> = async (
-    originFeed: Feed,
-    fileLinks: string[]
-  ) => {
+  ): Promise<deletableFilesBasket> => {
     let { uploadFileIdsToDelete, fileLinksToDelete }: deletableFilesBasket = {
       uploadFileIdsToDelete: [],
       fileLinksToDelete: [],
@@ -33,11 +30,11 @@ export class UploadFileService {
       } else {
         // 게시물에 등록된 기존 파일링크 중 새로운 파일링크 배열과 비교하여 없는 링크는 삭제할 수 있도록 찾아서 담아둔다.
         for (const originFileLink of originFeed.uploadFiles) {
-          const isFileLinkfound: boolean = fileLinks.some(
+          const isFileLinkFound: boolean = fileLinks.some(
             fileLink => fileLink === originFileLink.file_link
           );
 
-          if (!isFileLinkfound) {
+          if (!isFileLinkFound) {
             uploadFileIdsToDelete.push(originFileLink.id);
             fileLinksToDelete.push(originFileLink.file_link);
           }
@@ -63,7 +60,7 @@ export class UploadFileService {
           });
 
         if (findUploadFile.feed !== null) {
-          if (Number(findUploadFile.feed) === feed.id) {
+          if (findUploadFile.feed === feed.id) {
             continue;
           } else {
             throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
@@ -71,7 +68,7 @@ export class UploadFileService {
         }
 
         await queryRunner.manager.update(UploadFiles, findUploadFile.id, {
-          feed: feed,
+          feed: feed.id,
         });
       } catch (error) {
         if (error instanceof EntityNotFoundError) {
@@ -90,9 +87,7 @@ export class UploadFileService {
       .getRepository(UploadFiles)
       .createQueryBuilder('uploadFiles')
       .leftJoinAndSelect('uploadFiles.feed', 'feed')
-      .where('uploadFiles.file_link LIKE :fileLink', {
-        fileLink: `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${userId}%`,
-      })
+      .where(`uploadFiles.user = :userId`, { userId: userId })
       // .andWhere('feed.id IS NULL')
       // .orWhere('feed.deleted_at IS NOT NULL')
       // 아래 콜백함수 메소드가 아닌 위의 방법처럼 체이닝하여 조건을 사용할 수도 있다.
@@ -126,8 +121,11 @@ export class UploadFileService {
     userId: number
   ): Promise<void> => {
     if (uploadFileIdsToDelete.length > 0) {
-      await queryRunner.manager.softDelete(UploadFiles, uploadFileIdsToDelete);
-      await this.uploadService.deleteUploadFile(userId, fileLinksToDelete);
+      await this.uploadService.deleteUploadFile(
+        userId,
+        fileLinksToDelete,
+        queryRunner
+      );
     }
   };
   public checkUploadFileOfFeed = async (
