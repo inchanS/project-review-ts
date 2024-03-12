@@ -19,6 +19,7 @@ export class UpdateUploadFilesTable1710222149703 implements MigrationInterface {
     await queryRunner.createForeignKey(
       'upload_files',
       new TableForeignKey({
+        name: 'fk_upload_files_userId',
         columnNames: ['userId'],
         referencedColumnNames: ['id'],
         referencedTableName: 'users',
@@ -30,6 +31,8 @@ export class UpdateUploadFilesTable1710222149703 implements MigrationInterface {
         SET userId = CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(file_link, '/', 4), '/', -1) AS UNSIGNED)
     `);
 
+    await queryRunner.dropForeignKey('upload_files', 'fk_upload_files_userId');
+
     await queryRunner.changeColumn(
       'upload_files',
       'userId',
@@ -37,6 +40,16 @@ export class UpdateUploadFilesTable1710222149703 implements MigrationInterface {
         name: 'userId',
         type: 'int',
         isNullable: false,
+      })
+    );
+
+    await queryRunner.createForeignKey(
+      'upload_files',
+      new TableForeignKey({
+        name: 'fk_upload_files_userId',
+        columnNames: ['userId'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'users',
       })
     );
   }
