@@ -4,33 +4,18 @@ import { s3 } from '../middleware/uploadToS3';
 import dataSource from '../repositories/data-source';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
-import { UserRepository } from '../repositories/user.repository';
 import { QueryRunner, Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
-import { User } from '../entities/users.entity';
 
 export class UploadService {
-  private userRepository: UserRepository;
   private uploadFilesRepository: Repository<UploadFiles>;
 
   constructor() {
-    this.userRepository = UserRepository.getInstance();
     this.uploadFilesRepository = dataSource.getRepository(UploadFiles);
   }
 
   // module 'sharp'은 모킹하기가 너무 까다롭고 문제가 생기며 코드가 지저분해진다.
   // 때문에 함수를 분리하고 간단하게 이 함수들을 테스트하고 모킹한다.
-
-  // 사용자 유효성 검사 (로그인 유저의 경우, 현재 시점에서의 유효성을 검사한다.)
-  private async validatorUserId(userId: number): Promise<User> {
-    return await this.userRepository
-      .findOneOrFail({
-        where: { id: userId },
-      })
-      .catch(() => {
-        throw new CustomError(400, 'INVALID_USER');
-      });
-  }
 
   private async resizeImage(buffer: Buffer): Promise<Buffer> {
     const image: sharp.Sharp = sharp(buffer);
@@ -92,9 +77,6 @@ export class UploadService {
     userId: number,
     files: Express.Multer.File[]
   ): Promise<string[]> => {
-    // 사용자 유효성 검사
-    const userInfo: User = await this.validatorUserId(userId);
-
     // aws S3는 동일한 이름의 파일을 업로드하면 덮어쓰기를 한다. 이에 대한 대비책으로 파일 이름을 랜덤하게 생성한다.
     let files_link: string[] = [];
 
@@ -152,7 +134,7 @@ export class UploadService {
       const decodedFilename: string = decodeURIComponent(file.originalname);
 
       const newUploadFile: UploadFiles = this.uploadFilesRepository.create({
-        user: userInfo,
+        user: { id: userId },
         file_link: file_link,
         is_img: isImage,
         file_name: decodedFilename,
@@ -241,9 +223,6 @@ export class UploadService {
     fileLinks: string[],
     queryRunner?: QueryRunner
   ): Promise<void> => {
-    // 사용자 유효성 검사
-    await this.validatorUserId(userId);
-
     // deleteFiles 함수를 호출하여 S3에서 해당 파일들을 삭제하고 DB에서도 삭제할 수 있도록 keyArray와 uploadFileIdArray를 반환받는다.
     const checkDeleteFiles = await this.checkDeleteFiles(fileLinks, userId);
 
