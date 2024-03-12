@@ -5,7 +5,7 @@ import { Category } from './category.entity';
 import { FeedStatus } from './feedStatus.entity';
 import { Comment } from './comment.entity';
 import { FeedSymbol } from './feedSymbol.entity';
-import { Base, transformer } from './base.entity';
+import { Base, dateTransformer } from './base.entity';
 import { UploadFiles } from './uploadFiles.entity';
 
 @Entity('feeds')
@@ -39,7 +39,7 @@ export class Feed extends Base {
   @JoinColumn({ name: 'statusId' })
   status: FeedStatus;
 
-  @Column({ type: 'timestamp', nullable: true, transformer: transformer })
+  @Column({ type: 'timestamp', nullable: true, transformer: dateTransformer })
   posted_at?: Date;
 
   @OneToMany(() => Comment, comment => comment.feed)

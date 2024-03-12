@@ -29,16 +29,22 @@ export class FeedsService {
 
   // 임시저장 ==================================================================
   // 임시저장 게시글 리스트 --------------------------------------------------------
-  public getTempFeedList = async (userId: number) => {
+  public getTempFeedList = async (userId: number): Promise<FeedList[]> => {
     const results: FeedList[] =
       await this.feedListRepository.getFeedListByUserId(userId, undefined, {
         onlyTempFeeds: true,
       });
 
-    for (const result of results) {
-      const updatedAt: string = result.updatedAt.toString().substring(2);
-      result.title = result.title ?? `${updatedAt}에 임시저장된 글입니다.`;
-    }
+    // forEach, map, for 루프 등의 방법들 중
+    // 큰 차이는 없겠지만 불필요한 메모리낭비를 제거하기 위해 map은 제외, (아래는 map 메소드 사용시 코드)
+    // results.map(result => this.updateTitle(result));
+
+    // for 루프보다는 가독성이 더 낫다고 판단하여 forEach 선택 (아래는 for 루프 메소드 사용시 코드)
+    // for (const result of results) {
+    //   this.updateTitle(result);
+    // }
+
+    results.forEach(result => this.updateTitle(result));
 
     return results;
   };
@@ -228,8 +234,8 @@ export class FeedsService {
       });
 
     if (feed) {
-      const updatedAt: string = feed.updated_at.toString().substring(2);
-      feed.title = feed.title ?? `${updatedAt}에 임시저장된 글입니다.`;
+      // 제목이 없는 임시게시글의 경우 최근 수정일을 제목으로 대신하는 함수 호출
+      this.updateTitle(feed);
 
       // 임시저장 게시글은 본인만 볼 수 있음
       if (feed.status.id === 2 && feed.user.id !== userId) {
@@ -292,15 +298,13 @@ export class FeedsService {
     try {
       if (feedToDelete.uploadFiles && feedToDelete.uploadFiles.length > 0) {
         const deleteFileLinksArray: string[] = [];
-        // feeds.service에서 본 함수를 사용할때, mySQL의 테이블에서 삭제하는 로직은 필요가 없기때문에 구분 조건을 만들어준다.
-        deleteFileLinksArray.push('DELETE_FROM_UPLOAD_FILES_TABLE');
 
         // 게시물의 모든 uploadFile 삭제
         for (const uploadFile of feedToDelete.uploadFiles) {
           deleteFileLinksArray.push(uploadFile.file_link);
         }
         await this.uploadService
-          .deleteUploadFile(userId, deleteFileLinksArray)
+          .deleteUploadFile(userId, deleteFileLinksArray, queryRunner)
           .catch(err => {
             throw new Error(`deleteUploadFile error: ${err}`);
           });
@@ -332,5 +336,22 @@ export class FeedsService {
     return await dataSource
       .getRepository(Estimation)
       .find({ select: ['id', 'estimation'] });
+  };
+
+  updateTitle = (item: Feed | FeedList) => {
+    let updatedAt: string | undefined;
+
+    if (item instanceof Feed) {
+      updatedAt = item.updated_at.toString().substring(2);
+    } else if (item instanceof FeedList) {
+      updatedAt = item.updatedAt.toString().substring(2);
+    }
+
+    if (updatedAt !== undefined) {
+      item.title = item.title ?? `${updatedAt}에 임시저장된 글입니다.`;
+    } else {
+      console.error('Unable to update title due to undefined updatedAt.');
+      item.title = item.title ?? '정의되지 않은 날짜에 임시저장된 글입니다.';
+    }
   };
 }

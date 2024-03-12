@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { DateUtils } from '../utils/dateUtils';
 
-export const transformer: ValueTransformer = {
+export const dateTransformer: ValueTransformer = {
   from: (value: Date) =>
     value instanceof Date ? DateUtils.formatDate(value) : value,
   to: (value: Date) => value,
@@ -18,12 +18,12 @@ export abstract class Base extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @CreateDateColumn({ type: 'timestamp', transformer: transformer })
+  @CreateDateColumn({ type: 'timestamp', transformer: dateTransformer })
   created_at!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp', transformer: transformer })
+  @UpdateDateColumn({ type: 'timestamp', transformer: dateTransformer })
   updated_at!: Date;
 
-  @DeleteDateColumn({ type: 'timestamp', transformer: transformer })
+  @DeleteDateColumn({ type: 'timestamp', transformer: dateTransformer })
   deleted_at?: Date | null;
 }
