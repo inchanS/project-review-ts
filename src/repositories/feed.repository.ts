@@ -25,15 +25,7 @@ export class FeedRepository extends Repository<Feed> {
     // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
     // 다른 방법으로 처리해준다.
     const feed: Feed = queryRunner.manager.create(Feed, feedInfo);
-    await queryRunner.manager.save(feed);
-
-    const result: Feed = await queryRunner.manager.findOneOrFail(Feed, {
-      loadRelationIds: true,
-      where: { user: { id: feedInfo.user.id } },
-      order: { id: 'DESC' },
-    });
-
-    return result;
+    return await queryRunner.manager.save(feed);
   }
 
   async updateFeed(
