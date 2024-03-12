@@ -1,7 +1,7 @@
 import dataSource from './data-source';
 import { User } from '../entities/users.entity';
 import { UserDto } from '../entities/dto/user.dto';
-import { FindOneOptions, Repository, UpdateResult } from 'typeorm';
+import { Repository } from 'typeorm';
 
 export class UserRepository extends Repository<User> {
   private static instance: UserRepository;
@@ -41,17 +41,5 @@ export class UserRepository extends Repository<User> {
         nickname,
       })
       .getOne();
-  }
-
-  async findOneOrFail(options: FindOneOptions): Promise<User> {
-    return super.findOneOrFail(options);
-  }
-
-  async findOne(options: FindOneOptions): Promise<User | null> {
-    return super.findOne(options);
-  }
-
-  async update(userId: number, userInfo: UserDto): Promise<UpdateResult> {
-    return super.update(userId, userInfo);
   }
 }
