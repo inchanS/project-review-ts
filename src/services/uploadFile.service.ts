@@ -60,7 +60,7 @@ export class UploadFileService {
           });
 
         if (findUploadFile.feed !== null) {
-          if (findUploadFile.feed === feed.id) {
+          if (findUploadFile.feed.id === feed.id) {
             continue;
           } else {
             throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
@@ -68,7 +68,7 @@ export class UploadFileService {
         }
 
         await queryRunner.manager.update(UploadFiles, findUploadFile.id, {
-          feed: feed.id,
+          feed: feed,
         });
       } catch (error) {
         if (error instanceof EntityNotFoundError) {
