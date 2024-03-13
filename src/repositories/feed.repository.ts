@@ -1,11 +1,5 @@
 import { Feed } from '../entities/feed.entity';
-import {
-  IsNull,
-  Not,
-  QueryRunner,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { QueryRunner, Repository, SelectQueryBuilder } from 'typeorm';
 import dataSource from './data-source';
 
 export class FeedRepository extends Repository<Feed> {
@@ -25,15 +19,7 @@ export class FeedRepository extends Repository<Feed> {
     // 때문에 queryRunner를 사용하게 될 때에는 이중 트랜잭션으로 인한 롤백 에러를 방지하기 위해,
     // 다른 방법으로 처리해준다.
     const feed: Feed = queryRunner.manager.create(Feed, feedInfo);
-    await queryRunner.manager.save(feed);
-
-    const result: Feed = await queryRunner.manager.findOneOrFail(Feed, {
-      loadRelationIds: true,
-      where: { user: { id: feedInfo.user.id } },
-      order: { id: 'DESC' },
-    });
-
-    return result;
+    return await queryRunner.manager.save(feed);
   }
 
   async updateFeed(
@@ -81,31 +67,36 @@ export class FeedRepository extends Repository<Feed> {
       .leftJoin('feed.status', 'status')
       .leftJoin('feed.uploadFiles', 'uploadFiles')
       .where('feed.id = :feedId', { feedId: feedId });
+    // .withDeleted();
     // typeORM에서는 deleted_at이 null인 것만 가져오는 것이 default이기에 추가적인 where 구문을 입력할 필요가 없다.
     // 만약 deleted_at 컬럼 값이 있는 데이터도 가져오고 싶다면 .withDeleted() 메소드를 추가해주면 된다.
 
     if (options.isAll) {
     } else if (options.isTemp) {
-      queryBuilder.andWhere('feed.posted_at IS NULL');
+      queryBuilder.andWhere('status.id = 2');
     } else {
-      queryBuilder.andWhere('feed.posted_at IS NOT NULL');
+      queryBuilder.andWhere('status.id = 1');
     }
     return await queryBuilder.getOneOrFail();
   }
 
   // 사용자별 피드의 총 개수 가져오기(임시저장 및 삭제된 게시글은 제외)
   async getFeedCountByUserId(userId: number): Promise<number> {
-    return await this.countBy({
-      user: { id: userId },
-      posted_at: Not(IsNull()),
-    });
+    // typeORM의 countBy 메소드를 이용한 간단한 기능구현
+    // (단점은 Entity의 softDelete 기능으로 인한 'where feed.deleted_at IS NOT NULL' 쿼리가 무조건 들어간다.
+    // 그리고 불필요한 join을 남발하는 query 실행결과를 확인하였다.
+    // 때문에 아래의 createQueryBuilder를 이용한 query 구현을 사용한다.
+    // const result = await this.countBy({
+    //   user: { id: userId },
+    //   status: { id: 1 },
+    // });
 
-    // return await this.createQueryBuilder('feed')
-    //   .select(['COUNT(feed.id) as feedCnt', 'feed.user'])
-    //   .where('feed.user = :userId', { userId: userId })
-    //   .andWhere('feed.posted_at IS NOT NULL')
-    //   .andWhere('feed.deleted_at IS NULL')
-    //   .getRawOne();
+    return await this.createQueryBuilder('feed')
+      .select('feed.id')
+      .where('feed.user = :userId', { userId: userId })
+      .andWhere('feed.status = :statusId', { statusId: 1 })
+      .withDeleted()
+      .getCount();
   }
 
   // 피드의 symbol id별 count 가져오기

@@ -1,4 +1,4 @@
-import { IsNull, Like, Not, Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import dataSource from './data-source';
 import { CustomError } from '../utils/util';
@@ -23,8 +23,7 @@ export class FeedListRepository extends Repository<FeedList> {
   ): Promise<FeedList[]> {
     let where: any = {
       categoryId: categoryId,
-      postedAt: Not(IsNull()),
-      deletedAt: IsNull(),
+      statusId: 1,
     };
 
     if (query) {
@@ -79,11 +78,11 @@ export class FeedListRepository extends Repository<FeedList> {
       // 사용자의 정식 게시글 + 임시저장 게시글 목록 반환 (삭제된 글은 반환하지 않음)
     } else if (onlyTempFeeds) {
       // 사용자의 임시저장 게시글 목록만 반환
-      feedListCondition = { postedAt: IsNull() };
+      feedListCondition = { statusId: 2 };
       orderOption = { updatedAt: 'DESC' };
     } else {
       // 사용자의 정식 게시글 목록만 반환
-      feedListCondition = { postedAt: Not(IsNull()) };
+      feedListCondition = { statusId: 1 };
       orderOption = { postedAt: 'DESC' };
     }
 
@@ -97,7 +96,7 @@ export class FeedListRepository extends Repository<FeedList> {
     }
 
     const findOption = {
-      where: { userId: userId, deletedAt: IsNull(), ...feedListCondition },
+      where: { userId: userId, ...feedListCondition },
       order: orderOption,
       ...pageCondition,
     };
