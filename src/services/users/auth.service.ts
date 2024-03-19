@@ -19,23 +19,31 @@ export class AuthService {
     this.userRepository = UserRepository.getInstance();
   }
 
-  signUp = async (userInfo: UserDto): Promise<void> => {
-    userInfo = plainToInstance(UserDto, userInfo);
-
-    await validateOrReject(userInfo).catch(errors => {
-      throw { status: 500, message: errors[0].constraints };
-    });
-
-    await this.validatorService.checkDuplicateEmail(userInfo.email);
-    await this.validatorService.checkDuplicateNickname(userInfo.nickname);
-
-    const salt = await bcrypt.genSalt();
-    userInfo.password = await bcrypt.hash(userInfo.password, salt);
-
+  public signUp = async (userInfo: UserDto): Promise<void> => {
+    userInfo = await this.validateUserInfo(userInfo);
+    await this.checkUserUniqueness(userInfo);
+    userInfo.password = await this.hashPassword(userInfo.password);
     await this.userRepository.createUser(userInfo);
   };
 
-  signIn = async (
+  private async validateUserInfo(userInfo: UserDto): Promise<UserDto> {
+    const validatedUserInfo: UserDto = plainToInstance(UserDto, userInfo);
+    await validateOrReject(userInfo).catch(errors => {
+      throw new CustomError(400, errors[0].constraints);
+    });
+    return validatedUserInfo;
+  }
+  private async checkUserUniqueness(userInfo: UserDto): Promise<void> {
+    await this.validatorService.checkDuplicateEmail(userInfo.email);
+    await this.validatorService.checkDuplicateNickname(userInfo.nickname);
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const salt: string = await bcrypt.genSalt();
+    return await bcrypt.hash(password, salt);
+  }
+
+  public signIn = async (
     email: string,
     password: string
   ): Promise<{ token: string }> => {
@@ -74,7 +82,7 @@ export class AuthService {
   };
 
   // 비밀번호 찾기 기능 구현
-  resetPassword = async (
+  public resetPassword = async (
     email: string,
     resetPasswordUrl: string
   ): Promise<void> => {
