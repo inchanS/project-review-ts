@@ -47,18 +47,6 @@ export class AuthService {
     email: string,
     password: string
   ): Promise<{ token: string }> => {
-    // // <version 1>
-    // // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
-    // const checkUserbyEmail = await dataSource
-    //   .createQueryBuilder(User, 'user')
-    //   .addSelect('user.password')
-    //   .where('user.email = :email', { email: email })
-    //   .getOne();
-
-    // <version 2> User entity에서 static 메소드 리턴시,
-    // typeORM 문법으로 삭제된 유저, 즉 deleted_at이 not null인 유저는 제외하고 리턴한다.
-    // 하지만 softDelete로 삭제된 유저의 경우에도 findByEmail을 통해 찾아야 실제 가입시 Entity Duplicated 에러를 방지할 수 있다.
-
     const checkUserbyEmail: User | null = await this.userRepository.findByEmail(
       email
     );
@@ -137,17 +125,6 @@ export class AuthService {
     };
 
     await sendMail.executeSendMail(mailOption);
-
-    // await sendMail(mailOptions);
-    // 위와 같이 작성시 가독성과 코드의 간결함은 좋지만 클라이언트의 응답시간이 비동기 동작의 block으로 인해 길어짐
-    // 이에 아래와 같이 작성
-    // sendMail(mailOptions).then(r => {
-    //   return new Promise((resolve, reject) => {
-    //     resolve(r);
-    //     reject(r);
-    //   });
-    // });
-
     return;
   };
 }
