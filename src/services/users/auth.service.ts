@@ -26,6 +26,42 @@ export class AuthService {
     await this.userRepository.createUser(userInfo);
   };
 
+  public signIn = async (
+    email: string,
+    password: string
+  ): Promise<{ token: string }> => {
+    const user: User | null = await this.userRepository.findByEmail(email);
+
+    if (!user || user.deleted_at) {
+      throw new CustomError(404, `${email}_IS_NOT_FOUND`);
+    }
+
+    const isPasswordMatch: boolean = await bcrypt.compare(
+      password,
+      user.password
+    );
+    if (!isPasswordMatch) {
+      throw new CustomError(401, 'PASSWORD_IS_INCORRECT');
+    }
+
+    const jwtSecret: string = process.env.SECRET_KEY;
+    const token: string = jwt.sign({ id: user.id }, jwtSecret);
+
+    return { token };
+  };
+
+  // 비밀번호 찾기 기능 구현
+  public resetPassword = async (
+    email: string,
+    resetPasswordUrl: string
+  ): Promise<void> => {
+    const user: User = await this.findUserByEmail(email);
+    const token: string = this.generateResetPasswordToken(user.id);
+    const url: string = `${resetPasswordUrl}?token=${token}`;
+    const mailOption: Mail.Options = this.createMailOption(email, url);
+    await this.sendResetPasswordMail(mailOption);
+  };
+
   private async validateUserInfo(userInfo: UserDto): Promise<UserDto> {
     const validatedUserInfo: UserDto = plainToInstance(UserDto, userInfo);
     await validateOrReject(userInfo).catch(errors => {
@@ -43,63 +79,23 @@ export class AuthService {
     return await bcrypt.hash(password, salt);
   }
 
-  public signIn = async (
-    email: string,
-    password: string
-  ): Promise<{ token: string }> => {
-    const checkUserbyEmail: User | null = await this.userRepository.findByEmail(
-      email
-    );
-
-    if (!checkUserbyEmail || checkUserbyEmail.deleted_at) {
-      throw new CustomError(404, `${email}_IS_NOT_FOUND`);
-    }
-
-    const isSame: boolean = bcrypt.compareSync(
-      password,
-      checkUserbyEmail.password
-    );
-    if (!isSame) {
-      throw new CustomError(401, 'PASSWORD_IS_INCORRECT');
-    }
-
-    const jwtSecret: string = process.env.SECRET_KEY;
-    const token: string = jwt.sign({ id: checkUserbyEmail.id }, jwtSecret);
-
-    return { token };
-  };
-
-  // 비밀번호 찾기 기능 구현
-  public resetPassword = async (
-    email: string,
-    resetPasswordUrl: string
-  ): Promise<void> => {
-    const user: User = await this.userRepository
+  private async findUserByEmail(email: string): Promise<User> {
+    return await this.userRepository
       .findOneOrFail({ where: { email } })
       .catch(() => {
         throw new CustomError(404, 'USER_IS_NOT_FOUND');
       });
+  }
 
+  private generateResetPasswordToken(userId: number): string {
     const jwtSecret: string = process.env.SECRET_KEY;
-    const token: string = jwt.sign({ id: user.id }, jwtSecret, {
+    return jwt.sign({ id: userId }, jwtSecret, {
       expiresIn: '10m',
     });
+  }
 
-    const url: string = `${resetPasswordUrl}?token=${token}`;
-
-    const mailOptions: MailOptions = {
-      service: 'gmail',
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.NODEMAILER_USER as string,
-        pass: process.env.NODEMAILER_PASS as string,
-      },
-    };
-
-    const sendMail: SendMail = new SendMail(mailOptions);
-    const mailOption: Mail.Options = {
+  private createMailOption(email: string, url: string): Mail.Options {
+    return {
       from: process.env.EMAIL,
       to: email,
       subject: '비밀번호를 재설정해주세요 - review site',
@@ -123,10 +119,23 @@ export class AuthService {
         <p>감사합니다.</p>
       `,
     };
+  }
 
+  private async sendResetPasswordMail(mailOption: Mail.Options): Promise<void> {
+    const mailOptions: MailOptions = {
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.NODEMAILER_USER as string,
+        pass: process.env.NODEMAILER_PASS as string,
+      },
+    };
+
+    const sendMail: SendMail = new SendMail(mailOptions);
     await sendMail.executeSendMail(mailOption);
-    return;
-  };
+  }
 }
 
 // TODO 나중에 프로필 이미지 넣어볼까나
