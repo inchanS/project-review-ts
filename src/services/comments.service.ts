@@ -5,7 +5,6 @@ import { CommentRepository } from '../repositories/comment.repository';
 import { FeedRepository } from '../repositories/feed.repository';
 import { Comment } from '../entities/comment.entity';
 import { CustomError } from '../utils/util';
-import { Feed } from '../entities/feed.entity';
 import { ExtendedUser } from '../types/comment';
 
 export class CommentFormatter {
@@ -101,15 +100,14 @@ export class CommentsService {
     feedId: number,
     userId: number
   ): Promise<Comment[]> => {
-    const feed: Feed | null = await this.feedRepository.findOne({
-      loadRelationIds: true,
-      where: { id: feedId },
-    });
-
-    const statusId: number = Number(feed?.status);
-    if (!feed || statusId === 2) {
-      throw new CustomError(404, 'FEED_NOT_FOUND');
-    }
+    await this.feedRepository
+      .findOneOrFail({
+        loadRelationIds: true,
+        where: { id: feedId, status: { id: 1 } },
+      })
+      .catch(() => {
+        throw new CustomError(404, 'FEED_NOT_FOUND');
+      });
 
     const result: Comment[] = await this.commentRepository.getCommentList(
       feedId
