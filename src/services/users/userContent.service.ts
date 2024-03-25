@@ -27,23 +27,8 @@ export class UserContentService {
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
 
-  private validatePage(page: Pagination): Pagination | undefined {
-    if (isNaN(page.startIndex) || isNaN(page.limit)) {
-      return undefined;
-    } else if (page.startIndex < 1) {
-      throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
-    }
-    return page;
-  }
-
-  private calculateTotalPageCount(
-    totalItems: number,
-    page: Pagination | undefined
-  ): number {
-    return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
-  }
   // 유저 정보 확인시 유저의 게시글 조회
-  findUserFeedsByUserId = async (
+  public findUserFeedsByUserId = async (
     targetUserId: number,
     page: Pagination | undefined,
     options?: FeedListOptions
@@ -52,17 +37,16 @@ export class UserContentService {
       throw new CustomError(400, 'NOT_FOUND_TARGET_USER_ID');
     }
 
-    page = page ? this.validatePage(page) : undefined;
+    page = page ? this.validatePage(page, 1) : undefined;
 
-    // 유저의 게시글 수 조회
     const feedCntByUserId: number =
       await this.feedRepository.getFeedCountByUserId(targetUserId);
 
-    // 클라이언트에서 보내준 limit에 따른 총 페이지 수 계산
     const totalPage: number = this.calculateTotalPageCount(
       feedCntByUserId,
       page
     );
+
     const feedListByUserId: FeedList[] =
       await this.feedListRepository.getFeedListByUserId(
         targetUserId,
@@ -74,7 +58,7 @@ export class UserContentService {
   };
 
   // 유저 정보 확인시 유저의 댓글 조회
-  findUserCommentsByUserId = async (
+  public findUserCommentsByUserId = async (
     targetUserId: number,
     loggedInUserId: number,
     page?: Pagination | undefined
@@ -83,42 +67,34 @@ export class UserContentService {
       throw new CustomError(400, 'NOT_FOUND_TARGET_USER_ID');
     }
 
-    if (!page || isNaN(page.startIndex) || isNaN(page.limit)) {
-      page = undefined;
-    } else if (page.startIndex < 0) {
-      throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
-    }
+    // 덧글은 페이지가 아닌 무한스크롤 기준이기에 index 최소값이 0부터 시작한다.
+    page = page ? this.validatePage(page, 0) : undefined;
 
     const commentCntByUserId: number =
       await this.commentRepository.getCommentCountByUserId(targetUserId);
 
     // 클라이언트에서 보내준 limit에 따른 총 무한스크롤 횟수 계산
-    let totalScrollCnt: number = this.calculateTotalPageCount(
+    const totalScrollCnt: number = this.calculateTotalPageCount(
       commentCntByUserId,
       page
     );
 
-    const originalCommentListByUserId: Comment[] =
-      await this.commentRepository.getCommentListByUserId(targetUserId, page);
-
-    const commentListByUserId: Comment[] = originalCommentListByUserId.map(
-      (comment: Comment) => {
-        const parentId: number | undefined =
-          comment.parent?.user.id ?? undefined;
-
-        return new CommentFormatter(comment, loggedInUserId, parentId).format();
-      }
-    );
+    const commentListByUserId: Comment[] =
+      await this.getFormattedCommentListByUserId(
+        targetUserId,
+        loggedInUserId,
+        page
+      );
 
     return { commentCntByUserId, totalScrollCnt, commentListByUserId };
   };
 
   // 유저 정보 확인시, 유저의 피드 심볼 조회
-  findUserFeedSymbolsByUserId = async (
+  public findUserFeedSymbolsByUserId = async (
     targetUserId: number,
     page: Pagination | undefined
   ): Promise<FeedSymbolListByUserId> => {
-    page ? this.validatePage(page) : undefined;
+    page ? this.validatePage(page, 1) : undefined;
 
     const symbolCntByUserId: number =
       await this.feedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);
@@ -136,5 +112,39 @@ export class UserContentService {
       );
 
     return { symbolCntByUserId, totalPage, symbolListByUserId };
+  };
+
+  private validatePage(
+    page: Pagination,
+    minimumValue: number
+  ): Pagination | undefined {
+    if (isNaN(page.startIndex) || isNaN(page.limit)) {
+      return undefined;
+    } else if (page.startIndex < minimumValue) {
+      throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
+    }
+    return page;
+  }
+
+  private calculateTotalPageCount(
+    totalItems: number,
+    page: Pagination | undefined
+  ): number {
+    return page?.limit ? Math.ceil(totalItems / page.limit) : 1;
+  }
+
+  private getFormattedCommentListByUserId = async (
+    targetUserId: number,
+    loggedInUserId: number,
+    page: Pagination | undefined
+  ): Promise<Comment[]> => {
+    const originalCommentListByUserId: Comment[] =
+      await this.commentRepository.getCommentListByUserId(targetUserId, page);
+
+    return originalCommentListByUserId.map((comment: Comment) => {
+      const parentId: number | undefined = comment.parent?.user.id ?? undefined;
+
+      return new CommentFormatter(comment, loggedInUserId, parentId).format();
+    });
   };
 }
