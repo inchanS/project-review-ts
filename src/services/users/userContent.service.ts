@@ -144,7 +144,11 @@ export class UserContentService {
     return originalCommentListByUserId.map((comment: Comment) => {
       const parentId: number | undefined = comment.parent?.user.id ?? undefined;
 
-      return new CommentFormatter(comment, loggedInUserId, parentId).format();
+      return new CommentFormatter(
+        comment,
+        loggedInUserId,
+        parentId
+      ).formatComments();
     });
   };
 }
