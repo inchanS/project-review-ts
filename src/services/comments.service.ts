@@ -40,7 +40,7 @@ export class CommentFormatter {
 
   private isPrivate = (): boolean => {
     return (
-      this.comment.is_private === true &&
+      this.comment.is_private &&
       this.comment.user.id !== this.userId &&
       (this.parentUserId
         ? this.parentUserId !== this.userId
