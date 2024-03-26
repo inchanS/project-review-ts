@@ -27,17 +27,6 @@ export class FeedsService {
     this.uploadService = new UploadService();
   }
 
-  public getTempFeedList = async (userId: number): Promise<FeedList[]> => {
-    const results: FeedList[] =
-      await this.feedListRepository.getFeedListByUserId(userId, undefined, {
-        onlyTempFeeds: true,
-      });
-
-    results.forEach(result => this.changeTitleToUpdatedAt(result));
-
-    return results;
-  };
-
   // 임시게시글 및 정식 게시글 저장
   public createFeed = async (
     feedInfo: TempFeedDto | FeedDto,
@@ -57,7 +46,7 @@ export class FeedsService {
 
     const transactionAttempt: number = 1;
 
-    return await this.executeTransactionWithRetry(
+    return await this.executeCreateFeedTransactionWithRetry(
       transactionAttempt,
       feedInfo,
       fileLinks,
@@ -93,7 +82,16 @@ export class FeedsService {
     );
   };
 
-  // 게시글 가져오기 --------------------------------------------------------
+  public deleteFeed = async (userId: number, feedId: number): Promise<void> => {
+    const feedToDelete: Feed | void = await this.validateFeedOrUser(
+      feedId,
+      userId,
+      { isAll: true }
+    );
+
+    await this.executeFeedDeleteTransaction(feedToDelete);
+  };
+
   public getFeed = async (
     userId: number,
     feedId: number,
@@ -127,7 +125,17 @@ export class FeedsService {
     return;
   };
 
-  // 게시글 리스트 --------------------------------------------------------------
+  public getTempFeedList = async (userId: number): Promise<FeedList[]> => {
+    const results: FeedList[] =
+      await this.feedListRepository.getFeedListByUserId(userId, undefined, {
+        onlyTempFeeds: true,
+      });
+
+    results.forEach(result => this.changeTitleToUpdatedAt(result));
+
+    return results;
+  };
+
   public getFeedList = async (
     categoryId: number | undefined,
     index: number,
@@ -148,45 +156,6 @@ export class FeedsService {
     }
 
     return await this.feedListRepository.getFeedList(categoryId, index, limit);
-  };
-
-  public deleteFeed = async (userId: number, feedId: number): Promise<void> => {
-    const feed: Feed | void = await this.feedRepository
-      .getFeed(feedId, { isAll: true })
-      .catch((err: Error): void => {
-        if (err instanceof EntityNotFoundError) {
-          throw new CustomError(404, `NOT_FOUND_FEED`);
-        }
-      });
-
-    const feedToDelete: Feed = feed!;
-
-    // 사용자 유효성 검사
-    if (feedToDelete.user.id !== userId) {
-      throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_DELETE');
-    }
-
-    const queryRunner: QueryRunner = dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      await Promise.all([
-        this.deleteFeedFileLinks(feedToDelete, userId, queryRunner),
-        queryRunner.manager.softDelete(FeedSymbol, { feed: feedId }),
-        queryRunner.manager.update(Feed, { id: feedId }, { status: { id: 3 } }),
-      ]);
-
-      await queryRunner.manager.softDelete(Feed, { id: feedId });
-
-      await queryRunner.commitTransaction();
-      return;
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw new Error(`deleteFeed TRANSACTION error: ${err}`);
-    } finally {
-      await queryRunner.release();
-    }
   };
 
   public getEstimations = async (): Promise<Estimation[]> => {
@@ -216,8 +185,7 @@ export class FeedsService {
   };
 
   // 임시저장 및 게시글 저장 -----------------------------------------------------------
-  private maxTransactionAttempts: number = 3;
-  private executeTransactionWithRetry = async (
+  private executeCreateFeedTransactionWithRetry = async (
     attempt: number,
     feedInfo: TempFeedDto | FeedDto,
     fileLinks: string[],
@@ -226,6 +194,8 @@ export class FeedsService {
     const queryRunner: QueryRunner = dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
+    const maxTransactionAttempts: number = 3;
 
     try {
       const newFeedInstance: Feed = plainToInstance(Feed, feedInfo);
@@ -243,10 +213,10 @@ export class FeedsService {
 
       if (
         err.message.includes('Lock wait timeout') &&
-        attempt < this.maxTransactionAttempts
+        attempt < maxTransactionAttempts
       ) {
         console.log(`createFeed TRANSACTION retry: ${attempt}`);
-        return await this.executeTransactionWithRetry(
+        return await this.executeCreateFeedTransactionWithRetry(
           attempt + 1,
           feedInfo,
           fileLinks,
@@ -299,12 +269,16 @@ export class FeedsService {
   ): Promise<Feed> => {
     const originFeed: Feed = await this.feedRepository
       .getFeed(feedId, options)
-      .catch(() => {
-        throw new CustomError(404, 'NOT_FOUND_FEED');
+      .catch((err: Error) => {
+        if (err instanceof EntityNotFoundError) {
+          throw new CustomError(404, `NOT_FOUND_FEED`);
+        } else {
+          throw new CustomError(500, `${err.message}`);
+        }
       });
 
     if (originFeed.user.id !== userId) {
-      throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_EDIT');
+      throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_ACCESS');
     }
 
     return originFeed;
@@ -370,7 +344,6 @@ export class FeedsService {
 
   private deleteFeedFileLinks = async (
     feedToDelete: Feed,
-    userId: number,
     queryRunner: QueryRunner
   ) => {
     if (feedToDelete.uploadFiles && feedToDelete.uploadFiles.length > 0) {
@@ -381,10 +354,44 @@ export class FeedsService {
         deleteFileLinksArray.push(uploadFile.file_link);
       }
       await this.uploadService
-        .deleteUploadFile(userId, deleteFileLinksArray, queryRunner)
+        .deleteUploadFile(
+          feedToDelete.user.id,
+          deleteFileLinksArray,
+          queryRunner
+        )
         .catch(err => {
           throw new Error(`deleteUploadFile error: ${err}`);
         });
+    }
+  };
+
+  private executeFeedDeleteTransaction = async (
+    feedToDelete: Feed
+  ): Promise<void> => {
+    const queryRunner: QueryRunner = dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      await Promise.all([
+        this.deleteFeedFileLinks(feedToDelete, queryRunner),
+        queryRunner.manager.softDelete(FeedSymbol, { feed: feedToDelete.id }),
+        queryRunner.manager.update(
+          Feed,
+          { id: feedToDelete.id },
+          { status: { id: 3 } }
+        ),
+      ]);
+
+      await queryRunner.manager.softDelete(Feed, { id: feedToDelete.id });
+
+      await queryRunner.commitTransaction();
+      return;
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw new Error(`deleteFeed TRANSACTION error: ${err}`);
+    } finally {
+      await queryRunner.release();
     }
   };
 }
