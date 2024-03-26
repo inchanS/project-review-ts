@@ -1,10 +1,9 @@
 import { plainToInstance } from 'class-transformer';
-import { validateOrReject } from 'class-validator';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentRepository } from '../repositories/comment.repository';
 import { FeedRepository } from '../repositories/feed.repository';
 import { Comment } from '../entities/comment.entity';
-import { CustomError } from '../utils/util';
+import { CustomError, transformAndValidateDTO } from '../utils/util';
 import { ExtendedUser } from '../types/comment';
 
 export class CommentFormatter {
@@ -119,10 +118,7 @@ export class CommentsService {
   };
 
   public createComment = async (commentInfo: CommentDto): Promise<Comment> => {
-    commentInfo = plainToInstance(CommentDto, commentInfo);
-    await validateOrReject(commentInfo).catch(errors => {
-      throw { status: 500, message: errors[0].constraints };
-    });
+    commentInfo = await transformAndValidateDTO(CommentDto, commentInfo);
 
     // 임시게시글, 삭제된 게시글, 존재하지 않는 게시글에 댓글 달기 시도시 에러처리
     await this.validateFeedExists(commentInfo);

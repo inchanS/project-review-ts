@@ -1,5 +1,3 @@
-import { plainToInstance } from 'class-transformer';
-import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserDto } from '../../entities/dto/user.dto';
@@ -8,7 +6,7 @@ import { ValidatorService } from './validator.service';
 import { User } from '../../entities/users.entity';
 import { MailOptions, SendMail } from '../../utils/sendMail';
 import Mail from 'nodemailer/lib/mailer';
-import { CustomError } from '../../utils/util';
+import { CustomError, transformAndValidateDTO } from '../../utils/util';
 
 export class AuthService {
   private userRepository: UserRepository;
@@ -20,7 +18,7 @@ export class AuthService {
   }
 
   public signUp = async (userInfo: UserDto): Promise<void> => {
-    userInfo = await this.validateUserInfo(userInfo);
+    userInfo = await transformAndValidateDTO(UserDto, userInfo);
     await this.checkUserUniqueness(userInfo);
     userInfo.password = await this.hashPassword(userInfo.password);
     await this.userRepository.createUser(userInfo);
@@ -62,13 +60,6 @@ export class AuthService {
     await this.sendResetPasswordMail(mailOption);
   };
 
-  private async validateUserInfo(userInfo: UserDto): Promise<UserDto> {
-    const validatedUserInfo: UserDto = plainToInstance(UserDto, userInfo);
-    await validateOrReject(userInfo).catch(errors => {
-      throw new CustomError(400, errors[0].constraints);
-    });
-    return validatedUserInfo;
-  }
   private async checkUserUniqueness(userInfo: UserDto): Promise<void> {
     await this.validatorService.checkDuplicateEmail(userInfo.email);
     await this.validatorService.checkDuplicateNickname(userInfo.nickname);
