@@ -188,7 +188,7 @@ export class UploadService {
         const findFileResult: UploadFiles = await this.findFileLink(file_link);
 
         // 찾은 파일의 사용자를 확인한다.
-        const filesUserId: number = findFileResult.user.id;
+        const filesUserId: number = Number(findFileResult.user);
 
         // 파일의 사용자와 요청한 사용자가 같은지 확인한다.
         if (filesUserId !== userId) {

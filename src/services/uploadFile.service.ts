@@ -60,7 +60,7 @@ export class UploadFileService {
           });
 
         if (findUploadFile.feed !== null) {
-          if (findUploadFile.feed.id === feed.id) {
+          if (Number(findUploadFile.feed) === feed.id) {
             continue;
           } else {
             throw new CustomError(409, `FILE_LINK_ALREADY_EXISTS`);
