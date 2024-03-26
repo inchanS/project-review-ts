@@ -1,4 +1,3 @@
-import { validateOrReject } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { FeedRepository } from '../repositories/feed.repository';
 import { FeedDto } from '../entities/dto/feed.dto';
@@ -10,7 +9,11 @@ import { Estimation } from '../entities/estimation.entity';
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { UploadFileService } from './uploadFile.service';
 import { UploadService } from './upload.service';
-import { CustomError } from '../utils/util';
+import {
+  CustomError,
+  DtoClassType,
+  transformAndValidateDTO,
+} from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 
@@ -33,16 +36,13 @@ export class FeedsService {
     fileLinks: string[],
     options?: FeedOption
   ): Promise<Feed> => {
-    if (feedInfo.status === 2) {
-      feedInfo = plainToInstance(TempFeedDto, feedInfo);
-    } else {
-      feedInfo = plainToInstance(FeedDto, feedInfo);
+    const dtoClass: DtoClassType =
+      feedInfo.status === 2 ? TempFeedDto : FeedDto;
+    feedInfo = await transformAndValidateDTO(dtoClass, feedInfo);
+
+    if (feedInfo instanceof FeedDto) {
       feedInfo.posted_at = new Date();
     }
-
-    await validateOrReject(feedInfo).catch(errors => {
-      throw { status: 500, message: errors[0].constraints };
-    });
 
     const transactionAttempt: number = 1;
 
@@ -69,11 +69,7 @@ export class FeedsService {
     );
 
     const feedDto: TempFeedDto | FeedDto =
-      this.transformFeedInfoDTOBasedOnStatus(originFeed, feedInfo);
-
-    await validateOrReject(feedDto).catch(errors => {
-      throw new CustomError(500, errors[0].constraints);
-    });
+      await this.validateAndTransformFeedDTO(originFeed, feedInfo);
 
     return await this.executeFeedUpdateTransaction(
       feedDto,
@@ -284,17 +280,18 @@ export class FeedsService {
     return originFeed;
   };
 
-  private transformFeedInfoDTOBasedOnStatus = (
+  private validateAndTransformFeedDTO = async (
     originFeed: Feed,
     feedInfo: TempFeedDto | FeedDto
-  ) => {
+  ): Promise<TempFeedDto | FeedDto> => {
+    const dtoClass: DtoClassType =
+      feedInfo.status === 2 ? TempFeedDto : FeedDto;
+    feedInfo = await transformAndValidateDTO(dtoClass, feedInfo);
+
     if (originFeed.status.id === 2 && feedInfo.status === 1) {
-      feedInfo = plainToInstance(FeedDto, feedInfo);
-      feedInfo.posted_at = new Date();
-    } else if (originFeed.status.id === 2) {
-      feedInfo = plainToInstance(TempFeedDto, feedInfo);
-    } else {
-      feedInfo = plainToInstance(FeedDto, feedInfo);
+      if (feedInfo instanceof FeedDto) {
+        feedInfo.posted_at = new Date();
+      }
     }
 
     return feedInfo;
