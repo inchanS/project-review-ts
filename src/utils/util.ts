@@ -30,7 +30,7 @@ export async function transformAndValidateDTO<T extends object>(
 ): Promise<T> {
   const instance: T = plainToInstance(cls as any, plain);
   await validateOrReject(instance).catch(errors => {
-    throw new CustomError(500, errors[0].constraints);
+    throw { status: 500, message: errors[0].constraints };
   });
   return instance;
 }
