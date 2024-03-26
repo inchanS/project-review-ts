@@ -285,7 +285,7 @@ export class FeedsService {
     feedInfo: TempFeedDto | FeedDto
   ): Promise<TempFeedDto | FeedDto> => {
     const dtoClass: DtoClassType =
-      feedInfo.status === 2 ? TempFeedDto : FeedDto;
+      feedInfo.status === 1 ? FeedDto : TempFeedDto;
     feedInfo = await transformAndValidateDTO(dtoClass, feedInfo);
 
     if (originFeed.status.id === 2 && feedInfo.status === 1) {
