@@ -239,7 +239,7 @@ export class CommentsService {
   private validateMaximumCommentDepth = async (parentComment: Comment) => {
     // depth 3이상의 댓글 생성을 막기 위한 에러 반환
     if (parentComment.parent) {
-      const grandparentId: number = parentComment.parent.id;
+      const grandparentId: number = Number(parentComment.parent);
       const grandparentComment: Comment | null =
         await this.commentRepository.findOne({
           loadRelationIds: true,
