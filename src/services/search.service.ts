@@ -19,9 +19,8 @@ export class SearchService {
     }
 
     if (!index) {
-      index = 1;
+      index = 0;
     }
-    const startIndex: number = (index - 1) * limit;
 
     const titleSnippetLength: number = 10;
     const contentSnippetLength: number = 20;
@@ -82,13 +81,11 @@ export class SearchService {
       .setParameter('originQuery', query)
       .orderBy('feed.posted_at', 'DESC')
       .orderBy('feed.id', 'DESC')
-      .skip(startIndex)
+      .skip(index)
       .take(limit)
       .getRawMany();
 
-    const formattedResult = DateUtils.processDateValues(result);
-
-    return formattedResult;
+    return DateUtils.processDateValues(result);
   };
 
   searchContentList = async (query: string, index: number, limit: number) => {
@@ -98,13 +95,12 @@ export class SearchService {
     }
 
     if (!index) {
-      index = 1;
+      index = 0;
     }
-    const startIndex: number = (index - 1) * limit;
 
     let result: FeedList[] = await this.feedListRepository.getFeedList(
       undefined,
-      startIndex,
+      index,
       limit,
       query
     );
