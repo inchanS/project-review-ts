@@ -12,15 +12,13 @@ export class SearchService {
     this.feedRepository = FeedRepository.getInstance();
     this.feedListRepository = FeedListRepository.getInstance();
   }
-  searchContent = async (query: string, index: number, limit: number) => {
-    // query로 전달된 limit가 0이거나 없을 경우 기본값 5으로 변경 처리
-    if (!limit || limit === 0) {
-      limit = 5;
-    }
-
-    if (!index) {
-      index = 0;
-    }
+  public searchContent = async (
+    query: string,
+    index: number,
+    limit: number
+  ) => {
+    index = !isNaN(index) ? index : 0;
+    limit = !isNaN(limit) ? limit : 5;
 
     const titleSnippetLength: number = 10;
     const contentSnippetLength: number = 20;
@@ -88,79 +86,61 @@ export class SearchService {
     return DateUtils.processDateValues(result);
   };
 
-  searchContentList = async (query: string, index: number, limit: number) => {
-    // query로 전달된 limit가 0이거나 없을 경우 기본값 10으로 변경 처리
-    if (!limit || limit === 0) {
-      limit = 10;
-    }
+  public searchContentList = async (
+    query: string,
+    index: number,
+    limit: number
+  ): Promise<FeedList[]> => {
+    index = !isNaN(index) ? index : 0;
+    limit = !isNaN(limit) ? limit : 10;
 
-    if (!index) {
-      index = 0;
-    }
-
-    let result: FeedList[] = await this.feedListRepository.getFeedList(
+    const result: FeedList[] = await this.feedListRepository.getFeedList(
       undefined,
       index,
       limit,
       query
     );
+    const lowerQuery: string = query.toLowerCase();
 
-    result = result.map((feed: FeedList) => {
-      const lowerQuery: string = query.toLowerCase();
+    const titlePadding: number = 10;
+    const contentPadding: number = 30;
 
-      let titleSnippet: string = feed.title;
-      const titleIndex: number = titleSnippet.toLowerCase().indexOf(lowerQuery);
-
-      if (titleIndex === -1) {
-        titleSnippet = feed.title;
-      } else {
-        if (titleIndex >= 0) {
-          const start: number = Math.max(titleIndex - 10, 0);
-          const end: number = Math.min(
-            titleIndex + lowerQuery.length + 10,
-            titleSnippet.length
-          );
-          titleSnippet = titleSnippet.substring(start, end);
-          if (start > 0) {
-            titleSnippet = '...' + titleSnippet;
-          }
-          if (end < titleSnippet.length) {
-            titleSnippet = titleSnippet + '...';
-          }
-        }
-      }
-
-      let contentSnippet: string = feed.content;
-      const contentIndex: number = contentSnippet
-        .toLowerCase()
-        .indexOf(lowerQuery);
-
-      if (contentIndex === -1) {
-        contentSnippet = feed.content;
-      } else {
-        if (contentIndex >= 0) {
-          const start: number = Math.max(contentIndex - 30, 0);
-          const end: number = Math.min(
-            contentIndex + lowerQuery.length + 30,
-            contentSnippet.length
-          );
-          contentSnippet = contentSnippet.substring(start, end);
-          if (start > 0) {
-            contentSnippet = '...' + contentSnippet;
-          }
-          if (end < contentSnippet.length) {
-            contentSnippet = contentSnippet + '...';
-          }
-        }
-      }
-
+    return result.map((feed: FeedList) => {
       return {
         ...feed,
-        title: titleSnippet,
-        content: contentSnippet,
+        title: this.extractSnippet(feed.title, lowerQuery, titlePadding),
+        content: this.extractSnippet(feed.content, lowerQuery, contentPadding),
       };
     });
-
-    return result;
   };
+
+  private extractSnippet(
+    source: string,
+    searchTerm: string,
+    padding: number
+  ): string {
+    const lowerSource: string = source.toLowerCase();
+    const index: number = lowerSource.indexOf(searchTerm);
+
+    if (index === -1) {
+      return source;
+    }
+
+    const start: number = Math.max(index - padding, 0);
+    const end: number = Math.min(
+      index + searchTerm.length + padding,
+      source.length
+    );
+
+    let snippet: string = source.substring(start, end);
+
+    if (start > 0) {
+      snippet = '...' + snippet;
+    }
+    if (end < source.length) {
+      snippet = snippet + '...';
+    }
+
+    return snippet;
+  }
 }
