@@ -1,9 +1,16 @@
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 
 interface AddAndUpdateSymbolToFeedResult {
-  sort: 'add' | 'update';
-  result: any;
+  statusCode: number;
+  message: string;
+  result: FeedSymbolCount[];
 }
+
+interface RemoveSymbolToFeedResult {
+  message: string;
+  result: FeedSymbolCount[];
+}
+
 interface CheckSymbolResult {
   checkValue: boolean;
   result: FeedSymbol | null;

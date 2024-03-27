@@ -9,6 +9,7 @@ import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
 import {
   AddAndUpdateSymbolToFeedResult,
   CheckSymbolResult,
+  RemoveSymbolToFeedResult,
 } from '../types/feedSymbol';
 import { CustomError } from '../utils/util';
 import { Feed } from '../entities/feed.entity';
@@ -21,49 +22,43 @@ export class SymbolService {
     this.feedRepository = FeedRepository.getInstance();
     this.feedSymbolRepository = FeedSymbolRepository.getInstance();
   }
-  getSymbols = async (): Promise<Symbol[]> =>
+  public getSymbols = async (): Promise<Symbol[]> =>
     await dataSource.getRepository(Symbol).find({
       select: ['id', 'symbol'],
     });
 
   // 게시글당 사용자별 공감표시의 개수 가져오기
-  getFeedSymbolCount = async (feedId: number) => {
+  public getFeedSymbolCount = async (
+    feedId: number
+  ): Promise<FeedSymbolCount[]> => {
     // 피드 유효성검사
-    await this.feedRepository.getFeed(feedId).catch(() => {
-      throw new CustomError(404, 'INVALID_FEED');
-    });
+    await this.validateFeedExistence(feedId);
 
     const result: FeedSymbolCount[] =
       await this.feedRepository.getFeedSymbolCount(feedId);
 
-    return result.map((item: any) => ({
-      ...item,
-      count: Number(item.count),
-    }));
+    return result.map(
+      (item: FeedSymbolCount): FeedSymbolCount => ({
+        ...item,
+        count: Number(item.count),
+      })
+    );
   };
 
-  checkUsersSymbolForFeed = async (
+  public checkUsersSymbolForFeed = async (
     feedId: number,
     userId: number
   ): Promise<CheckSymbolResult> => {
     const result: FeedSymbol | null =
       await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
 
-    let newResult: CheckSymbolResult = {
-      checkValue: false,
-      result: null,
+    return {
+      checkValue: !!result,
+      result: result,
     };
-
-    if (!result) {
-      return newResult;
-    } else {
-      newResult.checkValue = true;
-      newResult.result = result;
-      return newResult;
-    }
   };
 
-  addAndUpdateSymbolToFeed = async (
+  public addAndUpdateSymbolToFeed = async (
     feedSymbolInfo: FeedSymbolDto
   ): Promise<AddAndUpdateSymbolToFeedResult> => {
     await validateOrReject(feedSymbolInfo).catch(errors => {
@@ -71,66 +66,113 @@ export class SymbolService {
     });
 
     // 피드 유효성검사
-    const validateFeed: Feed | void = await this.feedRepository
-      .getFeed(feedSymbolInfo.feed)
-      .catch((): void => {
-        throw new CustomError(404, 'INVALID_FEED');
-      });
-
-    // 사용자 유효성검사 (게시글 작성자는 공감할 수 없음)
-    if (validateFeed && validateFeed.user.id === feedSymbolInfo.user) {
-      throw new CustomError(403, 'THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
-    }
+    const feed: Feed | void = await this.validateFeedExistence(
+      feedSymbolInfo.feed
+    );
 
     // 심볼 유효성검사
-    await dataSource
-      .getRepository(Symbol)
-      .findOneOrFail({
-        where: { id: feedSymbolInfo.symbol },
-      })
-      .catch((): void => {
-        throw new CustomError(404, 'INVALID_SYMBOL');
-      });
+    await this.validateSymbolExistence(feedSymbolInfo.symbol);
+
+    // 사용자 유효성검사 (게시글 작성자는 공감할 수 없음)
+    this.ensureNotAuthor(feed, feedSymbolInfo.user);
 
     // 피드 심볼 중복검사
-    const checkFeedSymbol: FeedSymbol | null =
-      await this.feedSymbolRepository.getFeedSymbol(
-        feedSymbolInfo.feed,
-        feedSymbolInfo.user
-      );
+    const isNewSymbolAdded: boolean = await this.ensureFeedSymbolUpserted(
+      feedSymbolInfo
+    );
 
-    // create와 update에 따른 sort 값 조정으로 controller에서 res.statusCode를 조정한다.
-    let sort: AddAndUpdateSymbolToFeedResult['sort'] = 'add';
-    // 이미 공감했을 경우, 공감 종류 변경으로 수정 반영
-    if (checkFeedSymbol) {
-      sort = 'update';
+    // 응답메시지 생성
+    const responseMessage: { message: string; statusCode: number } =
+      this.createResponseMessage(isNewSymbolAdded, feedSymbolInfo);
+
+    return {
+      statusCode: responseMessage.statusCode,
+      message: responseMessage.message,
+      result: await this.getFeedSymbolCount(feedSymbolInfo.feed),
+    };
+  };
+
+  public removeSymbolFromFeed = async (
+    userId: number,
+    feedId: number
+  ): Promise<RemoveSymbolToFeedResult> => {
+    const feedSymbol: FeedSymbol = await this.ensureFeedSymbolExists(
+      feedId,
+      userId
+    );
+
+    await this.feedSymbolRepository.deleteFeedSymbol(feedSymbol.id);
+
+    const message: string = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
+    const result: FeedSymbolCount[] = await this.getFeedSymbolCount(feedId);
+    return { message, result };
+  };
+
+  private async validateFeedExistence(feedId: number): Promise<Feed> {
+    const feed: Feed = await this.feedRepository.getFeed(feedId);
+    if (!feed) {
+      throw new CustomError(404, 'INVALID_FEED');
     }
+    return feed;
+  }
 
+  private async validateSymbolExistence(symbolId: number): Promise<Symbol> {
+    const symbol: Symbol | null = await dataSource
+      .getRepository(Symbol)
+      .findOne({ where: { id: symbolId } });
+    if (!symbol) {
+      throw new CustomError(404, 'INVALID_SYMBOL');
+    }
+    return symbol;
+  }
+
+  private async upsertFeedSymbol(feedSymbolInfo: FeedSymbolDto): Promise<void> {
     const newFeedSymbol: FeedSymbol = plainToInstance(
       FeedSymbol,
       feedSymbolInfo
     );
 
     await this.feedSymbolRepository.upsertFeedSymbol(newFeedSymbol);
+  }
 
-    const result = await this.getFeedSymbolCount(feedSymbolInfo.feed);
+  private createResponseMessage(
+    isNewSymbol: boolean,
+    feedSymbolInfo: FeedSymbolDto
+  ): { message: string; statusCode: number } {
+    const action = isNewSymbol ? 'ADDED' : 'UPDATED';
+    const statusCode: number = isNewSymbol ? 201 : 200;
+    const message: string = `SYMBOL_ID_${feedSymbolInfo.symbol}_HAS_BEEN_${action}_TO_THE_FEED_ID_${feedSymbolInfo.feed}`;
 
-    return { sort, result };
-  };
+    return { statusCode, message };
+  }
 
-  removeSymbolFromFeed = async (userId: number, feedId: number) => {
-    // 피드 심볼 유효성검사
-    const validateFeedSymbol: FeedSymbol | null =
+  private ensureNotAuthor(feed: Feed, userId: number): void {
+    if (feed.user.id === userId) {
+      throw new CustomError(403, 'THE_AUTHOR_OF_THE_POST_CANNOT_EMPATHIZE');
+    }
+  }
+
+  private async ensureFeedSymbolUpserted(
+    feedSymbolInfo: FeedSymbolDto
+  ): Promise<boolean> {
+    const existingSymbol: FeedSymbol | null =
+      await this.feedSymbolRepository.getFeedSymbol(
+        feedSymbolInfo.feed,
+        feedSymbolInfo.user
+      );
+    await this.upsertFeedSymbol(feedSymbolInfo);
+    return !existingSymbol;
+  }
+
+  private async ensureFeedSymbolExists(
+    feedId: number,
+    userId: number
+  ): Promise<FeedSymbol> {
+    const feedSymbol: FeedSymbol | null =
       await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
-
-    if (!validateFeedSymbol) {
+    if (!feedSymbol) {
       throw new CustomError(404, `FEED_SYMBOL_NOT_FOUND`);
     }
-
-    await this.feedSymbolRepository.deleteFeedSymbol(validateFeedSymbol.id);
-
-    const message: string = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
-    const result = await this.getFeedSymbolCount(feedId);
-    return { message, result };
-  };
+    return feedSymbol;
+  }
 }
