@@ -139,8 +139,8 @@ export class SymbolService {
     isNewSymbol: boolean,
     feedSymbolInfo: FeedSymbolDto
   ): { message: string; statusCode: number } {
-    const action = isNewSymbol ? 'ADDED' : 'UPDATED';
-    const statusCode: number = isNewSymbol ? 201 : 200;
+    const action: 'ADDED' | 'UPDATED' = isNewSymbol ? 'ADDED' : 'UPDATED';
+    const statusCode: 201 | 200 = isNewSymbol ? 201 : 200;
     const message: string = `SYMBOL_ID_${feedSymbolInfo.symbol}_HAS_BEEN_${action}_TO_THE_FEED_ID_${feedSymbolInfo.feed}`;
 
     return { statusCode, message };
