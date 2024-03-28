@@ -6,13 +6,13 @@ import { CustomError } from '../../utils/util';
 import { FeedListRepository } from '../../repositories/feedList.repository';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
-import { CommentFormatter } from '../comments.service';
 import {
   CommentListByUserId,
   FeedListByUserId,
   FeedSymbolListByUserId,
 } from '../../types/user';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
+import { CommentFormatter } from '../../utils/commentFormatter';
 
 export class UserContentService {
   private feedRepository: FeedRepository;
