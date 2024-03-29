@@ -10,15 +10,9 @@ export class ValidatorService {
     this.userRepository = UserRepository.getInstance();
   }
 
-  private validateUserId(userId: number): void {
-    if (!userId) {
-      throw new CustomError(400, 'USER_ID_IS_UNDEFINED');
-    }
-  }
   public validateUserInfo = async (targetUserId: number): Promise<User> => {
     this.validateUserId(targetUserId);
-
-    const userInfo: User = await this.userRepository
+    return await this.userRepository
       .findOneOrFail({
         where: { id: targetUserId },
       })
@@ -28,45 +22,52 @@ export class ValidatorService {
         }
         throw err;
       });
-
-    return userInfo;
   };
 
   public checkDuplicateNickname = async (
     nickname: string
   ): Promise<{ message: string }> => {
-    if (!nickname) {
-      throw new CustomError(400, `NICKNAME_IS_UNDEFINED`);
-    }
-    const checkData: User | null = await this.userRepository.findByNickname(
-      nickname
-    );
+    this.validateUserNickname(nickname);
+    const user: User | null = await this.userRepository.findOne({
+      where: { nickname: nickname },
+    });
 
-    if (!checkData) {
-      return { message: 'AVAILABLE_NICKNAME' };
-    } else {
-      throw new CustomError(
-        409,
-        `${checkData.nickname}_IS_NICKNAME_THAT_ALREADY_EXSITS`
-      );
+    if (user) {
+      throw new CustomError(409, `${user.nickname}_ALREADY_EXISTS`);
     }
+    return { message: 'AVAILABLE_NICKNAME' };
   };
 
   public checkDuplicateEmail = async (
     email: string
   ): Promise<{ message: string }> => {
-    if (!email) {
-      throw new CustomError(400, 'EMAIL_IS_UNDEFINED');
-    }
-    const checkData: User | null = await this.userRepository.findByEmail(email);
+    this.validateUserEmail(email);
+    const existingUser: User | null = await this.userRepository.findByEmail(
+      email
+    );
 
-    if (checkData === null) {
+    if (existingUser === null) {
       return { message: 'AVAILABLE_EMAIL' };
     } else {
-      throw new CustomError(
-        409,
-        `${checkData.email}_IS_EMAIL_THAT_ALREADY_EXSITS`
-      );
+      throw new CustomError(409, `${existingUser.email}_ALREADY_EXISTS`);
     }
   };
+
+  private validateUserId(userId: number): void {
+    if (!userId) {
+      throw new CustomError(400, 'USER_ID_IS_REQUIRED');
+    }
+  }
+
+  private validateUserNickname(nickname: string): void {
+    if (!nickname) {
+      throw new CustomError(400, `NICKNAME_IS_REQUIRED`);
+    }
+  }
+
+  private validateUserEmail(email: string): void {
+    if (!email) {
+      throw new CustomError(400, 'EMAIL_IS_REQUIRED');
+    }
+  }
 }

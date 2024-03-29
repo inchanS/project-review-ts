@@ -168,13 +168,13 @@ export class FeedsController {
   getFeedList = async (req: Request, res: Response): Promise<void> => {
     const categoryId: number = Number(req.query.categoryId);
 
-    const index: number = Number(req.query.index);
+    const startIndex: number = Number(req.query.index);
     const limit: number = Number(req.query.limit);
+    const page: Pagination = { startIndex, limit };
 
     const result: FeedList[] = await this.feedsService.getFeedList(
       categoryId,
-      index,
-      limit
+      page
     );
 
     res.status(200).json(result);

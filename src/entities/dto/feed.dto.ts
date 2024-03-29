@@ -6,12 +6,11 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { User } from '../users.entity';
 
 export class FeedDto {
   @IsNotEmpty()
   @IsNumber()
-  user: User | number;
+  user: number;
 
   @IsNotEmpty()
   @IsString()
@@ -40,7 +39,7 @@ export class FeedDto {
   posted_at?: Date;
 
   constructor(
-    user: User,
+    user: number,
     title: string,
     content: string,
     estimation: number,
