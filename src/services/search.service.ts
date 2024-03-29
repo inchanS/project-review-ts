@@ -3,6 +3,7 @@ import { Brackets } from 'typeorm';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { DateUtils } from '../utils/dateUtils';
+import { PageValidator } from '../utils/pageValidator';
 
 export class SearchService {
   private feedRepository: FeedRepository;
@@ -12,13 +13,13 @@ export class SearchService {
     this.feedRepository = FeedRepository.getInstance();
     this.feedListRepository = FeedListRepository.getInstance();
   }
-  public searchContent = async (
-    query: string,
-    index: number,
-    limit: number
-  ) => {
-    index = !isNaN(index) ? index : 0;
-    limit = !isNaN(limit) ? limit : 5;
+  public searchContent = async (query: string, page: Pagination) => {
+    const validatedPage: Pagination | undefined = PageValidator.validate(
+      page,
+      0
+    );
+
+    page = validatedPage ? validatedPage : { startIndex: 0, limit: 5 };
 
     const titleSnippetLength: number = 10;
     const contentSnippetLength: number = 20;
@@ -79,8 +80,8 @@ export class SearchService {
       .setParameter('originQuery', query)
       .orderBy('feed.posted_at', 'DESC')
       .orderBy('feed.id', 'DESC')
-      .skip(index)
-      .take(limit)
+      .skip(page.startIndex)
+      .take(page.limit)
       .getRawMany();
 
     return DateUtils.processDateValues(result);
@@ -88,16 +89,18 @@ export class SearchService {
 
   public searchContentList = async (
     query: string,
-    index: number,
-    limit: number
+    page: Pagination
   ): Promise<FeedList[]> => {
-    index = !isNaN(index) ? index : 0;
-    limit = !isNaN(limit) ? limit : 10;
+    const validatedPage: Pagination | undefined = PageValidator.validate(
+      page,
+      0
+    );
+
+    page = validatedPage ? validatedPage : { startIndex: 0, limit: 10 };
 
     const result: FeedList[] = await this.feedListRepository.getFeedList(
       undefined,
-      index,
-      limit,
+      page,
       query
     );
     const lowerQuery: string = query.toLowerCase();

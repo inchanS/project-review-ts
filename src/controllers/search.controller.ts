@@ -9,7 +9,9 @@ class SearchController {
     const query: string = req.query.query as string;
     const limit: number = Number(req.query.limit);
     const index: number = Number(req.query.index);
-    const result = await this.searchService.searchContent(query, index, limit);
+
+    const page: Pagination = { startIndex: index, limit: limit };
+    const result = await this.searchService.searchContent(query, page);
 
     res.status(200).json(result);
   };
@@ -17,12 +19,12 @@ class SearchController {
   searchContentList = async (req: Request, res: Response): Promise<void> => {
     const query: string = req.query.query as string;
     const limit: number = Number(req.query.limit);
-    const index: number = Number(req.query.index);
+    const startIndex: number = Number(req.query.index);
 
+    const page: Pagination = { startIndex, limit };
     const result: FeedList[] = await this.searchService.searchContentList(
       query,
-      index,
-      limit
+      page
     );
 
     res.status(200).json(result);

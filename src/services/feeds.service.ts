@@ -16,6 +16,7 @@ import {
 } from '../utils/util';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
+import { PageValidator } from '../utils/pageValidator';
 
 export class FeedsService {
   private feedRepository: FeedRepository;
@@ -134,24 +135,21 @@ export class FeedsService {
 
   public getFeedList = async (
     categoryId: number | undefined,
-    index: number,
-    limit: number
+    page: Pagination
   ): Promise<FeedList[]> => {
     // query로 전달된 categoryId가 0이거나 없을 경우 undefined로 변경 처리
     if (!categoryId || categoryId === 0) {
       categoryId = undefined;
     }
 
-    // query로 전달된 limit가 0이거나 없을 경우 기본값 10으로 변경 처리
-    if (!limit || limit === 0) {
-      limit = 10;
-    }
+    const validatedPage: Pagination | undefined = PageValidator.validate(
+      page,
+      0
+    );
 
-    if (!index) {
-      index = 0;
-    }
+    page = validatedPage ? validatedPage : { startIndex: 0, limit: 10 };
 
-    return await this.feedListRepository.getFeedList(categoryId, index, limit);
+    return await this.feedListRepository.getFeedList(categoryId, page);
   };
 
   public getEstimations = async (): Promise<Estimation[]> => {

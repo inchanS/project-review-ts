@@ -17,8 +17,7 @@ export class FeedListRepository extends Repository<FeedList> {
 
   async getFeedList(
     categoryId: number | undefined,
-    startIndex: number,
-    limit: number,
+    page: Pagination,
     query?: string
   ): Promise<FeedList[]> {
     let where: any = {
@@ -44,8 +43,8 @@ export class FeedListRepository extends Repository<FeedList> {
         postedAt: 'DESC',
         id: 'DESC',
       },
-      skip: startIndex,
-      take: limit,
+      skip: page.startIndex,
+      take: page.limit,
       where,
     });
 

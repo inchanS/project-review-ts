@@ -13,6 +13,7 @@ import {
 } from '../../types/user';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { CommentFormatter } from '../../utils/commentFormatter';
+import { PageValidator } from '../../utils/pageValidator';
 
 export class UserContentService {
   private feedRepository: FeedRepository;
@@ -37,7 +38,7 @@ export class UserContentService {
       throw new CustomError(400, 'NOT_FOUND_TARGET_USER_ID');
     }
 
-    page = page ? this.validatePage(page, 1) : undefined;
+    page = page ? PageValidator.validate(page, 1) : undefined;
 
     const feedCntByUserId: number =
       await this.feedRepository.getFeedCountByUserId(targetUserId);
@@ -68,7 +69,7 @@ export class UserContentService {
     }
 
     // 덧글은 페이지가 아닌 무한스크롤 기준이기에 index 최소값이 0부터 시작한다.
-    page = page ? this.validatePage(page, 0) : undefined;
+    page = page ? PageValidator.validate(page, 0) : undefined;
 
     const commentCntByUserId: number =
       await this.commentRepository.getCommentCountByUserId(targetUserId);
@@ -94,7 +95,7 @@ export class UserContentService {
     targetUserId: number,
     page: Pagination | undefined
   ): Promise<FeedSymbolListByUserId> => {
-    page ? this.validatePage(page, 1) : undefined;
+    page ? PageValidator.validate(page, 1) : undefined;
 
     const symbolCntByUserId: number =
       await this.feedSymbolRepository.getFeedSymbolCountByUserId(targetUserId);
@@ -113,18 +114,6 @@ export class UserContentService {
 
     return { symbolCntByUserId, totalPage, symbolListByUserId };
   };
-
-  private validatePage(
-    page: Pagination,
-    minimumValue: number
-  ): Pagination | undefined {
-    if (isNaN(page.startIndex) || isNaN(page.limit)) {
-      return undefined;
-    } else if (page.startIndex < minimumValue) {
-      throw new CustomError(400, 'PAGE_START_INDEX_IS_INVALID');
-    }
-    return page;
-  }
 
   private calculateTotalPageCount(
     totalItems: number,
