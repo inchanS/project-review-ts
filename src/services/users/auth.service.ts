@@ -114,10 +114,10 @@ export class AuthService {
 
   private async sendResetPasswordMail(mailOption: Mail.Options): Promise<void> {
     const mailOptions: MailOptions = {
-      service: 'gmail',
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
+      service: process.env.MAILSERVICE as string,
+      host: process.env.MAILHOST as string,
+      port: parseInt(process.env.MAILPORT as string, 10),
+      secure: process.env.MAILSECURE === 'true',
       auth: {
         user: process.env.NODEMAILER_USER as string,
         pass: process.env.NODEMAILER_PASS as string,
