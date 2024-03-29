@@ -22,19 +22,6 @@ export class FeedRepository extends Repository<Feed> {
     return await queryRunner.manager.save(feed);
   }
 
-  async updateFeed(
-    feedId: number,
-    feedInfo: Feed,
-    queryRunner: QueryRunner
-  ): Promise<Feed> {
-    await queryRunner.manager.update(Feed, feedId, feedInfo);
-
-    return await queryRunner.manager.findOneOrFail(Feed, {
-      loadRelationIds: true,
-      where: { id: feedId },
-    });
-  }
-
   async getFeed(feedId: number, options: FeedOption = {}): Promise<Feed> {
     const queryBuilder: SelectQueryBuilder<Feed> = this.createQueryBuilder(
       'feed'

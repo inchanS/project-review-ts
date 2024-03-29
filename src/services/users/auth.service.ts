@@ -1,5 +1,3 @@
-import { plainToInstance } from 'class-transformer';
-import { validateOrReject } from 'class-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserDto } from '../../entities/dto/user.dto';
@@ -8,7 +6,7 @@ import { ValidatorService } from './validator.service';
 import { User } from '../../entities/users.entity';
 import { MailOptions, SendMail } from '../../utils/sendMail';
 import Mail from 'nodemailer/lib/mailer';
-import { CustomError } from '../../utils/util';
+import { CustomError, transformAndValidateDTO } from '../../utils/util';
 
 export class AuthService {
   private userRepository: UserRepository;
@@ -19,91 +17,76 @@ export class AuthService {
     this.userRepository = UserRepository.getInstance();
   }
 
-  signUp = async (userInfo: UserDto): Promise<void> => {
-    userInfo = plainToInstance(UserDto, userInfo);
-
-    await validateOrReject(userInfo).catch(errors => {
-      throw { status: 500, message: errors[0].constraints };
-    });
-
-    await this.validatorService.checkDuplicateEmail(userInfo.email);
-    await this.validatorService.checkDuplicateNickname(userInfo.nickname);
-
-    const salt = await bcrypt.genSalt();
-    userInfo.password = await bcrypt.hash(userInfo.password, salt);
-
+  public signUp = async (userInfo: UserDto): Promise<void> => {
+    userInfo = await transformAndValidateDTO(UserDto, userInfo);
+    await this.checkUserUniqueness(userInfo);
+    userInfo.password = await this.hashPassword(userInfo.password);
     await this.userRepository.createUser(userInfo);
   };
 
-  signIn = async (
+  public signIn = async (
     email: string,
     password: string
   ): Promise<{ token: string }> => {
-    // // <version 1>
-    // // user.password 컬럼의 경우 {select: false} 옵션으로 보호처리했기때문에 필요시 직접 넣어줘야한다.
-    // const checkUserbyEmail = await dataSource
-    //   .createQueryBuilder(User, 'user')
-    //   .addSelect('user.password')
-    //   .where('user.email = :email', { email: email })
-    //   .getOne();
+    const user: User | null = await this.userRepository.findByEmail(email);
 
-    // <version 2> User entity에서 static 메소드 리턴시,
-    // typeORM 문법으로 삭제된 유저, 즉 deleted_at이 not null인 유저는 제외하고 리턴한다.
-    // 하지만 softDelete로 삭제된 유저의 경우에도 findByEmail을 통해 찾아야 실제 가입시 Entity Duplicated 에러를 방지할 수 있다.
-
-    const checkUserbyEmail: User | null = await this.userRepository.findByEmail(
-      email
-    );
-
-    if (!checkUserbyEmail || checkUserbyEmail.deleted_at) {
+    if (!user || user.deleted_at) {
       throw new CustomError(404, `${email}_IS_NOT_FOUND`);
     }
 
-    const isSame: boolean = bcrypt.compareSync(
+    const isPasswordMatch: boolean = await bcrypt.compare(
       password,
-      checkUserbyEmail.password
+      user.password
     );
-    if (!isSame) {
+    if (!isPasswordMatch) {
       throw new CustomError(401, 'PASSWORD_IS_INCORRECT');
     }
 
     const jwtSecret: string = process.env.SECRET_KEY;
-    const token: string = jwt.sign({ id: checkUserbyEmail.id }, jwtSecret);
+    const token: string = jwt.sign({ id: user.id }, jwtSecret);
 
     return { token };
   };
 
   // 비밀번호 찾기 기능 구현
-  resetPassword = async (
+  public resetPassword = async (
     email: string,
     resetPasswordUrl: string
   ): Promise<void> => {
-    const user: User = await this.userRepository
+    const user: User = await this.findUserByEmail(email);
+    const token: string = this.generateResetPasswordToken(user.id);
+    const url: string = `${resetPasswordUrl}?token=${token}`;
+    const mailOption: Mail.Options = this.createMailOption(email, url);
+    await this.sendResetPasswordMail(mailOption);
+  };
+
+  private async checkUserUniqueness(userInfo: UserDto): Promise<void> {
+    await this.validatorService.checkDuplicateEmail(userInfo.email);
+    await this.validatorService.checkDuplicateNickname(userInfo.nickname);
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const salt: string = await bcrypt.genSalt();
+    return await bcrypt.hash(password, salt);
+  }
+
+  private async findUserByEmail(email: string): Promise<User> {
+    return await this.userRepository
       .findOneOrFail({ where: { email } })
       .catch(() => {
         throw new CustomError(404, 'USER_IS_NOT_FOUND');
       });
+  }
 
+  private generateResetPasswordToken(userId: number): string {
     const jwtSecret: string = process.env.SECRET_KEY;
-    const token: string = jwt.sign({ id: user.id }, jwtSecret, {
+    return jwt.sign({ id: userId }, jwtSecret, {
       expiresIn: '10m',
     });
+  }
 
-    const url: string = `${resetPasswordUrl}?token=${token}`;
-
-    const mailOptions: MailOptions = {
-      service: 'gmail',
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.NODEMAILER_USER as string,
-        pass: process.env.NODEMAILER_PASS as string,
-      },
-    };
-
-    const sendMail: SendMail = new SendMail(mailOptions);
-    const mailOption: Mail.Options = {
+  private createMailOption(email: string, url: string): Mail.Options {
+    return {
       from: process.env.EMAIL,
       to: email,
       subject: '비밀번호를 재설정해주세요 - review site',
@@ -127,21 +110,23 @@ export class AuthService {
         <p>감사합니다.</p>
       `,
     };
+  }
 
+  private async sendResetPasswordMail(mailOption: Mail.Options): Promise<void> {
+    const mailOptions: MailOptions = {
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.NODEMAILER_USER as string,
+        pass: process.env.NODEMAILER_PASS as string,
+      },
+    };
+
+    const sendMail: SendMail = new SendMail(mailOptions);
     await sendMail.executeSendMail(mailOption);
-
-    // await sendMail(mailOptions);
-    // 위와 같이 작성시 가독성과 코드의 간결함은 좋지만 클라이언트의 응답시간이 비동기 동작의 block으로 인해 길어짐
-    // 이에 아래와 같이 작성
-    // sendMail(mailOptions).then(r => {
-    //   return new Promise((resolve, reject) => {
-    //     resolve(r);
-    //     reject(r);
-    //   });
-    // });
-
-    return;
-  };
+  }
 }
 
 // TODO 나중에 프로필 이미지 넣어볼까나

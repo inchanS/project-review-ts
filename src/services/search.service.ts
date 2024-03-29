@@ -3,6 +3,7 @@ import { Brackets } from 'typeorm';
 import { FeedListRepository } from '../repositories/feedList.repository';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { DateUtils } from '../utils/dateUtils';
+import { PageValidator } from '../utils/pageValidator';
 
 export class SearchService {
   private feedRepository: FeedRepository;
@@ -12,16 +13,13 @@ export class SearchService {
     this.feedRepository = FeedRepository.getInstance();
     this.feedListRepository = FeedListRepository.getInstance();
   }
-  searchContent = async (query: string, index: number, limit: number) => {
-    // query로 전달된 limit가 0이거나 없을 경우 기본값 5으로 변경 처리
-    if (!limit || limit === 0) {
-      limit = 5;
-    }
+  public searchContent = async (query: string, page: Pagination) => {
+    const validatedPage: Pagination | undefined = PageValidator.validate(
+      page,
+      0
+    );
 
-    if (!index) {
-      index = 1;
-    }
-    const startIndex: number = (index - 1) * limit;
+    page = validatedPage ? validatedPage : { startIndex: 0, limit: 5 };
 
     const titleSnippetLength: number = 10;
     const contentSnippetLength: number = 20;
@@ -82,89 +80,70 @@ export class SearchService {
       .setParameter('originQuery', query)
       .orderBy('feed.posted_at', 'DESC')
       .orderBy('feed.id', 'DESC')
-      .skip(startIndex)
-      .take(limit)
+      .skip(page.startIndex)
+      .take(page.limit)
       .getRawMany();
 
-    const formattedResult = DateUtils.processDateValues(result);
-
-    return formattedResult;
+    return DateUtils.processDateValues(result);
   };
 
-  searchContentList = async (query: string, index: number, limit: number) => {
-    // query로 전달된 limit가 0이거나 없을 경우 기본값 10으로 변경 처리
-    if (!limit || limit === 0) {
-      limit = 10;
-    }
-
-    if (!index) {
-      index = 1;
-    }
-    const startIndex: number = (index - 1) * limit;
-
-    let result: FeedList[] = await this.feedListRepository.getFeedList(
-      undefined,
-      startIndex,
-      limit,
-      query
+  public searchContentList = async (
+    query: string,
+    page: Pagination
+  ): Promise<FeedList[]> => {
+    const validatedPage: Pagination | undefined = PageValidator.validate(
+      page,
+      0
     );
 
-    result = result.map((feed: FeedList) => {
-      const lowerQuery: string = query.toLowerCase();
+    page = validatedPage ? validatedPage : { startIndex: 0, limit: 10 };
 
-      let titleSnippet: string = feed.title;
-      const titleIndex: number = titleSnippet.toLowerCase().indexOf(lowerQuery);
+    const result: FeedList[] = await this.feedListRepository.getFeedList(
+      undefined,
+      page,
+      query
+    );
+    const lowerQuery: string = query.toLowerCase();
 
-      if (titleIndex === -1) {
-        titleSnippet = feed.title;
-      } else {
-        if (titleIndex >= 0) {
-          const start: number = Math.max(titleIndex - 10, 0);
-          const end: number = Math.min(
-            titleIndex + lowerQuery.length + 10,
-            titleSnippet.length
-          );
-          titleSnippet = titleSnippet.substring(start, end);
-          if (start > 0) {
-            titleSnippet = '...' + titleSnippet;
-          }
-          if (end < titleSnippet.length) {
-            titleSnippet = titleSnippet + '...';
-          }
-        }
-      }
+    const titlePadding: number = 10;
+    const contentPadding: number = 30;
 
-      let contentSnippet: string = feed.content;
-      const contentIndex: number = contentSnippet
-        .toLowerCase()
-        .indexOf(lowerQuery);
-
-      if (contentIndex === -1) {
-        contentSnippet = feed.content;
-      } else {
-        if (contentIndex >= 0) {
-          const start: number = Math.max(contentIndex - 30, 0);
-          const end: number = Math.min(
-            contentIndex + lowerQuery.length + 30,
-            contentSnippet.length
-          );
-          contentSnippet = contentSnippet.substring(start, end);
-          if (start > 0) {
-            contentSnippet = '...' + contentSnippet;
-          }
-          if (end < contentSnippet.length) {
-            contentSnippet = contentSnippet + '...';
-          }
-        }
-      }
-
+    return result.map((feed: FeedList) => {
       return {
         ...feed,
-        title: titleSnippet,
-        content: contentSnippet,
+        title: this.extractSnippet(feed.title, lowerQuery, titlePadding),
+        content: this.extractSnippet(feed.content, lowerQuery, contentPadding),
       };
     });
-
-    return result;
   };
+
+  private extractSnippet(
+    source: string,
+    searchTerm: string,
+    padding: number
+  ): string {
+    const lowerSource: string = source.toLowerCase();
+    const index: number = lowerSource.indexOf(searchTerm);
+
+    if (index === -1) {
+      return source;
+    }
+
+    const start: number = Math.max(index - padding, 0);
+    const end: number = Math.min(
+      index + searchTerm.length + padding,
+      source.length
+    );
+
+    let snippet: string = source.substring(start, end);
+
+    if (start > 0) {
+      snippet = '...' + snippet;
+    }
+    if (end < source.length) {
+      snippet = snippet + '...';
+    }
+
+    return snippet;
+  }
 }

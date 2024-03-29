@@ -1,6 +1,13 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { TokenIndexer } from 'morgan';
 import { blue, green, red, yellow } from 'cli-color';
+import { plainToInstance } from 'class-transformer';
+import { validateOrReject } from 'class-validator';
+import { CommentDto } from '../entities/dto/comment.dto';
+import { FeedDto } from '../entities/dto/feed.dto';
+import { FeedSymbolDto } from '../entities/dto/feedSymbol.dto';
+import { TempFeedDto } from '../entities/dto/tempFeed.dto';
+import { UserDto } from '../entities/dto/user.dto';
 
 export class CustomError extends Error {
   status: number;
@@ -8,6 +15,24 @@ export class CustomError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+export type DtoClassType =
+  | typeof CommentDto
+  | typeof FeedDto
+  | typeof FeedSymbolDto
+  | typeof TempFeedDto
+  | typeof UserDto;
+
+export async function transformAndValidateDTO<T extends object>(
+  cls: DtoClassType,
+  plain: object
+): Promise<T> {
+  const instance: T = plainToInstance(cls as any, plain);
+  await validateOrReject(instance).catch(errors => {
+    throw { status: 500, message: errors[0].constraints };
+  });
+  return instance;
 }
 
 // TODO 아래 함수들 모두 Class-static method로 변경

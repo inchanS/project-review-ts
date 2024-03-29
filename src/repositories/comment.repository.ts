@@ -16,9 +16,6 @@ export class CommentRepository extends Repository<Comment> {
   }
 
   async getCommentList(id: number): Promise<Comment[]> {
-    // TODO 무한대댓글 만들기
-
-    // FIXME 대댓글 정렬이 DESC이다? ASC로 고쳐야한다.
     return await this.createQueryBuilder('comment')
       .withDeleted()
       .addSelect(['user.id', 'user.nickname', 'user.email'])
@@ -74,12 +71,6 @@ export class CommentRepository extends Repository<Comment> {
       where: { user: { id: userId } },
       withDeleted: true,
     });
-
-    // return await this.createQueryBuilder('comment')
-    //   .select(['COUNT(comment.id) as commentCnt', 'comment.user'])
-    //   .where('comment.user = :userId', { userId: userId })
-    //   .withDeleted()
-    //   .getRawOne();
   }
 
   async getCommentListByUserId(

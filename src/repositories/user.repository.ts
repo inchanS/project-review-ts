@@ -33,13 +33,4 @@ export class UserRepository extends Repository<User> {
         .getOne()
     );
   }
-
-  async findByNickname(nickname: string): Promise<User | null> {
-    return this.createQueryBuilder('user')
-      .withDeleted()
-      .where('nickname = :nickname', {
-        nickname,
-      })
-      .getOne();
-  }
 }
