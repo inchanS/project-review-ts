@@ -18,9 +18,12 @@ export class SymbolService {
   private feedRepository: FeedRepository;
   private feedSymbolRepository: FeedSymbolRepository;
 
-  constructor() {
-    this.feedRepository = FeedRepository.getInstance();
-    this.feedSymbolRepository = FeedSymbolRepository.getInstance();
+  constructor(
+    feedRepository: FeedRepository,
+    feedSymbolRepository: FeedSymbolRepository
+  ) {
+    this.feedRepository = feedRepository;
+    this.feedSymbolRepository = feedSymbolRepository;
   }
   public getSymbols = async (): Promise<Symbol[]> =>
     await dataSource.getRepository(Symbol).find({

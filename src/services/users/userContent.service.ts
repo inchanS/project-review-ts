@@ -21,11 +21,16 @@ export class UserContentService {
   private commentRepository: CommentRepository;
   private feedSymbolRepository: FeedSymbolRepository;
 
-  constructor() {
-    this.feedRepository = FeedRepository.getInstance();
-    this.feedListRepository = FeedListRepository.getInstance();
-    this.commentRepository = CommentRepository.getInstance();
-    this.feedSymbolRepository = FeedSymbolRepository.getInstance();
+  constructor(
+    feedRepository: FeedRepository,
+    feedListRepository: FeedListRepository,
+    commentRepository: CommentRepository,
+    feedSymbolRepository: FeedSymbolRepository
+  ) {
+    this.feedRepository = feedRepository;
+    this.feedListRepository = feedListRepository;
+    this.commentRepository = commentRepository;
+    this.feedSymbolRepository = feedSymbolRepository;
   }
 
   // 유저 정보 확인시 유저의 게시글 조회

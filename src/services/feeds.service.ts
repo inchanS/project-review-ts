@@ -24,11 +24,16 @@ export class FeedsService {
   private uploadFileService: UploadFileService;
   private uploadService: UploadService;
 
-  constructor() {
-    this.feedRepository = FeedRepository.getInstance();
-    this.feedListRepository = FeedListRepository.getInstance();
-    this.uploadFileService = new UploadFileService();
-    this.uploadService = new UploadService();
+  constructor(
+    feedRepository: FeedRepository,
+    feedListRepository: FeedListRepository,
+    uploadFileService: UploadFileService,
+    uploadService: UploadService
+  ) {
+    this.feedRepository = feedRepository;
+    this.feedListRepository = feedListRepository;
+    this.uploadFileService = uploadFileService;
+    this.uploadService = uploadService;
   }
 
   // 임시게시글 및 정식 게시글 저장

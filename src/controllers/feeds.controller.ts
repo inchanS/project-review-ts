@@ -6,6 +6,7 @@ import { FeedsService } from '../services/feeds.service';
 import { CustomError } from '../utils/util';
 import { Estimation } from '../entities/estimation.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
+import { createFeedsService } from '../utils/serviceFactory';
 
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
@@ -187,4 +188,4 @@ export class FeedsController {
   };
 }
 
-export default new FeedsController(new FeedsService());
+export default new FeedsController(createFeedsService());

@@ -4,8 +4,8 @@ import { Category } from '../entities/category.entity';
 export class CategoriesService {
   private repository: CategoriesRepository;
 
-  constructor() {
-    this.repository = CategoriesRepository.getInstance();
+  constructor(categoriesRepository: CategoriesRepository) {
+    this.repository = categoriesRepository;
   }
 
   getCategoriesList = async (): Promise<Category[]> => {

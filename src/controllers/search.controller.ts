@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { SearchService } from '../services/search.service';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
+import { createSearchService } from '../utils/serviceFactory';
 
 class SearchController {
   constructor(private searchService: SearchService) {}
@@ -31,4 +32,4 @@ class SearchController {
   };
 }
 
-export default new SearchController(new SearchService());
+export default new SearchController(createSearchService());

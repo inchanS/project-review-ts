@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CategoriesService } from '../services/categories.service';
 import { Category } from '../entities/category.entity';
+import { createCategoriesService } from '../utils/serviceFactory';
 
 class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
@@ -11,4 +12,4 @@ class CategoriesController {
   };
 }
 
-export default new CategoriesController(new CategoriesService());
+export default new CategoriesController(createCategoriesService());

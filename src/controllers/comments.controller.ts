@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CommentDto } from '../entities/dto/comment.dto';
 import { CommentsService } from '../services/comments.service';
 import { Comment } from '../entities/comment.entity';
+import { createCommentsService } from '../utils/serviceFactory';
 
 class CommentsController {
   constructor(private commentsService: CommentsService) {}
@@ -61,4 +62,4 @@ class CommentsController {
   };
 }
 
-export default new CommentsController(new CommentsService());
+export default new CommentsController(createCommentsService());

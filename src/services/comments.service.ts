@@ -10,9 +10,12 @@ export class CommentsService {
   private feedRepository: FeedRepository;
   private commentRepository: CommentRepository;
 
-  constructor() {
-    this.feedRepository = FeedRepository.getInstance();
-    this.commentRepository = CommentRepository.getInstance();
+  constructor(
+    feedRepository: FeedRepository,
+    commentRepository: CommentRepository
+  ) {
+    this.feedRepository = feedRepository;
+    this.commentRepository = commentRepository;
   }
 
   public getCommentList = async (

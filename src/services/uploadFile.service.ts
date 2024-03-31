@@ -7,8 +7,8 @@ import { CustomError } from '../utils/util';
 export class UploadFileService {
   private uploadService: UploadService;
 
-  constructor() {
-    this.uploadService = new UploadService();
+  constructor(uploadService: UploadService) {
+    this.uploadService = uploadService;
   }
 
   private generateListOfLinksForDeletableFiles = async (
