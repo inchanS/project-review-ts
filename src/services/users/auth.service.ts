@@ -12,9 +12,12 @@ export class AuthService {
   private userRepository: UserRepository;
   private validatorService: ValidatorService;
 
-  constructor() {
-    this.validatorService = new ValidatorService();
-    this.userRepository = UserRepository.getInstance();
+  constructor(
+    validatorService: ValidatorService,
+    userRepository: UserRepository
+  ) {
+    this.validatorService = validatorService;
+    this.userRepository = userRepository;
   }
 
   public signUp = async (userInfo: UserDto): Promise<void> => {

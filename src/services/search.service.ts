@@ -9,9 +9,12 @@ export class SearchService {
   private feedRepository: FeedRepository;
   private feedListRepository: FeedListRepository;
 
-  constructor() {
-    this.feedRepository = FeedRepository.getInstance();
-    this.feedListRepository = FeedListRepository.getInstance();
+  constructor(
+    feedRepository: FeedRepository,
+    feedListRepository: FeedListRepository
+  ) {
+    this.feedRepository = feedRepository;
+    this.feedListRepository = feedListRepository;
   }
   public searchContent = async (query: string, page: Pagination) => {
     const validatedPage: Pagination | undefined = PageValidator.validate(

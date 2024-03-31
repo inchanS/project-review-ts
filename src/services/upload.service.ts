@@ -1,17 +1,17 @@
 import sharp from 'sharp';
 import { DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { s3 } from '../middleware/uploadToS3';
-import dataSource from '../repositories/data-source';
 import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
 import { QueryRunner, Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
+import { UploadFilesRepository } from '../repositories/uploadFiles.repository';
 
 export class UploadService {
   private uploadFilesRepository: Repository<UploadFiles>;
 
-  constructor() {
-    this.uploadFilesRepository = dataSource.getRepository(UploadFiles);
+  constructor(uploadFilesRepository: UploadFilesRepository) {
+    this.uploadFilesRepository = uploadFilesRepository;
   }
 
   // module 'sharp'은 모킹하기가 너무 까다롭고 문제가 생기며 코드가 지저분해진다.

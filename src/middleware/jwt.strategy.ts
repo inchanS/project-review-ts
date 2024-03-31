@@ -2,6 +2,7 @@ import { NextFunction, Request } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { ValidatorService } from '../services/users/validator.service';
 import { CustomError } from '../utils/util';
+import { createValidateService } from '../utils/serviceFactory';
 
 class TokenDecoder {
   public static async decodeToken(token: string): Promise<JwtPayload | string> {
@@ -34,7 +35,7 @@ class AuthValidator {
   constructor(req: Request, next: NextFunction) {
     this.req = req;
     this.next = next;
-    this.validatorService = new ValidatorService();
+    this.validatorService = createValidateService();
   }
 
   // 토큰이 없으면 에러를 반환하는 유효성 검사 함수

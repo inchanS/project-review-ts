@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserDto } from '../../entities/dto/user.dto';
 import { AuthService } from '../../services/users/auth.service';
+import { createAuthService } from '../../utils/serviceFactory';
 
 class AuthController {
   constructor(private authService: AuthService) {}
@@ -33,4 +34,4 @@ class AuthController {
   };
 }
 
-export default new AuthController(new AuthService());
+export default new AuthController(createAuthService());

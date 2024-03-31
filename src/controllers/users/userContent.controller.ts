@@ -6,6 +6,7 @@ import {
   FeedListByUserId,
   FeedSymbolListByUserId,
 } from '../../types/user';
+import { createUserContentService } from '../../utils/serviceFactory';
 
 class UserContentController {
   constructor(private userContentService: UserContentService) {}
@@ -74,4 +75,4 @@ class UserContentController {
   };
 }
 
-export default new UserContentController(new UserContentService());
+export default new UserContentController(createUserContentService());

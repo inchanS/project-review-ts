@@ -7,6 +7,7 @@ import {
 } from '../types/feedSymbol';
 import { SymbolService } from '../services/symbol.service';
 import { Symbol } from '../entities/symbol.entity';
+import { createSymbolService } from '../utils/serviceFactory';
 
 class SymbolsController {
   constructor(private symbolService: SymbolService) {}
@@ -68,4 +69,4 @@ class SymbolsController {
   };
 }
 
-export default new SymbolsController(new SymbolService());
+export default new SymbolsController(createSymbolService());

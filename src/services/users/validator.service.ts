@@ -6,8 +6,8 @@ import { EntityNotFoundError } from 'typeorm';
 export class ValidatorService {
   private userRepository: UserRepository;
 
-  constructor() {
-    this.userRepository = UserRepository.getInstance();
+  constructor(userRepository: UserRepository) {
+    this.userRepository = userRepository;
   }
 
   public validateUserInfo = async (targetUserId: number): Promise<User> => {

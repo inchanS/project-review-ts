@@ -21,12 +21,18 @@ export class UserService {
   private userContentService: UserContentService;
   private validatorService: ValidatorService;
 
-  constructor() {
-    this.userRepository = UserRepository.getInstance();
-    this.feedSymbolRepository = FeedSymbolRepository.getInstance();
-    this.uploadFileService = new UploadFileService();
-    this.userContentService = new UserContentService();
-    this.validatorService = new ValidatorService();
+  constructor(
+    userRepository: UserRepository,
+    feedSymbolRepository: FeedSymbolRepository,
+    uploadFileservice: UploadFileService,
+    userContentService: UserContentService,
+    validatorService: ValidatorService
+  ) {
+    this.userRepository = userRepository;
+    this.feedSymbolRepository = feedSymbolRepository;
+    this.uploadFileService = uploadFileservice;
+    this.userContentService = userContentService;
+    this.validatorService = validatorService;
   }
 
   public updateUserInfo = async (
