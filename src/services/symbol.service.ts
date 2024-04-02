@@ -4,8 +4,8 @@ import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { plainToInstance } from 'class-transformer';
 import { FeedSymbolDto } from '../entities/dto/feedSymbol.dto';
 import { validateOrReject } from 'class-validator';
-import { FeedRepository } from '../repositories/feed.repository';
-import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
+import { FeedCustomRepository } from '../repositories/feed.customRepository';
+import { FeedSymbolCustomRepository } from '../repositories/feedSymbol.customRepository';
 import {
   AddAndUpdateSymbolToFeedResult,
   CheckSymbolResult,
@@ -13,17 +13,15 @@ import {
 } from '../types/feedSymbol';
 import { CustomError } from '../utils/util';
 import { Feed } from '../entities/feed.entity';
+import { EntityNotFoundError } from 'typeorm';
 
 export class SymbolService {
-  private feedRepository: FeedRepository;
-  private feedSymbolRepository: FeedSymbolRepository;
-
   constructor(
-    feedRepository: FeedRepository,
-    feedSymbolRepository: FeedSymbolRepository
+    private feedCustomRepository: FeedCustomRepository,
+    private feedSymbolCustomRepository: FeedSymbolCustomRepository
   ) {
-    this.feedRepository = feedRepository;
-    this.feedSymbolRepository = feedSymbolRepository;
+    this.feedCustomRepository = feedCustomRepository;
+    this.feedSymbolCustomRepository = feedSymbolCustomRepository;
   }
   public getSymbols = async (): Promise<Symbol[]> =>
     await dataSource.getRepository(Symbol).find({
@@ -38,7 +36,7 @@ export class SymbolService {
     await this.validateFeedExistence(feedId);
 
     const result: FeedSymbolCount[] =
-      await this.feedRepository.getFeedSymbolCount(feedId);
+      await this.feedCustomRepository.getFeedSymbolCount(feedId);
 
     return result.map(
       (item: FeedSymbolCount): FeedSymbolCount => ({
@@ -53,7 +51,7 @@ export class SymbolService {
     userId: number
   ): Promise<CheckSymbolResult> => {
     const result: FeedSymbol | null =
-      await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
+      await this.feedSymbolCustomRepository.getFeedSymbol(feedId, userId);
 
     return {
       checkValue: !!result,
@@ -104,7 +102,7 @@ export class SymbolService {
       userId
     );
 
-    await this.feedSymbolRepository.deleteFeedSymbol(feedSymbol.id);
+    await this.feedSymbolCustomRepository.deleteFeedSymbol(feedSymbol.id);
 
     const message: string = `SYMBOL_REMOVED_FROM_${feedId}_FEED`;
     const result: FeedSymbolCount[] = await this.getFeedSymbolCount(feedId);
@@ -112,11 +110,15 @@ export class SymbolService {
   };
 
   private async validateFeedExistence(feedId: number): Promise<Feed> {
-    const feed: Feed = await this.feedRepository.getFeed(feedId);
-    if (!feed) {
-      throw new CustomError(404, 'INVALID_FEED');
-    }
-    return feed;
+    return await this.feedCustomRepository
+      .getFeed(feedId)
+      .catch((err: Error) => {
+        if (err instanceof EntityNotFoundError) {
+          throw new CustomError(404, `NOT_FOUND_FEED`);
+        } else {
+          throw new CustomError(500, `${err.message}`);
+        }
+      });
   }
 
   private async validateSymbolExistence(symbolId: number): Promise<Symbol> {
@@ -135,7 +137,7 @@ export class SymbolService {
       feedSymbolInfo
     );
 
-    await this.feedSymbolRepository.upsertFeedSymbol(newFeedSymbol);
+    await this.feedSymbolCustomRepository.upsertFeedSymbol(newFeedSymbol);
   }
 
   private createResponseMessage(
@@ -159,7 +161,7 @@ export class SymbolService {
     feedSymbolInfo: FeedSymbolDto
   ): Promise<boolean> {
     const existingSymbol: FeedSymbol | null =
-      await this.feedSymbolRepository.getFeedSymbol(
+      await this.feedSymbolCustomRepository.getFeedSymbol(
         feedSymbolInfo.feed,
         feedSymbolInfo.user
       );
@@ -172,7 +174,7 @@ export class SymbolService {
     userId: number
   ): Promise<FeedSymbol> {
     const feedSymbol: FeedSymbol | null =
-      await this.feedSymbolRepository.getFeedSymbol(feedId, userId);
+      await this.feedSymbolCustomRepository.getFeedSymbol(feedId, userId);
     if (!feedSymbol) {
       throw new CustomError(404, `FEED_SYMBOL_NOT_FOUND`);
     }

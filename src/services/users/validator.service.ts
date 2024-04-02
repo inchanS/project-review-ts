@@ -1,12 +1,14 @@
-import { UserRepository } from '../../repositories/user.repository';
+import { UserCustomRepository } from '../../repositories/user.customRepository';
 import { CustomError } from '../../utils/util';
 import { User } from '../../entities/users.entity';
-import { EntityNotFoundError } from 'typeorm';
+import { EntityNotFoundError, Repository } from 'typeorm';
 
 export class ValidatorService {
-  private userRepository: UserRepository;
-
-  constructor(userRepository: UserRepository) {
+  constructor(
+    private userCustomRepository: UserCustomRepository,
+    private userRepository: Repository<User>
+  ) {
+    this.userCustomRepository = userCustomRepository;
     this.userRepository = userRepository;
   }
 
@@ -42,9 +44,8 @@ export class ValidatorService {
     email: string
   ): Promise<{ message: string }> => {
     this.validateUserEmail(email);
-    const existingUser: User | null = await this.userRepository.findByEmail(
-      email
-    );
+    const existingUser: User | null =
+      await this.userCustomRepository.findByEmail(email);
 
     if (existingUser === null) {
       return { message: 'AVAILABLE_EMAIL' };

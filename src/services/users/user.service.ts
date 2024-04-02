@@ -8,31 +8,24 @@ import { Comment } from '../../entities/comment.entity';
 import { UserContentService } from './userContent.service';
 import { UploadFileService } from '../uploadFile.service';
 import { ValidatorService } from './validator.service';
-import { UserRepository } from '../../repositories/user.repository';
-import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
+import { FeedSymbolCustomRepository } from '../../repositories/feedSymbol.customRepository';
 import { CustomError } from '../../utils/util';
-import { QueryRunner } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { CommentListByUserId, FeedListByUserId } from '../../types/user';
 
 export class UserService {
-  private userRepository: UserRepository;
-  private feedSymbolRepository: FeedSymbolRepository;
-  private uploadFileService: UploadFileService;
-  private userContentService: UserContentService;
-  private validatorService: ValidatorService;
-
   constructor(
-    userRepository: UserRepository,
-    feedSymbolRepository: FeedSymbolRepository,
-    uploadFileservice: UploadFileService,
-    userContentService: UserContentService,
-    validatorService: ValidatorService
+    private feedSymbolCustomRepository: FeedSymbolCustomRepository,
+    private uploadFileService: UploadFileService,
+    private userContentService: UserContentService,
+    private validatorService: ValidatorService,
+    private userRepository: Repository<User>
   ) {
-    this.userRepository = userRepository;
-    this.feedSymbolRepository = feedSymbolRepository;
-    this.uploadFileService = uploadFileservice;
+    this.feedSymbolCustomRepository = feedSymbolCustomRepository;
+    this.uploadFileService = uploadFileService;
     this.userContentService = userContentService;
     this.validatorService = validatorService;
+    this.userRepository = userRepository;
   }
 
   public updateUserInfo = async (
@@ -94,7 +87,7 @@ export class UserService {
         includeTempFeeds: true,
       }),
       this.userContentService.findUserCommentsByUserId(userId, userId),
-      this.feedSymbolRepository.findByUserId(userId),
+      this.feedSymbolCustomRepository.findByUserId(userId),
     ]);
 
     const queryRunner: QueryRunner = dataSource.createQueryRunner();

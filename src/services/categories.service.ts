@@ -1,15 +1,13 @@
-import { CategoriesRepository } from '../repositories/categories.repository';
 import { Category } from '../entities/category.entity';
+import { Repository } from 'typeorm';
 
 export class CategoriesService {
-  private repository: CategoriesRepository;
-
-  constructor(categoriesRepository: CategoriesRepository) {
-    this.repository = categoriesRepository;
+  constructor(private categoryRepository: Repository<Category>) {
+    this.categoryRepository = categoryRepository;
   }
 
   getCategoriesList = async (): Promise<Category[]> => {
-    return await this.repository.find({
+    return await this.categoryRepository.find({
       select: ['id', 'category', 'description'],
       order: { id: 'ASC' },
     });

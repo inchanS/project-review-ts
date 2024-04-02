@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { FeedRepository } from '../repositories/feed.repository';
+import { FeedCustomRepository } from '../repositories/feed.customRepository';
 import { FeedDto } from '../entities/dto/feed.dto';
 import { TempFeedDto } from '../entities/dto/tempFeed.dto';
 import { Feed } from '../entities/feed.entity';
@@ -14,23 +14,18 @@ import {
   DtoClassType,
   transformAndValidateDTO,
 } from '../utils/util';
-import { FeedListRepository } from '../repositories/feedList.repository';
+import { FeedListCustomRepository } from '../repositories/feedList.customRepository';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { PageValidator } from '../utils/pageValidator';
 
 export class FeedsService {
-  private feedRepository: FeedRepository;
-  private feedListRepository: FeedListRepository;
-  private uploadFileService: UploadFileService;
-  private uploadService: UploadService;
-
   constructor(
-    feedRepository: FeedRepository,
-    feedListRepository: FeedListRepository,
-    uploadFileService: UploadFileService,
-    uploadService: UploadService
+    private feedCustomRepository: FeedCustomRepository,
+    private feedListRepository: FeedListCustomRepository,
+    private uploadFileService: UploadFileService,
+    private uploadService: UploadService
   ) {
-    this.feedRepository = feedRepository;
+    this.feedCustomRepository = feedCustomRepository;
     this.feedListRepository = feedListRepository;
     this.uploadFileService = uploadFileService;
     this.uploadService = uploadService;
@@ -100,7 +95,7 @@ export class FeedsService {
     options?: FeedOption
   ): Promise<Feed | undefined> => {
     // typeORM에서 제공하는 EntityNotFoundError를 사용하여 존재하지 않거나 삭제된 feedId에 대한 에러처리
-    const feed: Feed | void = await this.feedRepository
+    const feed: Feed | void = await this.feedCustomRepository
       .getFeed(feedId, options)
       .catch((err: Error): void => {
         if (err instanceof EntityNotFoundError) {
@@ -120,7 +115,7 @@ export class FeedsService {
       // FrontEnd에서 캐싱으로 피드를 불러오게 되면 불필요한 조회수 증가를 막을 수 있다.
       // 등록된 정식 게시글의 경우 호출시 조회수 +1 증가
       if (feed.status.id === 1) {
-        await this.feedRepository.addViewCount(feedId);
+        await this.feedCustomRepository.addViewCount(feedId);
       }
       return feed;
     }
@@ -170,7 +165,7 @@ export class FeedsService {
     //  지금와서 바꾸자니 프론트엔드에서도 다 반영해야하기에 일단 놔두고 있다.
     if (item instanceof Feed) {
       updatedAt = item.updated_at.toString().substring(2);
-    } else if (item instanceof FeedList) {
+    } else {
       updatedAt = item.updatedAt.toString().substring(2);
     }
 
@@ -198,15 +193,16 @@ export class FeedsService {
 
     try {
       const newFeedInstance: Feed = plainToInstance(Feed, feedInfo);
-      const newFeed: Feed = await queryRunner.manager
-        .withRepository(this.feedRepository)
-        .createFeed(newFeedInstance, queryRunner);
+      const newFeed: Feed = await this.feedCustomRepository.createFeed(
+        newFeedInstance,
+        queryRunner
+      );
 
       await this.handleFileOperations(queryRunner, newFeed, fileLinks);
 
       await queryRunner.commitTransaction();
 
-      return await this.feedRepository.getFeed(newFeed.id, options);
+      return await this.feedCustomRepository.getFeed(newFeed.id, options);
     } catch (err: any) {
       await queryRunner.rollbackTransaction();
 
@@ -266,7 +262,7 @@ export class FeedsService {
     userId: number,
     options: FeedOption | undefined
   ): Promise<Feed> => {
-    const originFeed: Feed = await this.feedRepository
+    const originFeed: Feed = await this.feedCustomRepository
       .getFeed(feedId, options)
       .catch((err: Error) => {
         if (err instanceof EntityNotFoundError) {
@@ -276,7 +272,7 @@ export class FeedsService {
         }
       });
 
-    if (originFeed.user.id !== userId) {
+    if (originFeed && originFeed.user.id !== userId) {
       throw new CustomError(403, 'ONLY_THE_AUTHOR_CAN_ACCESS');
     }
 
@@ -328,7 +324,7 @@ export class FeedsService {
 
       await queryRunner.commitTransaction();
 
-      return await this.feedRepository.getFeed(originFeed.id, {
+      return await this.feedCustomRepository.getFeed(originFeed.id, {
         isAll: true,
       });
     } catch (err: any) {

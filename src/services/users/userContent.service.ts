@@ -1,9 +1,9 @@
 // 유저 정보 찾기시 유저 정보의 확인
-import { FeedRepository } from '../../repositories/feed.repository';
-import { CommentRepository } from '../../repositories/comment.repository';
-import { FeedSymbolRepository } from '../../repositories/feedSymbol.repository';
+import { FeedCustomRepository } from '../../repositories/feed.customRepository';
+import { CommentCustomRepository } from '../../repositories/comment.customRepository';
+import { FeedSymbolCustomRepository } from '../../repositories/feedSymbol.customRepository';
 import { CustomError } from '../../utils/util';
-import { FeedListRepository } from '../../repositories/feedList.repository';
+import { FeedListCustomRepository } from '../../repositories/feedList.customRepository';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import {
@@ -16,16 +16,11 @@ import { CommentFormatter } from '../../utils/commentFormatter';
 import { PageValidator } from '../../utils/pageValidator';
 
 export class UserContentService {
-  private feedRepository: FeedRepository;
-  private feedListRepository: FeedListRepository;
-  private commentRepository: CommentRepository;
-  private feedSymbolRepository: FeedSymbolRepository;
-
   constructor(
-    feedRepository: FeedRepository,
-    feedListRepository: FeedListRepository,
-    commentRepository: CommentRepository,
-    feedSymbolRepository: FeedSymbolRepository
+    private feedRepository: FeedCustomRepository,
+    private feedListRepository: FeedListCustomRepository,
+    private commentRepository: CommentCustomRepository,
+    private feedSymbolRepository: FeedSymbolCustomRepository
   ) {
     this.feedRepository = feedRepository;
     this.feedListRepository = feedListRepository;
