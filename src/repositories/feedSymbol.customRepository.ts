@@ -1,26 +1,18 @@
 import { FeedSymbol } from '../entities/feedSymbol.entity';
-import dataSource from './data-source';
-import { Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
+import { DataSource } from 'typeorm';
 
-export class FeedSymbolRepository extends Repository<FeedSymbol> {
-  private static instance: FeedSymbolRepository;
+export class FeedSymbolCustomRepository {
+  constructor(private dataSource: DataSource) {}
 
-  private constructor() {
-    super(FeedSymbol, dataSource.createEntityManager());
-  }
-
-  public static getInstance(): FeedSymbolRepository {
-    if (!this.instance) {
-      this.instance = new this();
-    }
-    return this.instance;
+  private get feedSymbolRepository() {
+    return this.dataSource.getRepository(FeedSymbol);
   }
   async getFeedSymbol(
     feedId: number,
     userId: number
   ): Promise<FeedSymbol | null> {
-    return await this.findOne({
+    return await this.feedSymbolRepository.findOne({
       loadRelationIds: true,
       where: {
         feed: { id: feedId },
@@ -31,13 +23,14 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
 
   // 사용자별 좋아요 총 개수 가져오기
   async getFeedSymbolCountByUserId(userId: number) {
-    return await this.countBy({
+    return await this.feedSymbolRepository.countBy({
       user: { id: userId },
     });
   }
 
   async getFeedSymbolsByUserId(userId: number, page: Pagination | undefined) {
-    let queryBuilder = this.createQueryBuilder('feedSymbol')
+    let queryBuilder = this.feedSymbolRepository
+      .createQueryBuilder('feedSymbol')
       .select([
         'feedSymbol.id',
         'feedSymbol.created_at',
@@ -65,23 +58,25 @@ export class FeedSymbolRepository extends Repository<FeedSymbol> {
   }
 
   async upsertFeedSymbol(feedSymbolInfo: FeedSymbol): Promise<void> {
-    await this.upsert(feedSymbolInfo, ['feed', 'user']).catch((err: Error) => {
-      if (
-        err.message ===
-        'Cannot update entity because entity id is not set in the entity.'
-      ) {
-        // 업데이트 할 내용이 기존의 내용과 다르지 않다는 에러메세지 처리
-        throw new CustomError(400, 'NOT_CHANGED_FEED_SYMBOL');
-      }
-    });
+    await this.feedSymbolRepository
+      .upsert(feedSymbolInfo, ['feed', 'user'])
+      .catch((err: Error) => {
+        if (
+          err.message ===
+          'Cannot update entity because entity id is not set in the entity.'
+        ) {
+          // 업데이트 할 내용이 기존의 내용과 다르지 않다는 에러메세지 처리
+          throw new CustomError(400, 'NOT_CHANGED_FEED_SYMBOL');
+        }
+      });
   }
 
   async deleteFeedSymbol(feedSymbolId: number): Promise<void> {
-    await this.delete(feedSymbolId);
+    await this.feedSymbolRepository.delete(feedSymbolId);
   }
 
   async findByUserId(userId: number): Promise<FeedSymbol[]> {
-    return await this.find({
+    return await this.feedSymbolRepository.find({
       loadRelationIds: true,
       where: { user: { id: userId } },
     });

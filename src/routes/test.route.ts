@@ -1,29 +1,31 @@
 import { Request, Response, Router } from 'express';
-import { UserRepository } from '../repositories/user.repository';
-import { CommentRepository } from '../repositories/comment.repository';
-import { FeedRepository } from '../repositories/feed.repository';
-import { FeedListRepository } from '../repositories/feedList.repository';
-import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
+import { UserCustomRepository } from '../repositories/user.customRepository';
+import { CommentCustomRepository } from '../repositories/comment.customRepository';
+import { FeedCustomRepository } from '../repositories/feed.customRepository';
+import { FeedListCustomRepository } from '../repositories/feedList.customRepository';
+import { FeedSymbolCustomRepository } from '../repositories/feedSymbol.customRepository';
 
 const router: Router = Router();
 
 // 레포지토리의 단일인스턴스 확인 함수
-function isSingleton<T>(repository: { getInstance(): T }): string {
-  const instance1: T = repository.getInstance();
-  const instance2: T = repository.getInstance();
-  const isInstanceEquel: boolean = instance1 === instance2;
-  const message: string = 'only instance is ';
-  const result: string = message + isInstanceEquel;
-
-  return result;
+function isInstanceValid<T>(repository: T): string {
+  const isInstanceValid: boolean =
+    repository !== undefined && repository !== null;
+  return 'Instance is valid: ' + isInstanceValid;
 }
 
 router.get('/singletons', (_req: Request, res: Response) => {
-  const testUserRepository = isSingleton(UserRepository);
-  const testFeedRepository = isSingleton(FeedRepository);
-  const testFeedListRepository = isSingleton(FeedListRepository);
-  const testCommentRepository = isSingleton(CommentRepository);
-  const testFeedsymbolRepository = isSingleton(FeedSymbolRepository);
+  const testUserRepository: string = isInstanceValid(UserCustomRepository);
+  const testFeedRepository: string = isInstanceValid(FeedCustomRepository);
+  const testFeedListRepository: string = isInstanceValid(
+    FeedListCustomRepository
+  );
+  const testCommentRepository: string = isInstanceValid(
+    CommentCustomRepository
+  );
+  const testFeedsymbolRepository: string = isInstanceValid(
+    FeedSymbolCustomRepository
+  );
 
   res.status(200).json({
     testUserRepository,

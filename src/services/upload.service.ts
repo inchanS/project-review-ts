@@ -5,12 +5,9 @@ import { UploadFiles } from '../entities/uploadFiles.entity';
 import crypto from 'crypto';
 import { QueryRunner, Repository } from 'typeorm';
 import { CustomError } from '../utils/util';
-import { UploadFilesRepository } from '../repositories/uploadFiles.repository';
 
 export class UploadService {
-  private uploadFilesRepository: Repository<UploadFiles>;
-
-  constructor(uploadFilesRepository: UploadFilesRepository) {
+  constructor(private uploadFilesRepository: Repository<UploadFiles>) {
     this.uploadFilesRepository = uploadFilesRepository;
   }
 

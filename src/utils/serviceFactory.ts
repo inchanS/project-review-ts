@@ -3,105 +3,117 @@ import { AuthService } from '../services/users/auth.service';
 import { UserService } from '../services/users/user.service';
 import { UploadFileService } from '../services/uploadFile.service';
 import { UserContentService } from '../services/users/userContent.service';
-import { UserRepository } from '../repositories/user.repository';
-import { FeedSymbolRepository } from '../repositories/feedSymbol.repository';
-import { FeedRepository } from '../repositories/feed.repository';
-import { FeedListRepository } from '../repositories/feedList.repository';
-import { CommentRepository } from '../repositories/comment.repository';
+import { UserCustomRepository } from '../repositories/user.customRepository';
 import { CategoriesService } from '../services/categories.service';
-import { CategoriesRepository } from '../repositories/categories.repository';
 import { CommentsService } from '../services/comments.service';
 import { FeedsService } from '../services/feeds.service';
 import { UploadService } from '../services/upload.service';
 import { SearchService } from '../services/search.service';
 import { SymbolService } from '../services/symbol.service';
-import { UploadFilesRepository } from '../repositories/uploadFiles.repository';
+import { Repository } from 'typeorm';
+import dataSource from '../repositories/data-source';
+import { UploadFiles } from '../entities/uploadFiles.entity';
+import { CommentCustomRepository } from '../repositories/comment.customRepository';
+import { FeedCustomRepository } from '../repositories/feed.customRepository';
+import { FeedSymbolCustomRepository } from '../repositories/feedSymbol.customRepository';
+import { FeedListCustomRepository } from '../repositories/feedList.customRepository';
+import { User } from '../entities/users.entity';
+import { Category } from '../entities/category.entity';
+import { Feed } from '../entities/feed.entity';
+import { Comment } from '../entities/comment.entity';
 
 export function createAuthService(): AuthService {
   const validatorService: ValidatorService = createValidateService();
-  const userRepository: UserRepository = UserRepository.getInstance();
-  return new AuthService(validatorService, userRepository);
+  const userCustomRepository: UserCustomRepository = new UserCustomRepository(
+    dataSource
+  );
+  const userRepository: Repository<User> = dataSource.getRepository(User);
+
+  return new AuthService(
+    validatorService,
+    userCustomRepository,
+    userRepository
+  );
 }
 
 export function createUserService(): UserService {
-  const userRepository: UserRepository = UserRepository.getInstance();
-  const feedSymbolRepository: FeedSymbolRepository =
-    FeedSymbolRepository.getInstance();
   const uploadFileService: UploadFileService = createUploadFileService();
   const userContentService: UserContentService = createUserContentService();
   const validatorService: ValidatorService = createValidateService();
+  const userRepository: Repository<User> = dataSource.getRepository(User);
   return new UserService(
-    userRepository,
-    feedSymbolRepository,
+    new FeedSymbolCustomRepository(dataSource),
     uploadFileService,
     userContentService,
-    validatorService
+    validatorService,
+    userRepository
   );
 }
 
 export function createUserContentService(): UserContentService {
-  const feedRepository: FeedRepository = FeedRepository.getInstance();
-  const feedListRepository: FeedListRepository =
-    FeedListRepository.getInstance();
-  const commentRepository: CommentRepository = CommentRepository.getInstance();
-  const feedSymbolRepository: FeedSymbolRepository =
-    FeedSymbolRepository.getInstance();
   return new UserContentService(
-    feedRepository,
-    feedListRepository,
-    commentRepository,
-    feedSymbolRepository
+    new FeedCustomRepository(dataSource),
+    new FeedListCustomRepository(dataSource),
+    new CommentCustomRepository(dataSource),
+    new FeedSymbolCustomRepository(dataSource)
   );
 }
 
 export function createValidateService(): ValidatorService {
-  const userRepository: UserRepository = UserRepository.getInstance();
-  return new ValidatorService(userRepository);
+  const userCustomRepository: UserCustomRepository = new UserCustomRepository(
+    dataSource
+  );
+  const userRepository: Repository<User> = dataSource.getRepository(User);
+  return new ValidatorService(userCustomRepository, userRepository);
 }
 
 export function createCategoriesService(): CategoriesService {
-  const categoriesRepository: CategoriesRepository =
-    CategoriesRepository.getInstance();
-  return new CategoriesService(categoriesRepository);
+  const categoryRepository: Repository<Category> =
+    dataSource.getRepository(Category);
+  return new CategoriesService(categoryRepository);
 }
 
 export function createCommentsService(): CommentsService {
-  const feedRepository: FeedRepository = FeedRepository.getInstance();
-  const commentRepository: CommentRepository = CommentRepository.getInstance();
-  return new CommentsService(feedRepository, commentRepository);
+  const commentCustomRepository: CommentCustomRepository =
+    new CommentCustomRepository(dataSource);
+  const feedRepository: Repository<Feed> = dataSource.getRepository(Feed);
+  const commentRepository: Repository<Comment> =
+    dataSource.getRepository(Comment);
+  return new CommentsService(
+    commentCustomRepository,
+    feedRepository,
+    commentRepository
+  );
 }
 
 export function createFeedsService(): FeedsService {
-  const feedRepository: FeedRepository = FeedRepository.getInstance();
-  const feedListRepository: FeedListRepository =
-    FeedListRepository.getInstance();
   const uploadFileService: UploadFileService = createUploadFileService();
   const uploadService: UploadService = createUploadService();
   return new FeedsService(
-    feedRepository,
-    feedListRepository,
+    new FeedCustomRepository(dataSource),
+    new FeedListCustomRepository(dataSource),
     uploadFileService,
     uploadService
   );
 }
 
 export function createSearchService(): SearchService {
-  const feedRepository: FeedRepository = FeedRepository.getInstance();
-  const feedListRepository: FeedListRepository =
-    FeedListRepository.getInstance();
-  return new SearchService(feedRepository, feedListRepository);
+  const feedListCustomRepository: FeedListCustomRepository =
+    new FeedListCustomRepository(dataSource);
+  const feedRepository: Repository<Feed> = dataSource.getRepository(Feed);
+  return new SearchService(feedListCustomRepository, feedRepository);
 }
 
 export function createSymbolService(): SymbolService {
-  const feedRepository: FeedRepository = FeedRepository.getInstance();
-  const feedSymbolRepository: FeedSymbolRepository =
-    FeedSymbolRepository.getInstance();
-  return new SymbolService(feedRepository, feedSymbolRepository);
+  return new SymbolService(
+    new FeedCustomRepository(dataSource),
+    new FeedSymbolCustomRepository(dataSource)
+  );
 }
 
 export function createUploadService(): UploadService {
-  const uploadFilesRepository: UploadFilesRepository =
-    UploadFilesRepository.getInstance();
+  const uploadFilesRepository: Repository<UploadFiles> =
+    dataSource.getRepository(UploadFiles);
   return new UploadService(uploadFilesRepository);
 }
 
