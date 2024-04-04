@@ -14,7 +14,7 @@ if (process.env.NODE_ENV === 'production') {
 // api Test시 초기세팅용 마이그레이션 폴더를 따로 지정(product 마이그레이션 파일 commit history와 다르기 때문)
 const migrationsLocation =
   process.env.NODE_ENV === 'test'
-    ? '/../test/testMigrations/migrations/*.{js,ts}'
+    ? '/../tests/migrations/*.{js,ts}'
     : '/../migrations/*.{js,ts}';
 
 const dataSource: DataSource = new DataSource({
