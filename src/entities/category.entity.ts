@@ -11,12 +11,11 @@ export class Category extends Base {
   description: string;
 
   @OneToMany(() => Feed, feed => feed.category)
-  feed: Feed[];
+  feed?: Feed[];
 
-  constructor(category: string, description: string, feed: Feed[]) {
+  constructor(category: string, description: string) {
     super();
     this.category = category;
     this.description = description;
-    this.feed = feed;
   }
 }

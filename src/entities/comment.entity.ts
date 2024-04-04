@@ -27,11 +27,18 @@ export class Comment extends Base {
   @OneToMany(() => Comment, comment => comment.parent)
   children?: Comment[];
 
-  constructor(user: User, feed: Feed, comment: string, is_private: boolean) {
+  constructor(
+    user: User,
+    feed: Feed,
+    comment: string,
+    is_private: boolean,
+    parent?: Comment
+  ) {
     super();
     this.user = user;
     this.feed = feed;
     this.comment = comment;
     this.is_private = is_private;
+    this.parent = parent;
   }
 }

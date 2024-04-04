@@ -18,11 +18,10 @@ export class Estimation extends Base {
   estimation: EstimationType;
 
   @OneToMany(() => Feed, feed => feed.estimation)
-  feed: Feed[];
+  feed?: Feed[];
 
-  constructor(estimation: EstimationType, feed: Feed[]) {
+  constructor(estimation: EstimationType) {
     super();
     this.estimation = estimation;
-    this.feed = feed;
   }
 }

@@ -14,11 +14,10 @@ export class Symbol extends Base {
   symbol: symbolType;
 
   @OneToMany(() => FeedSymbol, feedSymbol => feedSymbol.symbol)
-  feedSymbol: FeedSymbol[];
+  feedSymbol?: FeedSymbol[];
 
-  constructor(symbol: symbolType, feedSymbol: FeedSymbol[]) {
+  constructor(symbol: symbolType) {
     super();
     this.symbol = symbol;
-    this.feedSymbol = feedSymbol;
   }
 }

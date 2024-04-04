@@ -17,33 +17,21 @@ export class User extends Base {
   email: string;
 
   @OneToMany(() => Comment, comment => comment.user)
-  comment: Comment[];
+  comment?: Comment[];
 
   @OneToMany(() => Feed, feed => feed.user)
-  feed: Feed[];
+  feed?: Feed[];
 
   @OneToMany(() => FeedSymbol, feedSymbol => feedSymbol.user)
-  feedSymbol: FeedSymbol[];
+  feedSymbol?: FeedSymbol[];
 
   @OneToMany(() => UploadFiles, uploadFiles => uploadFiles.user)
-  uploadFiles: UploadFiles[];
+  uploadFiles?: UploadFiles[];
 
-  constructor(
-    nickname: string,
-    password: string,
-    email: string,
-    comment: Comment[],
-    feed: Feed[],
-    feedSymbol: FeedSymbol[],
-    uploadFiles: UploadFiles[]
-  ) {
+  constructor(nickname: string, password: string, email: string) {
     super();
     this.nickname = nickname;
     this.password = password;
     this.email = email;
-    this.comment = comment;
-    this.feed = feed;
-    this.feedSymbol = feedSymbol;
-    this.uploadFiles = uploadFiles;
   }
 }
