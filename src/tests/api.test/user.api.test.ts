@@ -2,6 +2,7 @@ import dataSource from '../../repositories/data-source';
 import { User } from '../../entities/users.entity';
 import { createApp } from '../../app';
 import request from 'supertest';
+import { Response } from 'superagent';
 import { UserDto } from '../../entities/dto/user.dto';
 import bcrypt from 'bcryptjs';
 import { Feed } from '../../entities/feed.entity';
@@ -10,6 +11,7 @@ import { MakeTestClass } from '../testUtils/makeTestClass';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { Express } from 'express';
 import { MakeTestUser } from '../testUtils/makeTestUser';
+import { TestUtils } from '../testUtils/testUtils';
 
 // 전체 auth API 테스트 설명
 describe('users.auth API test', () => {
@@ -106,59 +108,41 @@ describe('users.auth API test', () => {
     });
     describe('user validator service API - checkDuplicateNickname', () => {
       test('checkDuplicateNickname - !nickname', async () => {
-        const result = await request(app).get(`/users/checknickname?nickname=`);
-
-        expect(result.status).toBe(400);
-        expect(result.body.message).toBe('NICKNAME_IS_REQUIRED');
+        await request(app)
+          .get(`/users/checknickname?nickname=`)
+          .expect(400, { message: 'NICKNAME_IS_REQUIRED' });
       });
 
       test('checkDuplicateNickname - !checkData', async () => {
-        const result = await request(app).get(
-          `/users/checknickname?nickname=${existingUser.nickname}`
-        );
-
-        expect(result.status).toBe(409);
-        expect(result.body.message).toBe(
-          `${existingUser.nickname}_ALREADY_EXISTS`
-        );
+        await request(app)
+          .get(`/users/checknickname?nickname=${existingUser.nickname}`)
+          .expect(409, { message: `${existingUser.nickname}_ALREADY_EXISTS` });
       });
 
       test('checkDuplicateNickname - success', async () => {
-        const result = await request(app).get(
-          `/users/checknickname?nickname=${newUser.nickname}`
-        );
-
-        expect(result.status).toBe(200);
-        expect(result.body.message).toBe('AVAILABLE_NICKNAME');
+        await request(app)
+          .get(`/users/checknickname?nickname=${newUser.nickname}`)
+          .expect(200, { message: 'AVAILABLE_NICKNAME' });
       });
     });
 
     describe('user validator service API - checkDuplicateEmail', () => {
       test('checkDuplicateEmail - !email', async () => {
-        const result = await request(app).get(`/users/checkemail?email=`);
-
-        expect(result.status).toBe(400);
-        expect(result.body.message).toBe('EMAIL_IS_REQUIRED');
+        await request(app)
+          .get(`/users/checkemail?email=`)
+          .expect(400, { message: 'EMAIL_IS_REQUIRED' });
       });
 
       test('checkDuplicateEmail - !checkData', async () => {
-        const result = await request(app).get(
-          `/users/checkemail?email=${existingUser.email}`
-        );
-
-        expect(result.status).toBe(409);
-        expect(result.body.message).toBe(
-          `${existingUser.email}_ALREADY_EXISTS`
-        );
+        await request(app)
+          .get(`/users/checkemail?email=${existingUser.email}`)
+          .expect(409, { message: `${existingUser.email}_ALREADY_EXISTS` });
       });
 
       test('checkDuplicateEmail - success', async () => {
-        const result = await request(app).get(
-          `/users/checkemail?email=${newUser.email}`
-        );
-
-        expect(result.status).toBe(200);
-        expect(result.body.message).toBe('AVAILABLE_EMAIL');
+        await request(app)
+          .get(`/users/checkemail?email=${newUser.email}`)
+          .expect(200, { message: 'AVAILABLE_EMAIL' });
       });
     });
   });
@@ -233,8 +217,7 @@ describe('users.auth API test', () => {
       await request(app)
         .post(`/users/signin`)
         .send(nonExistingUserLoginInfo)
-        .expect(404)
-        .expect({
+        .expect(404, {
           message: `${nonExistingUserLoginInfo.email}_IS_NOT_FOUND`,
         });
     });
@@ -258,7 +241,7 @@ describe('users.auth API test', () => {
         password: existingUser.password,
       };
 
-      const result = await request(app)
+      const result: Response = await request(app)
         .post(`/users/signin`)
         .send(existingUserLoginInfo);
 
@@ -269,6 +252,7 @@ describe('users.auth API test', () => {
   });
 
   describe('user info - 로그인 사용자의 정보 조회', () => {
+    // test users
     const existingUser: TestUserInfo = {
       id: 1,
       nickname: 'existingNickname',
@@ -296,36 +280,65 @@ describe('users.auth API test', () => {
     };
     const tempUserEntity: TestUserInfo = MakeTestUser.userEntityInfo(tempUser);
 
+    // test feeds
+    const existingUserFeeds: Feed[] = [
+      new MakeTestClass(1, existingUser.id).feedData(),
+      new MakeTestClass(2, existingUser.id).feedData(),
+      new MakeTestClass(3, existingUser.id).feedData(),
+    ];
+
+    const otherUserFeeds: Feed[] = [
+      new MakeTestClass(4, otherUser.id).feedData(),
+    ];
+
+    const testFeeds: Feed[] = TestUtils.sortedMergedById(
+      existingUserFeeds,
+      otherUserFeeds
+    );
+
+    //test comments
+    const existingUserComments: Comment[] = [
+      new MakeTestClass(1, existingUser.id).commentData(4, false), // 공개 댓글
+      new MakeTestClass(2, existingUser.id).commentData(4, true), // 비공개 댓글
+      new MakeTestClass(3, existingUser.id).commentData(4, false, 1), // 공개 대댓글
+      new MakeTestClass(5, existingUser.id).commentData(1, true, 4), // 비공개 대댓글
+      new MakeTestClass(6, existingUser.id).commentData(
+        1,
+        false,
+        undefined,
+        true
+      ), // 삭제한 공개댓글
+    ];
+
+    const otherUserComments: Comment[] = [
+      new MakeTestClass(4, otherUser.id).commentData(1, true),
+    ];
+    const testComments: Comment[] = TestUtils.sortedMergedById(
+      existingUserComments,
+      otherUserComments
+    );
+
+    // test feed symbols
+    const existingUserFeedSybols: FeedSymbol[] = [
+      new MakeTestClass(1, existingUser.id).feedSymbolData(4),
+    ];
+    const otherUserFeedSybols: FeedSymbol[] = [
+      new MakeTestClass(2, otherUser.id).feedSymbolData(1),
+    ];
+    const testFeedSymbols: FeedSymbol[] = TestUtils.sortedMergedById(
+      existingUserFeedSybols,
+      otherUserFeedSybols
+    );
+
     beforeAll(async () => {
       // 이미 존재하는 유저 생성
-
       await dataSource.manager.save(User, [
         existingUserEntity,
         otherUserEntity,
         tempUserEntity,
       ]);
-
-      const testFeeds: Feed[] = [
-        new MakeTestClass(1, existingUser.id).feedData(),
-        new MakeTestClass(2, existingUser.id).feedData(),
-        new MakeTestClass(3, existingUser.id).feedData(),
-        new MakeTestClass(4, otherUser.id).feedData(),
-      ];
       await dataSource.manager.save(Feed, testFeeds);
-
-      const testComments: Comment[] = [
-        new MakeTestClass(1, existingUser.id).commentData(4, false),
-        new MakeTestClass(2, existingUser.id).commentData(4, true),
-        new MakeTestClass(3, existingUser.id).commentData(4, false, 1),
-        new MakeTestClass(4, otherUser.id).commentData(1, true),
-        new MakeTestClass(5, existingUser.id).commentData(1, true, 4),
-      ];
       await dataSource.manager.save(Comment, testComments);
-
-      const testFeedSymbols: FeedSymbol[] = [
-        new MakeTestClass(1, existingUser.id).feedSymbolData(4),
-        new MakeTestClass(2, otherUser.id).feedSymbolData(1),
-      ];
       await dataSource.manager.save(FeedSymbol, testFeedSymbols);
     });
 
@@ -339,17 +352,16 @@ describe('users.auth API test', () => {
     });
 
     test('user info - api query에 user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
-      const result = await request(app).get('/users/userinfo');
-
-      expect(result.status).toBe(400);
-      expect(result.body.message).toEqual('USER_ID_IS_REQUIRED');
+      await request(app)
+        .get('/users/userinfo')
+        .expect(400, { message: 'USER_ID_IS_REQUIRED' });
     });
 
     test('user Content - getMyInfo - 로그인 후, 탈퇴한 경우', async () => {
       // 로그인 후, 토큰 발급
       const tempUserSigningInfo: TestSignIn =
         MakeTestUser.signingInfo(tempUser);
-      const authResponse = await MakeTestUser.signinUser(
+      const authResponse: Response = await MakeTestUser.signinUser(
         app,
         tempUserSigningInfo
       );
@@ -365,34 +377,117 @@ describe('users.auth API test', () => {
       );
 
       // 탈퇴 전 발급받은 토큰으로 정보조회 요청
-      const result = await request(app)
+      await request(app)
         .get('/users/userinfo')
-        .set('Authorization', token);
-
-      expect(result.status).toBe(404);
-      expect(result.body.message).toEqual('NOT_FOUND_USER');
+        .set('Authorization', token)
+        .expect(404, { message: 'NOT_FOUND_USER' });
     });
 
-    test('user Content - getMyInfo - success', async () => {
-      const existingUserSigningInfo = MakeTestUser.signingInfo(existingUser);
-      const result = await MakeTestUser.makeAuthRequest(
+    test('user Content - getMyInfo: success', async () => {
+      const existingUserSigningInfo: TestSignIn =
+        MakeTestUser.signingInfo(existingUser);
+      const result: Response = await MakeTestUser.makeAuthRequest(
         app,
         existingUserSigningInfo,
         `/users/userinfo`
       );
+      TestUtils.validateUser(result, existingUser);
+    });
+
+    test('user Content - otherUser info: success ', async () => {
+      const result: Response = await request(app).get(
+        `/users/userinfo/${otherUser.id}`
+      );
+
+      TestUtils.validateUser(result, otherUser);
+    });
+
+    test('user Content - no user: fail', async () => {
+      const noUserId: string = '10000';
+      await request(app)
+        .get(`/users/userinfo/${noUserId}`)
+        .expect(404, { message: 'NOT_FOUND_USER' });
+    });
+
+    test('user Content - getMyFeedList - success', async () => {
+      const result: Response = await MakeTestUser.makeAuthRequest(
+        app,
+        existingUser,
+        `/users/userinfo/feeds`
+      );
 
       expect(result.status).toBe(200);
-      expect(Object.keys(result.body)).toHaveLength(6);
-      expect(result.body.id).toEqual(existingUser.id);
-      expect(result.body.created_at).toMatch(
-        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      expect(Object.keys(result.body)).toHaveLength(3);
+      expect(result.body.feedCntByUserId).toEqual(existingUserFeeds.length);
+      expect(result.body.totalPage).toEqual(1);
+      expect(result.body.feedListByUserId[0].userId).toEqual(existingUser.id);
+      expect(result.body.feedListByUserId[0].title).toEqual('test title');
+    });
+
+    test('user Content - getMyCommentList - success', async () => {
+      const result: Response = await MakeTestUser.makeAuthRequest(
+        app,
+        existingUser,
+        `/users/userinfo/comments`
       );
-      expect(result.body.updated_at).toMatch(
-        /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+
+      expect(result.status).toBe(200);
+      expect(Object.keys(result.body)).toHaveLength(3);
+      // 로그인 사용자의 총 덧글 개수
+      expect(result.body.commentCntByUserId).toEqual(
+        existingUserComments.length
       );
-      expect(result.body.deleted_at).toEqual(null);
-      expect(result.body.nickname).toEqual(existingUser.nickname);
-      expect(result.body.email).toEqual(existingUser.email);
+      // 로그인 사용자의 공개 덧글이 숨겨지지 않은지 확인
+      expect(
+        result.body.commentListByUserId.find((item: Comment) => item.id === 1)
+          .comment
+      ).toEqual(MakeTestClass.publicComment);
+
+      // 사용자의 삭제한 덧글이 삭제된 내용으로 반환되는지 확인
+      const deletedComments: Comment[] = result.body.commentListByUserId.filter(
+        (item: Comment) => item.deleted_at !== null
+      );
+      const allCommentsAreDeleted: boolean = deletedComments.every(
+        (item: Comment) => item.comment === MakeTestClass.deletedComment
+      );
+      expect(allCommentsAreDeleted).toBe(true);
+
+      // 대댓글의 경우에도 정상적으로 내용을 반환하는지 확인
+      const childComments: Comment[] = result.body.commentListByUserId.filter(
+        (item: Comment) => item.parent
+      );
+      const allCommentsHaveParent: Boolean = childComments.every(
+        (item: Comment) => item.comment === MakeTestClass.publicComment
+      );
+      expect(allCommentsHaveParent).toBe(true);
+
+      // 로그인 사용자의 비공개 덧글이 숨겨지지않고 제대로 반환되는지 확인
+      const privateComments: Comment[] = result.body.commentListByUserId.filter(
+        (item: Comment) => item.is_private
+      );
+      const allPrivatedComments: boolean = privateComments.every(
+        (item: Comment) => item.comment === MakeTestClass.publicComment
+      );
+      expect(allPrivatedComments).toBe(true);
+    });
+    //
+    test('user Content - getMyFeedSymbolList - success', async () => {
+      const result: Response = await MakeTestUser.makeAuthRequest(
+        app,
+        existingUser,
+        `/users/userinfo/symbols`
+      );
+
+      expect(result.status).toBe(200);
+      expect(Object.keys(result.body)).toHaveLength(3);
+      expect(result.body.symbolCntByUserId).toEqual(
+        existingUserFeedSybols.length
+      );
+      expect(result.body.symbolCntByUserId).toEqual(1);
+
+      expect(result.body.symbolListByUserId[0].feed.id).toEqual(4);
+      expect(result.body.symbolListByUserId[0].symbol.id).toEqual(1);
+      expect(result.body.symbolListByUserId[0].symbol.symbol).toEqual('like');
     });
   });
 });
