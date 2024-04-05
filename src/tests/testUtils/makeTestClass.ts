@@ -33,19 +33,24 @@ export class MakeTestClass {
   };
 
   // 테스트간 댓글생성을 위한 댓글 클래스 생성
+  public static publicComment: string = 'test comment';
+  public static deletedComment: string = '## DELETED_COMMENT ##';
+  public static privateComment: string = '## PRIVATE_COMMENT ##';
   public commentData = (
     feedId: number,
     is_private: boolean,
-    parent?: number
+    parent?: number,
+    deleted?: boolean
   ): Comment => {
     const testComment: Comment = new Comment(
       this.userId as unknown as User,
       feedId as unknown as Feed,
-      'test comment',
+      MakeTestClass.publicComment,
       is_private
     );
     testComment.id = this.id;
     testComment.parent = parent as unknown as Comment;
+    testComment.deleted_at = deleted ? new Date() : null;
 
     return testComment;
   };

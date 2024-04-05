@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Express } from 'express';
 import request from 'supertest';
+import { Response } from 'superagent';
 
 export class MakeTestUser {
   public static hashPwd(userInfo: TestUserInfo): string {
@@ -25,7 +26,10 @@ export class MakeTestUser {
   }
 
   // 반복되는 로그인 메소드
-  public static async signinUser(app: Express, user: TestSignIn) {
+  public static async signinUser(
+    app: Express,
+    user: TestSignIn
+  ): Promise<Response> {
     return request(app).post('/users/signin').send(user);
   }
 
@@ -34,7 +38,7 @@ export class MakeTestUser {
     app: Express,
     user: TestSignIn,
     endpoint: string
-  ) {
+  ): Promise<Response> {
     const authResponse = await this.signinUser(app, user);
     const token = authResponse.body.result.token;
     return request(app).get(endpoint).set('Authorization', token);
