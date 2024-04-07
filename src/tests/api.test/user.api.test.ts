@@ -386,7 +386,7 @@ describe('users.auth API test', () => {
     test('user Content - getMyInfo: success', async () => {
       const existingUserSigningInfo: TestSignIn =
         MakeTestUser.signingInfo(existingUser);
-      const result: Response = await MakeTestUser.makeAuthRequest(
+      const result: Response = await MakeTestUser.makeAuthGetRequest(
         app,
         existingUserSigningInfo,
         `/users/userinfo`
@@ -410,7 +410,7 @@ describe('users.auth API test', () => {
     });
 
     test('user Content - getMyFeedList - success', async () => {
-      const result: Response = await MakeTestUser.makeAuthRequest(
+      const result: Response = await MakeTestUser.makeAuthGetRequest(
         app,
         existingUser,
         `/users/userinfo/feeds`
@@ -425,7 +425,7 @@ describe('users.auth API test', () => {
     });
 
     test('user Content - getMyCommentList - success', async () => {
-      const result: Response = await MakeTestUser.makeAuthRequest(
+      const result: Response = await MakeTestUser.makeAuthGetRequest(
         app,
         existingUser,
         `/users/userinfo/comments`
@@ -472,7 +472,7 @@ describe('users.auth API test', () => {
     });
     //
     test('user Content - getMyFeedSymbolList - success', async () => {
-      const result: Response = await MakeTestUser.makeAuthRequest(
+      const result: Response = await MakeTestUser.makeAuthGetRequest(
         app,
         existingUser,
         `/users/userinfo/symbols`
@@ -489,5 +489,110 @@ describe('users.auth API test', () => {
       expect(result.body.symbolListByUserId[0].symbol.id).toEqual(1);
       expect(result.body.symbolListByUserId[0].symbol.symbol).toEqual('like');
     });
+  });
+
+  describe('user info - 사용자 정보변경', () => {
+    // 기존 사용자 정보
+    const existingUser: TestUserInfo = {
+      id: 1,
+      nickname: 'existingNickname',
+      password: 'existingPassword@1234',
+      email: 'existingEmail@email.com',
+    };
+
+    const existingUserSignIn: TestSignIn =
+      MakeTestUser.signingInfo(existingUser);
+    const existingUserEntity: TestUserInfo =
+      MakeTestUser.userEntityInfo(existingUser);
+
+    beforeEach(async () => {
+      // 이미 존재하는 유저 생성 (토큰 생성을 위해 API 이용)
+      await dataSource.manager.save(User, existingUserEntity);
+    });
+
+    afterEach(async () => {
+      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
+      await dataSource.manager.clear(User);
+      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
+    });
+
+    test('user info - 사용자정보변경: 실패 - not found user', async () => {
+      const authResponse = await MakeTestUser.signinUser(
+        app,
+        existingUserSignIn
+      );
+      const token = authResponse.body.result.token;
+
+      await dataSource.manager.update(
+        User,
+        { id: existingUser.id },
+        {
+          deleted_at: new Date(),
+        }
+      );
+
+      const updateUserInfo = {
+        email: 'updateUserInfo@email.com',
+      };
+
+      const endpoint: string = '/users/signup';
+
+      await request(app)
+        .patch(endpoint)
+        .set('Authorization', token)
+        .send(updateUserInfo)
+        .expect(404, { message: 'NOT_FOUND_USER' });
+    });
+
+    test('user info - 사용자 정보변경: 실패 - no change', async () => {
+      const updateSameUserInfo: { email: string; nickname: string } = {
+        email: existingUser.email,
+        nickname: existingUser.nickname,
+      };
+
+      const endpoint: string = '/users/signup';
+
+      const result: Response = await MakeTestUser.makeAuthPostOrPatchRequest(
+        app,
+        existingUserSignIn,
+        endpoint,
+        'patch',
+        updateSameUserInfo
+      );
+
+      expect(result.status).toBe(400);
+      expect(result.body.message).toBe('NO_CHANGE');
+    });
+
+    test.each([
+      {
+        email: 'updateEmail@email.com',
+        nickname: existingUser.nickname,
+      },
+      {
+        email: existingUser.email,
+        nickname: 'updateNiname',
+      },
+    ])(
+      'user info - 사용자 정보 변경: 성공',
+      async (item: { email: string; nickname: string }) => {
+        const endpoint: string = '/users/signup';
+
+        const result: Response = await MakeTestUser.makeAuthPostOrPatchRequest(
+          app,
+          existingUserSignIn,
+          endpoint,
+          'patch',
+          item
+        );
+
+        expect(result.status).toBe(200);
+        expect(result.body.message).toBe('UPDATE_USERINFO_SUCCESS');
+        expect(Object.keys(result.body.result)).toHaveLength(6);
+        expect(result.body.result).toHaveProperty('id', existingUser.id);
+        expect(result.body.result).toHaveProperty('nickname', item.nickname);
+        expect(result.body.result).toHaveProperty('email', item.email);
+      }
+    );
   });
 });
