@@ -574,7 +574,7 @@ describe('users.auth API test', () => {
         nickname: 'updateNiname',
       },
     ])(
-      'user info - 사용자 정보 변경: 성공',
+      'user info - 사용자 정보 변경(이메일, 닉네임): 성공',
       async (item: { email: string; nickname: string }) => {
         const endpoint: string = '/users/signup';
 
@@ -594,5 +594,41 @@ describe('users.auth API test', () => {
         expect(result.body.result).toHaveProperty('email', item.email);
       }
     );
+
+    test('user info - 사용자변경(password)', async () => {
+      const newPassword: string = 'newPassword#1234';
+      const updateUserInfo: { password: string } = { password: newPassword };
+      const endpoint: string = '/users/signup';
+
+      await MakeTestUser.makeAuthPostOrPatchRequest(
+        app,
+        existingUserSignIn,
+        endpoint,
+        'patch',
+        updateUserInfo
+      );
+
+      const newExistingUserSignIn: TestSignIn = {
+        email: existingUser.email,
+        password: newPassword,
+      };
+      const successResultModel: Response = await MakeTestUser.signinUser(
+        app,
+        newExistingUserSignIn
+      );
+
+      // 업데이트한 패스워드로 로그인시 성공
+      expect(successResultModel.status).toBe(200);
+      expect(successResultModel.body.message).toEqual('SIGNIN_SUCCESS');
+
+      const failedResultModel: Response = await MakeTestUser.signinUser(
+        app,
+        existingUserSignIn
+      );
+
+      // 패스워드 업데이트 이후, 이전 패스워드로 로그인시 실패
+      expect(failedResultModel.status).toBe(401);
+      expect(failedResultModel.body.message).toEqual('PASSWORD_IS_INCORRECT');
+    });
   });
 });
