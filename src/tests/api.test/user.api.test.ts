@@ -10,8 +10,9 @@ import { Comment } from '../../entities/comment.entity';
 import { MakeTestClass } from '../testUtils/makeTestClass';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { Express } from 'express';
-import { MakeTestUser } from '../testUtils/makeTestUser';
+import { TestUserFactory } from '../testUtils/testUserFactory';
 import { TestUtils } from '../testUtils/testUtils';
+import { ApiRequestHelper } from '../testUtils/apiRequestHelper';
 
 // 전체 auth API 테스트 설명
 describe('users.auth API test', () => {
@@ -261,7 +262,7 @@ describe('users.auth API test', () => {
     };
 
     const existingUserEntity: TestUserInfo =
-      MakeTestUser.userEntityInfo(existingUser);
+      TestUserFactory.createUserEntity(existingUser);
 
     const otherUser: TestUserInfo = {
       id: 2,
@@ -270,7 +271,7 @@ describe('users.auth API test', () => {
       password: 'otherUserPassword@1234',
     };
     const otherUserEntity: TestUserInfo =
-      MakeTestUser.userEntityInfo(otherUser);
+      TestUserFactory.createUserEntity(otherUser);
 
     const tempUser: TestUserInfo = {
       id: 3,
@@ -278,7 +279,8 @@ describe('users.auth API test', () => {
       email: 'tempEmail@email.com',
       password: 'tempPassword@1234',
     };
-    const tempUserEntity: TestUserInfo = MakeTestUser.userEntityInfo(tempUser);
+    const tempUserEntity: TestUserInfo =
+      TestUserFactory.createUserEntity(tempUser);
 
     // test feeds
     const existingUserFeeds: Feed[] = [
@@ -360,12 +362,11 @@ describe('users.auth API test', () => {
     test('user Content - getMyInfo - 로그인 후, 탈퇴한 경우', async () => {
       // 로그인 후, 토큰 발급
       const tempUserSigningInfo: TestSignIn =
-        MakeTestUser.signingInfo(tempUser);
-      const authResponse: Response = await MakeTestUser.signinUser(
+        TestUserFactory.createSignInInfo(tempUser);
+      const token: string = await ApiRequestHelper.getAuthToken(
         app,
         tempUserSigningInfo
       );
-      const token = authResponse.body.result.token;
 
       // 인위적으로 DB에서 회원정보에 탈퇴정보를 추가하여 탈퇴회원으로 수정
       await dataSource.manager.update(
@@ -385,8 +386,8 @@ describe('users.auth API test', () => {
 
     test('user Content - getMyInfo: success', async () => {
       const existingUserSigningInfo: TestSignIn =
-        MakeTestUser.signingInfo(existingUser);
-      const result: Response = await MakeTestUser.makeAuthGetRequest(
+        TestUserFactory.createSignInInfo(existingUser);
+      const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUserSigningInfo,
         `/users/userinfo`
@@ -410,7 +411,7 @@ describe('users.auth API test', () => {
     });
 
     test('user Content - getMyFeedList - success', async () => {
-      const result: Response = await MakeTestUser.makeAuthGetRequest(
+      const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUser,
         `/users/userinfo/feeds`
@@ -425,7 +426,7 @@ describe('users.auth API test', () => {
     });
 
     test('user Content - getMyCommentList - success', async () => {
-      const result: Response = await MakeTestUser.makeAuthGetRequest(
+      const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUser,
         `/users/userinfo/comments`
@@ -472,7 +473,7 @@ describe('users.auth API test', () => {
     });
     //
     test('user Content - getMyFeedSymbolList - success', async () => {
-      const result: Response = await MakeTestUser.makeAuthGetRequest(
+      const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUser,
         `/users/userinfo/symbols`
@@ -501,10 +502,11 @@ describe('users.auth API test', () => {
     };
 
     const existingUserSignIn: TestSignIn =
-      MakeTestUser.signingInfo(existingUser);
+      TestUserFactory.createSignInInfo(existingUser);
     const existingUserEntity: TestUserInfo =
-      MakeTestUser.userEntityInfo(existingUser);
+      TestUserFactory.createUserEntity(existingUser);
 
+    // 기존 사용자의 정보를 변경하거나 삭제하는 테스트들이기에 beforeAll이 아닌 beforeEach로 처리
     beforeEach(async () => {
       // 이미 존재하는 유저 생성 (토큰 생성을 위해 API 이용)
       await dataSource.manager.save(User, existingUserEntity);
@@ -517,11 +519,10 @@ describe('users.auth API test', () => {
     });
 
     test('user info - 사용자정보변경: 실패 - not found user', async () => {
-      const authResponse = await MakeTestUser.signinUser(
+      const token: string = await ApiRequestHelper.getAuthToken(
         app,
         existingUserSignIn
       );
-      const token = authResponse.body.result.token;
 
       await dataSource.manager.update(
         User,
@@ -552,11 +553,10 @@ describe('users.auth API test', () => {
 
       const endpoint: string = '/users/signup';
 
-      const result: Response = await MakeTestUser.makeAuthPostOrPatchRequest(
+      const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
         app,
         existingUserSignIn,
         endpoint,
-        'patch',
         updateSameUserInfo
       );
 
@@ -578,11 +578,10 @@ describe('users.auth API test', () => {
       async (item: { email: string; nickname: string }) => {
         const endpoint: string = '/users/signup';
 
-        const result: Response = await MakeTestUser.makeAuthPostOrPatchRequest(
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
           app,
           existingUserSignIn,
           endpoint,
-          'patch',
           item
         );
 
@@ -600,11 +599,10 @@ describe('users.auth API test', () => {
       const updateUserInfo: { password: string } = { password: newPassword };
       const endpoint: string = '/users/signup';
 
-      await MakeTestUser.makeAuthPostOrPatchRequest(
+      await ApiRequestHelper.makeAuthPatchRequest(
         app,
         existingUserSignIn,
         endpoint,
-        'patch',
         updateUserInfo
       );
 
@@ -612,23 +610,23 @@ describe('users.auth API test', () => {
         email: existingUser.email,
         password: newPassword,
       };
-      const successResultModel: Response = await MakeTestUser.signinUser(
-        app,
-        newExistingUserSignIn
-      );
+      const successResultModel: Response = await request(app)
+        .post('/users/signin')
+        .send(newExistingUserSignIn);
 
       // 업데이트한 패스워드로 로그인시 성공
       expect(successResultModel.status).toBe(200);
       expect(successResultModel.body.message).toEqual('SIGNIN_SUCCESS');
 
-      const failedResultModel: Response = await MakeTestUser.signinUser(
-        app,
-        existingUserSignIn
-      );
+      const failedResultModel: Response = await request(app)
+        .post('/users/signin')
+        .send(existingUserSignIn);
 
       // 패스워드 업데이트 이후, 이전 패스워드로 로그인시 실패
       expect(failedResultModel.status).toBe(401);
       expect(failedResultModel.body.message).toEqual('PASSWORD_IS_INCORRECT');
     });
   });
+
+  test('user info - delete User', async () => {});
 });
