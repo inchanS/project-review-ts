@@ -4,14 +4,18 @@ import { Response } from 'superagent';
 
 export class ApiRequestHelper {
   // 반복되는 로그인 메소드
+  public static async signinUser(
+    app: Express,
+    user: TestSignIn
+  ): Promise<Response> {
+    return request(app).post('/users/signin').send(user);
+  }
+
   public static async getAuthToken(
     app: Express,
     user: TestSignIn
   ): Promise<string> {
-    const authResponse: Response = await request(app)
-      .post('/users/signin')
-      .send(user);
-
+    const authResponse: Response = await this.signinUser(app, user);
     return authResponse.body.result.token;
   }
 

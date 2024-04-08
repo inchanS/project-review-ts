@@ -610,17 +610,19 @@ describe('users.auth API test', () => {
         email: existingUser.email,
         password: newPassword,
       };
-      const successResultModel: Response = await request(app)
-        .post('/users/signin')
-        .send(newExistingUserSignIn);
+      const successResultModel: Response = await ApiRequestHelper.signinUser(
+        app,
+        newExistingUserSignIn
+      );
 
       // 업데이트한 패스워드로 로그인시 성공
       expect(successResultModel.status).toBe(200);
       expect(successResultModel.body.message).toEqual('SIGNIN_SUCCESS');
 
-      const failedResultModel: Response = await request(app)
-        .post('/users/signin')
-        .send(existingUserSignIn);
+      const failedResultModel: Response = await ApiRequestHelper.signinUser(
+        app,
+        existingUserSignIn
+      );
 
       // 패스워드 업데이트 이후, 이전 패스워드로 로그인시 실패
       expect(failedResultModel.status).toBe(401);
