@@ -4,7 +4,6 @@ import { createApp } from '../../app';
 import request from 'supertest';
 import { Response } from 'superagent';
 import { UserDto } from '../../entities/dto/user.dto';
-import bcrypt from 'bcryptjs';
 import { Feed } from '../../entities/feed.entity';
 import { Comment } from '../../entities/comment.entity';
 import { MakeTestClass } from '../testUtils/makeTestClass';
@@ -53,25 +52,33 @@ describe('users.auth API test', () => {
   afterAll(async () => {
     // dataSource table 초기화
     // 외래키 검사 비활성화
-    await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 0;`).then(() => {
-      console.log('🔥user.api.test - SET FOREIGN_KEY_CHECKS = 0');
-    });
-    // 모든 일반 테이블명 가져오기
-    const tables = await dataSource.manager.query(`
+    await dataSource.transaction(async transactionalEntityManager => {
+      await transactionalEntityManager
+        .query(`SET FOREIGN_KEY_CHECKS = 0;`)
+        .then(() => {
+          console.log('🔥user.api.test - SET FOREIGN_KEY_CHECKS = 0');
+        });
+      // 모든 일반 테이블명 가져오기
+      const tables = await transactionalEntityManager.query(`
           SELECT table_name
           FROM information_schema.tables
           WHERE table_schema = 'test_project_review'
             AND table_type = 'BASE TABLE';
       `);
-    // 모든 일반 테이블 지우기
-    for (const table of tables) {
-      // dataSource.manager.clear(TABLE_NAME) 메소드는 migrations 테이블까지는 불러오지 못한다.
-      await dataSource.manager.query(`TRUNCATE TABLE ${table.TABLE_NAME};`);
-    }
-    console.log('🔥user.api.test - TRUNCATED ALL TABLES');
-    // 외래키 검사 재활성화
-    await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`).then(() => {
-      console.log('🔥user.api.test - SET FOREIGN_KEY_CHECKS = 1');
+      // 모든 일반 테이블 지우기
+      for (const table of tables) {
+        // dataSource.manager.clear(TABLE_NAME) 메소드는 migrations 테이블까지는 불러오지 못한다.
+        await transactionalEntityManager.query(
+          `TRUNCATE TABLE ${table.TABLE_NAME};`
+        );
+      }
+      console.log('🔥user.api.test - TRUNCATED ALL TABLES');
+      // 외래키 검사 재활성화
+      await transactionalEntityManager
+        .query(`SET FOREIGN_KEY_CHECKS = 1;`)
+        .then(() => {
+          console.log('🔥user.api.test - SET FOREIGN_KEY_CHECKS = 1');
+        });
     });
 
     // dataSource 연결 해제
@@ -108,41 +115,43 @@ describe('users.auth API test', () => {
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
     describe('user validator service API - checkDuplicateNickname', () => {
+      const endpoint: string = `/users/checknickname?nickname=`;
       test('checkDuplicateNickname - !nickname', async () => {
         await request(app)
-          .get(`/users/checknickname?nickname=`)
+          .get(endpoint)
           .expect(400, { message: 'NICKNAME_IS_REQUIRED' });
       });
 
       test('checkDuplicateNickname - !checkData', async () => {
         await request(app)
-          .get(`/users/checknickname?nickname=${existingUser.nickname}`)
+          .get(endpoint + existingUser.nickname)
           .expect(409, { message: `${existingUser.nickname}_ALREADY_EXISTS` });
       });
 
       test('checkDuplicateNickname - success', async () => {
         await request(app)
-          .get(`/users/checknickname?nickname=${newUser.nickname}`)
+          .get(endpoint + newUser.nickname)
           .expect(200, { message: 'AVAILABLE_NICKNAME' });
       });
     });
 
     describe('user validator service API - checkDuplicateEmail', () => {
+      const endpoint: string = `/users/checkemail?email=`;
       test('checkDuplicateEmail - !email', async () => {
         await request(app)
-          .get(`/users/checkemail?email=`)
+          .get(endpoint)
           .expect(400, { message: 'EMAIL_IS_REQUIRED' });
       });
 
       test('checkDuplicateEmail - !checkData', async () => {
         await request(app)
-          .get(`/users/checkemail?email=${existingUser.email}`)
+          .get(endpoint + existingUser.email)
           .expect(409, { message: `${existingUser.email}_ALREADY_EXISTS` });
       });
 
       test('checkDuplicateEmail - success', async () => {
         await request(app)
-          .get(`/users/checkemail?email=${newUser.email}`)
+          .get(endpoint + newUser.email)
           .expect(200, { message: 'AVAILABLE_EMAIL' });
       });
     });
@@ -188,19 +197,12 @@ describe('users.auth API test', () => {
       email: 'existingEmail@email.com',
     };
 
-    const hashingPassword: string = bcrypt.hashSync(
-      existingUser.password,
-      bcrypt.genSaltSync()
-    );
+    const existingUserEntity: TestUserInfo =
+      TestUserFactory.createUserEntity(existingUser);
 
     beforeAll(async () => {
       // 이미 존재하는 유저 생성 (토큰 생성을 위해 API 이용)
-      await dataSource.manager.save(User, {
-        id: existingUser.id,
-        nickname: existingUser.nickname,
-        password: hashingPassword,
-        email: existingUser.email,
-      });
+      await dataSource.manager.save(User, existingUserEntity);
     });
 
     afterAll(async () => {
@@ -253,6 +255,8 @@ describe('users.auth API test', () => {
   });
 
   describe('user info - 로그인 사용자의 정보 조회', () => {
+    const endpoint: string = '/users/userinfo';
+
     // test users
     const existingUser: TestUserInfo = {
       id: 1,
@@ -345,17 +349,12 @@ describe('users.auth API test', () => {
     });
 
     afterAll(async () => {
-      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
-      await dataSource.manager.clear(User);
-      await dataSource.manager.clear(Feed);
-      await dataSource.manager.clear(Comment);
-      await dataSource.manager.clear(FeedSymbol);
-      await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
+      await TestUtils.clearDatabaseTables(dataSource);
     });
 
     test('user info - api query에 user id가 없으면서, 로그인도 되어있지 않을 때', async () => {
       await request(app)
-        .get('/users/userinfo')
+        .get(endpoint)
         .expect(400, { message: 'USER_ID_IS_REQUIRED' });
     });
 
@@ -379,7 +378,7 @@ describe('users.auth API test', () => {
 
       // 탈퇴 전 발급받은 토큰으로 정보조회 요청
       await request(app)
-        .get('/users/userinfo')
+        .get(endpoint)
         .set('Authorization', token)
         .expect(404, { message: 'NOT_FOUND_USER' });
     });
@@ -390,14 +389,14 @@ describe('users.auth API test', () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUserSigningInfo,
-        `/users/userinfo`
+        endpoint
       );
       TestUtils.validateUser(result, existingUser);
     });
 
     test('user Content - otherUser info: success ', async () => {
       const result: Response = await request(app).get(
-        `/users/userinfo/${otherUser.id}`
+        `${endpoint}/${otherUser.id}`
       );
 
       TestUtils.validateUser(result, otherUser);
@@ -406,7 +405,7 @@ describe('users.auth API test', () => {
     test('user Content - no user: fail', async () => {
       const noUserId: string = '10000';
       await request(app)
-        .get(`/users/userinfo/${noUserId}`)
+        .get(`${endpoint}/${noUserId}`)
         .expect(404, { message: 'NOT_FOUND_USER' });
     });
 
@@ -414,7 +413,7 @@ describe('users.auth API test', () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUser,
-        `/users/userinfo/feeds`
+        `${endpoint}/feeds`
       );
 
       expect(result.status).toBe(200);
@@ -429,7 +428,7 @@ describe('users.auth API test', () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUser,
-        `/users/userinfo/comments`
+        `${endpoint}/comments`
       );
 
       expect(result.status).toBe(200);
@@ -476,7 +475,7 @@ describe('users.auth API test', () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUser,
-        `/users/userinfo/symbols`
+        `${endpoint}/symbols`
       );
 
       expect(result.status).toBe(200);
@@ -492,7 +491,9 @@ describe('users.auth API test', () => {
     });
   });
 
-  describe('user info - 사용자 정보변경', () => {
+  describe('user info - 사용자 정보 변경', () => {
+    const endpoint: string = '/users/signup';
+
     // 기존 사용자 정보
     const existingUser: TestUserInfo = {
       id: 1,
@@ -518,7 +519,7 @@ describe('users.auth API test', () => {
       await dataSource.manager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
     });
 
-    test('user info - 사용자정보변경: 실패 - not found user', async () => {
+    test('user info - 사용자정보변경: 실패(로그인 후 탈퇴 후 정보변경시 - not found user', async () => {
       const token: string = await ApiRequestHelper.getAuthToken(
         app,
         existingUserSignIn
@@ -532,11 +533,9 @@ describe('users.auth API test', () => {
         }
       );
 
-      const updateUserInfo = {
+      const updateUserInfo: { email: string } = {
         email: 'updateUserInfo@email.com',
       };
-
-      const endpoint: string = '/users/signup';
 
       await request(app)
         .patch(endpoint)
@@ -550,8 +549,6 @@ describe('users.auth API test', () => {
         email: existingUser.email,
         nickname: existingUser.nickname,
       };
-
-      const endpoint: string = '/users/signup';
 
       const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
         app,
@@ -576,8 +573,6 @@ describe('users.auth API test', () => {
     ])(
       'user info - 사용자 정보 변경(이메일, 닉네임): 성공',
       async (item: { email: string; nickname: string }) => {
-        const endpoint: string = '/users/signup';
-
         const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
           app,
           existingUserSignIn,
@@ -597,7 +592,6 @@ describe('users.auth API test', () => {
     test('user info - 사용자변경(password)', async () => {
       const newPassword: string = 'newPassword#1234';
       const updateUserInfo: { password: string } = { password: newPassword };
-      const endpoint: string = '/users/signup';
 
       await ApiRequestHelper.makeAuthPatchRequest(
         app,
@@ -630,5 +624,38 @@ describe('users.auth API test', () => {
     });
   });
 
-  test('user info - delete User', async () => {});
+  describe('delete user', () => {
+    const endpoint: string = '/users/signup';
+
+    const existingUser: TestUserInfo = {
+      id: 1,
+      nickname: 'existingNickname',
+      password: 'existingPassword@1234',
+      email: 'existingEmail@email.com',
+    };
+
+    const existingUserSignIn: TestSignIn =
+      TestUserFactory.createSignInInfo(existingUser);
+    const existingUserEntity: TestUserInfo =
+      TestUserFactory.createUserEntity(existingUser);
+
+    beforeEach(async () => {
+      // 이미 존재하는 유저 생성
+      await dataSource.manager.save(User, existingUserEntity);
+    });
+
+    afterEach(async () => {
+      await TestUtils.clearDatabaseTables(dataSource);
+    });
+
+    test('user delete', async () => {
+      const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
+        app,
+        existingUserSignIn,
+        endpoint
+      );
+
+      expect(result.status).toBe(200);
+    });
+  });
 });
