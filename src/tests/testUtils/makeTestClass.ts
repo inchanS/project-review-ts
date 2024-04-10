@@ -6,6 +6,7 @@ import { FeedStatus } from '../../entities/feedStatus.entity';
 import { Comment } from '../../entities/comment.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { Symbol } from '../../entities/symbol.entity';
+import { UploadFiles } from '../../entities/uploadFiles.entity';
 
 export class MakeTestClass {
   private readonly id: number;
@@ -30,6 +31,23 @@ export class MakeTestClass {
     testFeed.posted_at = new Date();
 
     return testFeed;
+  };
+
+  public uploadData = (fileName: string, feedId: number): UploadFiles => {
+    const generateRandomString = (): string => {
+      return Math.random().toString(36).substring(2, 12);
+    };
+
+    const testUploadFiles: UploadFiles = new UploadFiles(
+      generateRandomString(),
+      fileName,
+      '72.22KB',
+      feedId as unknown as Feed,
+      this.userId as unknown as User
+    );
+    testUploadFiles.id = this.id;
+
+    return testUploadFiles;
   };
 
   // 테스트간 댓글생성을 위한 댓글 클래스 생성
