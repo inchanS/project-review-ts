@@ -1,4 +1,5 @@
 import { Response } from 'superagent';
+import { DataSource } from 'typeorm';
 
 export class TestUtils {
   // 사용자 아이디 조회시 반환값의 종류와 유형 및 값을 정확히 반환하고 있는지 확인하는 메소드
@@ -25,5 +26,17 @@ export class TestUtils {
     combinedArray.sort((a: T, b: T) => a.id - b.id);
 
     return combinedArray;
+  }
+
+  public static async clearDatabaseTables(dataSource: DataSource) {
+    await dataSource.transaction(async transactionalEntityManager => {
+      await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+      await transactionalEntityManager.clear('FeedStatus');
+      await transactionalEntityManager.clear('FeedSymbol');
+      await transactionalEntityManager.clear('Comment');
+      await transactionalEntityManager.clear('Feed');
+      await transactionalEntityManager.clear('User');
+      await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
+    });
   }
 }
