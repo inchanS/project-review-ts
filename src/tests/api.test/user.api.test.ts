@@ -12,6 +12,30 @@ import { Express } from 'express';
 import { TestUserFactory } from '../testUtils/testUserFactory';
 import { TestUtils } from '../testUtils/testUtils';
 import { ApiRequestHelper } from '../testUtils/apiRequestHelper';
+import { UploadFiles } from '../../entities/uploadFiles.entity';
+
+// AWS SDK의 S3 서비스 부분을 모의 처리합니다.
+jest.mock('@aws-sdk/client-s3', () => {
+  class MockDeleteObjectsCommand {
+    constructor() {}
+  }
+
+  // S3Client 모의 처리
+  const mockS3Client = {
+    send: jest.fn(async command => {
+      if (command instanceof MockDeleteObjectsCommand) {
+        // 명령에 따라 적절한 응답을 반환합니다.
+        return;
+      }
+      throw new Error('Unknown command');
+    }),
+  };
+
+  return {
+    S3Client: jest.fn(() => mockS3Client),
+    DeleteObjectsCommand: MockDeleteObjectsCommand, // 클래스로 정의하여 instanceof 검사를 통과하게 한다.
+  };
+});
 
 // 전체 auth API 테스트 설명
 describe('users.auth API test', () => {
@@ -667,6 +691,11 @@ describe('users.auth API test', () => {
       otherUserFeeds
     );
 
+    const existingUserUploadFiles: UploadFiles[] = [
+      new MakeTestClass(1, existingUser.id).uploadData('image.jpg', 1),
+      new MakeTestClass(2, existingUser.id).uploadData('image.txt', 1),
+    ];
+
     //test comments
     const existingUserComments: Comment[] = [
       new MakeTestClass(1, existingUser.id).commentData(4, false), // 공개 댓글
@@ -712,6 +741,10 @@ describe('users.auth API test', () => {
         await transactionalEntityManager.save(Feed, testFeeds);
         await transactionalEntityManager.save(Comment, testComments);
         await transactionalEntityManager.save(FeedSymbol, testFeedSymbols);
+        await transactionalEntityManager.save(
+          UploadFiles,
+          existingUserUploadFiles
+        );
       });
     });
 
@@ -726,31 +759,10 @@ describe('users.auth API test', () => {
         endpoint
       );
 
-      expect(result.status).toBe(200);
-      expect(result.body).toEqual({ message: 'DELETE_USER_SUCCESS' });
-    });
-
-    test('delete User API - delete Feeds: success', async () => {
-      await ApiRequestHelper.makeAuthDeleteRequest(
-        app,
-        existingUserSigningInfo,
-        endpoint
-      );
-
       const feedsByDeletedUser: Feed[] = await dataSource.manager.find(Feed, {
         loadRelationIds: true,
         where: { user: { id: existingUser.id } },
       });
-
-      expect(feedsByDeletedUser.length).toBe(0);
-    });
-
-    test('delete User API - delete Comments: success', async () => {
-      await ApiRequestHelper.makeAuthDeleteRequest(
-        app,
-        existingUserSigningInfo,
-        endpoint
-      );
 
       const commentsByDeletedUser: Comment[] = await dataSource.manager.find(
         Comment,
@@ -760,23 +772,24 @@ describe('users.auth API test', () => {
         }
       );
 
-      expect(commentsByDeletedUser.length).toBe(0);
-    });
-
-    test('delete User API - delete FeedSymbol: success', async () => {
-      await ApiRequestHelper.makeAuthDeleteRequest(
-        app,
-        existingUserSigningInfo,
-        endpoint
-      );
-
       const feedSymbolsByDeletedUser: FeedSymbol[] =
         await dataSource.manager.find(FeedSymbol, {
           loadRelationIds: true,
           where: { user: { id: existingUser.id } },
         });
 
+      const uploadFilesByDeletedUser: UploadFiles[] =
+        await dataSource.manager.find(UploadFiles, {
+          loadRelationIds: true,
+          where: { user: { id: existingUser.id } },
+        });
+
+      expect(result.status).toBe(200);
+      expect(result.body).toEqual({ message: 'DELETE_USER_SUCCESS' });
+      expect(feedsByDeletedUser.length).toBe(0);
+      expect(commentsByDeletedUser.length).toBe(0);
       expect(feedSymbolsByDeletedUser.length).toBe(0);
+      expect(uploadFilesByDeletedUser.length).toBe(0);
     });
   });
 });
