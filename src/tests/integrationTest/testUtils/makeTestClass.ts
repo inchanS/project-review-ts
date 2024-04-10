@@ -1,12 +1,12 @@
-import { Feed } from '../../entities/feed.entity';
-import { User } from '../../entities/users.entity';
-import { Estimation } from '../../entities/estimation.entity';
-import { Category } from '../../entities/category.entity';
-import { FeedStatus } from '../../entities/feedStatus.entity';
-import { Comment } from '../../entities/comment.entity';
-import { FeedSymbol } from '../../entities/feedSymbol.entity';
-import { Symbol } from '../../entities/symbol.entity';
-import { UploadFiles } from '../../entities/uploadFiles.entity';
+import { Feed } from '../../../entities/feed.entity';
+import { User } from '../../../entities/users.entity';
+import { Estimation } from '../../../entities/estimation.entity';
+import { Category } from '../../../entities/category.entity';
+import { FeedStatus } from '../../../entities/feedStatus.entity';
+import { Comment } from '../../../entities/comment.entity';
+import { FeedSymbol } from '../../../entities/feedSymbol.entity';
+import { Symbol } from '../../../entities/symbol.entity';
+import { UploadFiles } from '../../../entities/uploadFiles.entity';
 
 export class MakeTestClass {
   private readonly id: number;

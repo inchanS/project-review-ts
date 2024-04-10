@@ -6,12 +6,12 @@ import { Response } from 'superagent';
 import { UserDto } from '../../entities/dto/user.dto';
 import { Feed } from '../../entities/feed.entity';
 import { Comment } from '../../entities/comment.entity';
-import { MakeTestClass } from '../testUtils/makeTestClass';
+import { MakeTestClass } from './testUtils/makeTestClass';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
 import { Express } from 'express';
-import { TestUserFactory } from '../testUtils/testUserFactory';
-import { TestUtils } from '../testUtils/testUtils';
-import { ApiRequestHelper } from '../testUtils/apiRequestHelper';
+import { TestUserFactory } from './testUtils/testUserFactory';
+import { TestUtils } from './testUtils/testUtils';
+import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { UploadFiles } from '../../entities/uploadFiles.entity';
 
 // AWS SDK의 S3 서비스 부분을 모의 처리합니다.
@@ -37,75 +37,24 @@ jest.mock('@aws-sdk/client-s3', () => {
   };
 });
 
-// 전체 auth API 테스트 설명
-describe('users.auth API test', () => {
-  let app: Express = createApp();
+const app: Express = createApp();
 
+describe('user API', () => {
   beforeAll(async () => {
-    // dataSource 연결
     await dataSource
       .initialize()
       .then(() => {
         if (process.env.NODE_ENV === 'test') {
-          console.log('💥TEST Data Source has been initialized!');
+          console.log('💥TEST Data Source for User API has been initialized!');
         }
       })
       .catch(error => {
-        console.log('Data Source Initializing failed:', error);
-      });
-
-    await dataSource
-      .synchronize(true)
-      .then(() => {
-        console.log('💥TEST Data Source has been synchronized!');
-      })
-      .catch(error => {
-        console.log('Data Source synchronizing failed:', error);
-      });
-
-    await dataSource
-      .runMigrations()
-      .then(() => {
-        console.log('💥TEST Data Source has been runMigrations!');
-      })
-      .catch(error => {
-        console.log('Migration sync failed:', error);
+        console.log('Data Source for User API Initializing failed:', error);
       });
   });
 
   afterAll(async () => {
-    // dataSource table 초기화
-    // 외래키 검사 비활성화
-    await dataSource.transaction(async transactionalEntityManager => {
-      await transactionalEntityManager
-        .query(`SET FOREIGN_KEY_CHECKS = 0;`)
-        .then(() => {
-          console.log('🔥user.api.test - SET FOREIGN_KEY_CHECKS = 0');
-        });
-      // 모든 일반 테이블명 가져오기
-      const tables = await transactionalEntityManager.query(`
-          SELECT table_name
-          FROM information_schema.tables
-          WHERE table_schema = 'test_project_review'
-            AND table_type = 'BASE TABLE';
-      `);
-      // 모든 일반 테이블 지우기
-      for (const table of tables) {
-        // dataSource.manager.clear(TABLE_NAME) 메소드는 migrations 테이블까지는 불러오지 못한다.
-        await transactionalEntityManager.query(
-          `TRUNCATE TABLE ${table.TABLE_NAME};`
-        );
-      }
-      console.log('🔥user.api.test - TRUNCATED ALL TABLES');
-      // 외래키 검사 재활성화
-      await transactionalEntityManager
-        .query(`SET FOREIGN_KEY_CHECKS = 1;`)
-        .then(() => {
-          console.log('🔥user.api.test - SET FOREIGN_KEY_CHECKS = 1');
-        });
-    });
-
-    // dataSource 연결 해제
+    await TestUtils.clearDatabaseTables(dataSource);
     await dataSource.destroy().then(() => {
       console.log('💥TEST Data Source has been destroyed!');
     });
