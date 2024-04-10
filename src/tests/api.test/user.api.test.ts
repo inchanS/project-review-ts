@@ -267,6 +267,8 @@ describe('users.auth API test', () => {
 
     const existingUserEntity: TestUserInfo =
       TestUserFactory.createUserEntity(existingUser);
+    const existingUserSigningInfo: TestSignIn =
+      TestUserFactory.createSignInInfo(existingUser);
 
     const otherUser: TestUserInfo = {
       id: 2,
@@ -337,15 +339,17 @@ describe('users.auth API test', () => {
     );
 
     beforeAll(async () => {
-      // 이미 존재하는 유저 생성
-      await dataSource.manager.save(User, [
-        existingUserEntity,
-        otherUserEntity,
-        tempUserEntity,
-      ]);
-      await dataSource.manager.save(Feed, testFeeds);
-      await dataSource.manager.save(Comment, testComments);
-      await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+      await dataSource.transaction(async transactionalEntityManager => {
+        // 이미 존재하는 유저 생성
+        await transactionalEntityManager.save(User, [
+          existingUserEntity,
+          otherUserEntity,
+          tempUserEntity,
+        ]);
+        await transactionalEntityManager.save(Feed, testFeeds);
+        await transactionalEntityManager.save(Comment, testComments);
+        await transactionalEntityManager.save(FeedSymbol, testFeedSymbols);
+      });
     });
 
     afterAll(async () => {
@@ -384,8 +388,6 @@ describe('users.auth API test', () => {
     });
 
     test('user Content - getMyInfo: success', async () => {
-      const existingUserSigningInfo: TestSignIn =
-        TestUserFactory.createSignInInfo(existingUser);
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
         app,
         existingUserSigningInfo,
@@ -624,9 +626,10 @@ describe('users.auth API test', () => {
     });
   });
 
-  describe('delete user', () => {
+  describe('delete user API', () => {
     const endpoint: string = '/users/signup';
 
+    // test users
     const existingUser: TestUserInfo = {
       id: 1,
       nickname: 'existingNickname',
@@ -634,28 +637,146 @@ describe('users.auth API test', () => {
       email: 'existingEmail@email.com',
     };
 
-    const existingUserSignIn: TestSignIn =
-      TestUserFactory.createSignInInfo(existingUser);
     const existingUserEntity: TestUserInfo =
       TestUserFactory.createUserEntity(existingUser);
+    const existingUserSigningInfo: TestSignIn =
+      TestUserFactory.createSignInInfo(existingUser);
+
+    const otherUser: TestUserInfo = {
+      id: 2,
+      nickname: 'otherUserNickname',
+      email: 'otherUser@email.com',
+      password: 'otherUserPassword@1234',
+    };
+    const otherUserEntity: TestUserInfo =
+      TestUserFactory.createUserEntity(otherUser);
+
+    // test feeds
+    const existingUserFeeds: Feed[] = [
+      new MakeTestClass(1, existingUser.id).feedData(),
+      new MakeTestClass(2, existingUser.id).feedData(),
+      new MakeTestClass(3, existingUser.id).feedData(),
+    ];
+
+    const otherUserFeeds: Feed[] = [
+      new MakeTestClass(4, otherUser.id).feedData(),
+    ];
+
+    const testFeeds: Feed[] = TestUtils.sortedMergedById(
+      existingUserFeeds,
+      otherUserFeeds
+    );
+
+    //test comments
+    const existingUserComments: Comment[] = [
+      new MakeTestClass(1, existingUser.id).commentData(4, false), // 공개 댓글
+      new MakeTestClass(2, existingUser.id).commentData(4, true), // 비공개 댓글
+      new MakeTestClass(3, existingUser.id).commentData(4, false, 1), // 공개 대댓글
+      new MakeTestClass(5, existingUser.id).commentData(1, true, 4), // 비공개 대댓글
+      new MakeTestClass(6, existingUser.id).commentData(
+        1,
+        false,
+        undefined,
+        true
+      ), // 삭제한 공개댓글
+    ];
+
+    const otherUserComments: Comment[] = [
+      new MakeTestClass(4, otherUser.id).commentData(1, true),
+    ];
+    const testComments: Comment[] = TestUtils.sortedMergedById(
+      existingUserComments,
+      otherUserComments
+    );
+
+    // test feed symbols
+    const existingUserFeedSybols: FeedSymbol[] = [
+      new MakeTestClass(1, existingUser.id).feedSymbolData(4),
+    ];
+    const otherUserFeedSybols: FeedSymbol[] = [
+      new MakeTestClass(2, otherUser.id).feedSymbolData(1),
+    ];
+    const testFeedSymbols: FeedSymbol[] = TestUtils.sortedMergedById(
+      existingUserFeedSybols,
+      otherUserFeedSybols
+    );
 
     beforeEach(async () => {
-      // 이미 존재하는 유저 생성
-      await dataSource.manager.save(User, existingUserEntity);
+      await dataSource.transaction(async transactionalEntityManager => {
+        // 이미 존재하는 유저 생성
+        await transactionalEntityManager.save(User, [
+          existingUserEntity,
+          otherUserEntity,
+        ]);
+
+        await transactionalEntityManager.save(Feed, testFeeds);
+        await transactionalEntityManager.save(Comment, testComments);
+        await transactionalEntityManager.save(FeedSymbol, testFeedSymbols);
+      });
     });
 
     afterEach(async () => {
       await TestUtils.clearDatabaseTables(dataSource);
     });
 
-    test('user delete', async () => {
+    test('delete User API - delete User: success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
         app,
-        existingUserSignIn,
+        existingUserSigningInfo,
         endpoint
       );
 
       expect(result.status).toBe(200);
+      expect(result.body).toEqual({ message: 'DELETE_USER_SUCCESS' });
+    });
+
+    test('delete User API - delete Feeds: success', async () => {
+      await ApiRequestHelper.makeAuthDeleteRequest(
+        app,
+        existingUserSigningInfo,
+        endpoint
+      );
+
+      const feedsByDeletedUser: Feed[] = await dataSource.manager.find(Feed, {
+        loadRelationIds: true,
+        where: { user: { id: existingUser.id } },
+      });
+
+      expect(feedsByDeletedUser.length).toBe(0);
+    });
+
+    test('delete User API - delete Comments: success', async () => {
+      await ApiRequestHelper.makeAuthDeleteRequest(
+        app,
+        existingUserSigningInfo,
+        endpoint
+      );
+
+      const commentsByDeletedUser: Comment[] = await dataSource.manager.find(
+        Comment,
+        {
+          loadRelationIds: true,
+          where: { user: { id: existingUser.id } },
+        }
+      );
+
+      expect(commentsByDeletedUser.length).toBe(0);
+    });
+
+    test('delete User API - delete FeedSymbol: success', async () => {
+      await ApiRequestHelper.makeAuthDeleteRequest(
+        app,
+        existingUserSigningInfo,
+        endpoint
+      );
+
+      const feedSymbolsByDeletedUser: FeedSymbol[] =
+        await dataSource.manager.find(FeedSymbol, {
+          loadRelationIds: true,
+          where: { user: { id: existingUser.id } },
+        });
+
+      expect(feedSymbolsByDeletedUser.length).toBe(0);
     });
   });
 });

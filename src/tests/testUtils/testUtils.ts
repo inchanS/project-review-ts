@@ -31,7 +31,6 @@ export class TestUtils {
   public static async clearDatabaseTables(dataSource: DataSource) {
     await dataSource.transaction(async transactionalEntityManager => {
       await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
-      await transactionalEntityManager.clear('FeedStatus');
       await transactionalEntityManager.clear('FeedSymbol');
       await transactionalEntityManager.clear('Comment');
       await transactionalEntityManager.clear('Feed');
