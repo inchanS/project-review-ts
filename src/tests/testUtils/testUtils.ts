@@ -1,5 +1,10 @@
 import { Response } from 'superagent';
 import { DataSource } from 'typeorm';
+import { FeedSymbol } from '../../entities/feedSymbol.entity';
+import { UploadFiles } from '../../entities/uploadFiles.entity';
+import { Comment } from '../../entities/comment.entity';
+import { Feed } from '../../entities/feed.entity';
+import { User } from '../../entities/users.entity';
 
 export class TestUtils {
   // 사용자 아이디 조회시 반환값의 종류와 유형 및 값을 정확히 반환하고 있는지 확인하는 메소드
@@ -31,10 +36,11 @@ export class TestUtils {
   public static async clearDatabaseTables(dataSource: DataSource) {
     await dataSource.transaction(async transactionalEntityManager => {
       await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
-      await transactionalEntityManager.clear('FeedSymbol');
-      await transactionalEntityManager.clear('Comment');
-      await transactionalEntityManager.clear('Feed');
-      await transactionalEntityManager.clear('User');
+      await transactionalEntityManager.clear(FeedSymbol);
+      await transactionalEntityManager.clear(UploadFiles);
+      await transactionalEntityManager.clear(Comment);
+      await transactionalEntityManager.clear(Feed);
+      await transactionalEntityManager.clear(User);
       await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
     });
   }
