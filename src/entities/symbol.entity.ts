@@ -2,7 +2,7 @@ import { Column, Entity, OneToMany, Unique } from 'typeorm';
 import { Base } from './base.entity';
 import { FeedSymbol } from './feedSymbol.entity';
 
-enum symbolType {
+export enum symbolType {
   Like = 'like',
   haveThisToo = 'I have this too',
 }
