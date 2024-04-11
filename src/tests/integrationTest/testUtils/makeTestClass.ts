@@ -74,11 +74,11 @@ export class MakeTestClass {
   };
 
   // 테스트간 게시물공감 데이터 생성을 위한 클래스 생성
-  public feedSymbolData = (feedId: number): FeedSymbol => {
+  public feedSymbolData = (feedId: number, symbolId: number): FeedSymbol => {
     return new FeedSymbol(
       this.userId as unknown as User,
       feedId as unknown as Feed,
-      1 as unknown as Symbol
+      symbolId as unknown as Symbol
     );
   };
 }

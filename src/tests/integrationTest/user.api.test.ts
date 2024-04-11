@@ -301,10 +301,10 @@ describe('user API', () => {
 
     // test feed symbols
     const existingUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(1, existingUser.id).feedSymbolData(4),
+      new MakeTestClass(1, existingUser.id).feedSymbolData(4, 1),
     ];
     const otherUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(2, otherUser.id).feedSymbolData(1),
+      new MakeTestClass(2, otherUser.id).feedSymbolData(1, 1),
     ];
     const testFeedSymbols: FeedSymbol[] = TestUtils.sortedMergedById(
       existingUserFeedSybols,
@@ -669,10 +669,10 @@ describe('user API', () => {
 
     // test feed symbols
     const existingUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(1, existingUser.id).feedSymbolData(4),
+      new MakeTestClass(1, existingUser.id).feedSymbolData(4, 1),
     ];
     const otherUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(2, otherUser.id).feedSymbolData(1),
+      new MakeTestClass(2, otherUser.id).feedSymbolData(1, 1),
     ];
     const testFeedSymbols: FeedSymbol[] = TestUtils.sortedMergedById(
       existingUserFeedSybols,
