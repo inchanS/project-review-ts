@@ -32,7 +32,7 @@ describe('categories API', () => {
   afterAll(async () => {
     await TestUtils.clearDatabaseTables(dataSource);
     await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source has been destroyed!');
+      console.log('💥TEST Data Source for Categories API has been destroyed!');
     });
   });
 
