@@ -37,7 +37,7 @@ describe('Symbol API', () => {
     });
   });
 
-  describe('get Symbol List', () => {
+  describe('set Symbol API', () => {
     // test users
     const existingUser: TestUserInfo = {
       id: 1,
@@ -116,7 +116,6 @@ describe('Symbol API', () => {
           anotherUserEntity,
         ]);
         await transactionalEntityManager.save(Feed, testFeeds);
-        await transactionalEntityManager.save(FeedSymbol, testFeedSymbols);
       });
     });
 
@@ -124,33 +123,52 @@ describe('Symbol API', () => {
       await TestUtils.clearDatabaseTables(dataSource);
     });
 
-    test('get Symbol List', async () => {
+    describe('get Symbol List', () => {
       const endpoint: string = '/symbols';
-      const result: Response = await request(app).get(endpoint);
 
-      expect(result.status).toBe(200);
-      expect(result.body).toBeInstanceOf(Array);
-      expect(result.body.length).toBe(2);
-      expect(result.body.every((item: Symbol) => item.hasOwnProperty('id')));
-      expect(
-        result.body.every((item: Symbol) => item.hasOwnProperty('symbol'))
-      );
-      expect(
-        result.body.every((item: Symbol) =>
-          Object.values(symbolType).includes(item.symbol)
-        )
-      ).toBe(true);
+      beforeAll(async () => {
+        await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+      });
 
-      expect(result.body.find((item: Symbol) => item.id === 1).symbol).toEqual(
-        'like'
-      );
-      expect(result.body.find((item: Symbol) => item.id === 2).symbol).toEqual(
-        'I have this too'
-      );
+      afterAll(async () => {
+        await dataSource.manager.clear(FeedSymbol);
+      });
+
+      test('get Symbol List', async () => {
+        const result: Response = await request(app).get(endpoint);
+
+        expect(result.status).toBe(200);
+        expect(result.body).toBeInstanceOf(Array);
+        expect(result.body.length).toBe(2);
+        expect(result.body.every((item: Symbol) => item.hasOwnProperty('id')));
+        expect(
+          result.body.every((item: Symbol) => item.hasOwnProperty('symbol'))
+        );
+        expect(
+          result.body.every((item: Symbol) =>
+            Object.values(symbolType).includes(item.symbol)
+          )
+        ).toBe(true);
+
+        expect(
+          result.body.find((item: Symbol) => item.id === 1).symbol
+        ).toEqual('like');
+        expect(
+          result.body.find((item: Symbol) => item.id === 2).symbol
+        ).toEqual('I have this too');
+      });
     });
 
     describe('get count of FeedSymbol', () => {
       const endpoint: string = '/symbols';
+
+      beforeAll(async () => {
+        await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+      });
+
+      afterAll(async () => {
+        await dataSource.manager.clear(FeedSymbol);
+      });
 
       test('get count of Symbols by Feeds with all FeedSymbols: success', async () => {
         const testFeedId: string = '/7';
@@ -205,6 +223,14 @@ describe('Symbol API', () => {
     describe('check FeedSymbol of Signing User by Feed', () => {
       const endpoint: string = '/symbols/check';
 
+      beforeAll(async () => {
+        await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+      });
+
+      afterAll(async () => {
+        await dataSource.manager.clear(FeedSymbol);
+      });
+
       test('check FeedSymbol: true', async () => {
         const testFeedId: number = 7;
         const stringTestFeedId: string = `/${testFeedId}`;
@@ -229,11 +255,161 @@ describe('Symbol API', () => {
           endpoint + stringTestFeedId
         );
 
-        console.log('🔥symbol.api.test/:232- result = ', result.body);
-
         expect(result.status).toBe(200);
         expect(result.body.checkValue).toBe(false);
         expect(result.body.result).toBe(null);
+      });
+    });
+
+    describe('add or update FeedSymbol', () => {
+      const endpoint = (feedId: number): string => {
+        return `/symbols/${feedId}`;
+      };
+
+      beforeEach(async () => {
+        await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+      });
+
+      afterEach(async () => {
+        await dataSource.manager.clear(FeedSymbol);
+      });
+
+      test('add FeedSymbol: true', async () => {
+        const testFeedId: number = 8;
+        const testEndpoint: string = endpoint(testFeedId);
+        const symbolId: number = 1;
+        const testContent: { symbolId: number } = { symbolId };
+
+        const beforeTestResult: Response = await request(app).get(testEndpoint);
+        const countFeedSymbolBeforeTest: number = beforeTestResult.body.find(
+          (item: FeedSymbolCount) => item.symbolId === symbolId
+        ).count;
+
+        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+          app,
+          existingUserSigningInfo,
+          testEndpoint,
+          testContent
+        );
+
+        expect(result.status).toBe(201);
+        expect(result.body.message).toEqual(
+          `SYMBOL_ID_${symbolId}_HAS_BEEN_ADDED_TO_THE_FEED_ID_${testFeedId}`
+        );
+        expect(
+          result.body.result.find(
+            (item: FeedSymbolCount) => item.symbolId === symbolId
+          ).count
+        ).toBe(countFeedSymbolBeforeTest + 1);
+      });
+
+      test('update FeedSymbol: true', async () => {
+        const testFeedId: number = 7;
+        const testEndpoint: string = endpoint(testFeedId);
+        const beforeSymbolId: number = 1;
+        const afterSymbolId: number = 2;
+        const testContent: { symbolId: number } = { symbolId: afterSymbolId };
+
+        const beforeTestResult: Response = await request(app).get(testEndpoint);
+        const countBeforeFeedSymbolBeforeTest: number =
+          beforeTestResult.body.find(
+            (item: FeedSymbolCount) => item.symbolId === beforeSymbolId
+          ).count;
+        const countUpdateFeedSymbolBeforeTest: number =
+          beforeTestResult.body.find(
+            (item: FeedSymbolCount) => item.symbolId === afterSymbolId
+          ).count;
+
+        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+          app,
+          existingUserSigningInfo,
+          testEndpoint,
+          testContent
+        );
+
+        expect(result.status).toBe(200);
+        expect(result.body.message).toEqual(
+          `SYMBOL_ID_${afterSymbolId}_HAS_BEEN_UPDATED_TO_THE_FEED_ID_${testFeedId}`
+        );
+
+        if (countBeforeFeedSymbolBeforeTest > 1) {
+          const countBeforeFeedSymbol: number = result.body.result.find(
+            (item: FeedSymbolCount) => item.symbolId === beforeSymbolId
+          ).count;
+
+          if (countBeforeFeedSymbol) {
+            expect(countBeforeFeedSymbol).toBe(
+              countBeforeFeedSymbolBeforeTest - 1
+            );
+          }
+        } else {
+          expect(result.body.result.length).toBe(1);
+        }
+
+        expect(
+          result.body.result.find(
+            (item: FeedSymbolCount) => item.symbolId === afterSymbolId
+          ).count
+        ).toBe(countUpdateFeedSymbolBeforeTest + 1);
+      });
+    });
+
+    describe('delete FeedSymbol', () => {
+      const endpoint = (feedId: number): string => {
+        return `/symbols/${feedId}`;
+      };
+
+      beforeEach(async () => {
+        await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+      });
+
+      afterEach(async () => {
+        await dataSource.manager.clear(FeedSymbol);
+      });
+
+      test('delete FeedSymbol: success', async () => {
+        const testFeedId: number = 7;
+        const testEndpoint: string = endpoint(testFeedId);
+
+        const beforeTestResult: Response = await request(app).get(testEndpoint);
+
+        const countFeedSymbolBeforeTest: number = beforeTestResult.body.find(
+          (item: FeedSymbolCount) => item.symbolId === 1
+        ).count;
+
+        const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
+          app,
+          existingUserSigningInfo,
+          testEndpoint
+        );
+
+        expect(result.status).toBe(200);
+
+        if (countFeedSymbolBeforeTest > 1) {
+          expect(
+            result.body.result.find(
+              (item: FeedSymbolCount) => item.symbolId === 1
+            )
+          ).toBe(countFeedSymbolBeforeTest - 1);
+        } else {
+          expect(result.body.result.length).toBe(
+            beforeTestResult.body.length - 1
+          );
+        }
+      });
+
+      test('delete FeedSymbol: failure', async () => {
+        const testFeedId: number = 8;
+        const testEndpoint: string = endpoint(testFeedId);
+
+        const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
+          app,
+          existingUserSigningInfo,
+          testEndpoint
+        );
+
+        expect(result.status).toBe(404);
+        expect(result.body.message).toEqual('FEED_SYMBOL_NOT_FOUND');
       });
     });
   });
