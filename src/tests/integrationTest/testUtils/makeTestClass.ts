@@ -17,11 +17,14 @@ export class MakeTestClass {
   }
 
   // 테스트간 피드생성을 위한 피드 클래스 생성
-  public feedData = (): Feed => {
+  public feedData = (
+    title: string = 'test title',
+    content: string = 'test content'
+  ): Feed => {
     const testFeed: Feed = new Feed(
       this.userId as unknown as User,
-      'test title',
-      'test content',
+      title,
+      content,
       0,
       '1' as unknown as Estimation,
       '1' as unknown as Category,
