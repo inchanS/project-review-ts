@@ -8,6 +8,7 @@ import { MakeTestClass } from './testUtils/makeTestClass';
 import { User } from '../../entities/users.entity';
 import { Response } from 'superagent';
 import request from 'supertest';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 
 const app: Express = createApp();
 
@@ -120,6 +121,117 @@ describe('Search API', () => {
 
       test('get search API test: null', async () => {
         const nullTestEndpoint = '/search?query=abcde';
+        const result: Response = await request(app).get(nullTestEndpoint);
+
+        expect(result.status).toBe(200);
+        expect(result.body).toBeInstanceOf(Array);
+        expect(result.body.length).toBe(0);
+      });
+
+      test('get search API test: with index and limit', async () => {
+        const index: number = 1;
+        const limit: number = 2;
+        const testEndpointWithIndexAndLimit: string =
+          testEndpoint + `&index=${index}&limit=${limit}`;
+        const result: Response = await request(app).get(
+          testEndpointWithIndexAndLimit
+        );
+
+        expect(result.status).toBe(200);
+        expect(result.body).toBeInstanceOf(Array);
+        expect(result.body.length).toBe(2);
+        expect(result.body[0].id).toBe(3);
+        expect(result.body[result.body.length - 1].id).toBe(2);
+      });
+
+      test('get search API test: Failure - PAGE_START_INDEX_OR LIMIT_IS_INVALID', async () => {
+        const index: number = -1;
+        const limit: number = 2;
+        const testEndpointWithIndexAndLimit: string =
+          testEndpoint + `&index=${index}&limit=${limit}`;
+        const result: Response = await request(app).get(
+          testEndpointWithIndexAndLimit
+        );
+
+        expect(result.status).toBe(400);
+        expect(result.body.message).toBe(
+          'PAGE_START_INDEX_OR LIMIT_IS_INVALID'
+        );
+      });
+
+      test('get search API test: Failure - WHEN_AN_INDEX_IS_PRESENT,_THE_LIMIT_MUST_BE_GREATER_THAN_0', async () => {
+        const index: number = 2;
+        const limit: number = 0;
+        const testEndpointWithIndexAndLimit: string =
+          testEndpoint + `&index=${index}&limit=${limit}`;
+        const result: Response = await request(app).get(
+          testEndpointWithIndexAndLimit
+        );
+
+        expect(result.status).toBe(400);
+        expect(result.body.message).toBe(
+          'WHEN_AN_INDEX_IS_PRESENT,_THE_LIMIT_MUST_BE_GREATER_THAN_0'
+        );
+      });
+    });
+
+    describe('searchList test', () => {
+      const endpoint: string = '/search/list?query=';
+      const testEndpoint: string = endpoint + testQuery;
+
+      test('get searchList API test', async () => {
+        const result: Response = await request(app).get(testEndpoint);
+
+        expect(result.status).toBe(200);
+        expect(result.body).toBeInstanceOf(Array);
+        expect(result.body.length).toBe(3);
+        expect(
+          result.body.every((item: FeedList) => item.hasOwnProperty('id'))
+        );
+        expect(
+          result.body.every((item: FeedList) => Object.keys(item).length === 18)
+        );
+        expect(result.body.every((item: FeedList) => item.deletedAt === null));
+
+        const feedWithTitleAndContent = result.body.find(
+          (item: FeedList) => item.id === 2
+        );
+        expect(feedWithTitleAndContent.title).toContain(testQuery);
+        expect(feedWithTitleAndContent.content).toContain(testQuery);
+
+        // String.startsWith  메소드로 '...'로 시작하는지 여부를 찾는 방법
+        const startsWithDotsTitle: boolean =
+          feedWithTitleAndContent.title.startsWith('...');
+        // 정규식으로 '...'로 시작하는지 여부를 찾는 방법
+        const regexStart: RegExp = /^\.{3}/; // 선두에 세 개의 점이 있는지 검사하는 정규 표현식
+        const startsWithDotsContent: boolean = regexStart.test(
+          feedWithTitleAndContent.content
+        );
+        expect(startsWithDotsTitle).toBe(true);
+        expect(startsWithDotsContent).toBe(true);
+
+        const endsWithDotsContent: boolean =
+          feedWithTitleAndContent.content.endsWith('...');
+        const regexEnd: RegExp = /\.{3}$/; // 문자열이 세 개의 점으로 끝나는지 검사하는 정규 표현식
+        const endsWithDotsTitle: boolean = regexEnd.test(
+          feedWithTitleAndContent.title
+        );
+        expect(endsWithDotsTitle).toBe(false);
+        expect(endsWithDotsContent).toBe(true);
+
+        const feedWithContent = result.body.find((item: any) => item.id === 4);
+        expect(feedWithContent.content).toContain(testQuery);
+
+        const feedWithTitle = result.body.find((item: any) => item.id === 3);
+        expect(feedWithTitle.title).toContain(testQuery);
+
+        // 순서
+        expect(result.body[0].id).toBe(4);
+        expect(result.body[result.body.length - 1].id).toBe(2);
+      });
+
+      test('get searchList API test: null', async () => {
+        const nullTestEndpoint = '/search/List?query=abcde';
         const result: Response = await request(app).get(nullTestEndpoint);
 
         expect(result.status).toBe(200);
