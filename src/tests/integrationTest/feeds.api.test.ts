@@ -81,8 +81,12 @@ describe('Feed CRUD API Test', () => {
           endpoint,
           postBody
         );
-        console.log('🔥feeds.api.test/:84- result.body = ', result.body);
+
         expect(result.status).toBe(201);
+        expect(result.body.message).toBe('create temporary feed success');
+        expect(Object.keys(result.body.result).length).toBe(13);
+        expect(result.body.result.user.id).toBe(existingUser.id);
+        expect(result.body.result.content).toBe(feedInfo.content);
       });
     });
   });
