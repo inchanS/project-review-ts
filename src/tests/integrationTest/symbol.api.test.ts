@@ -222,9 +222,11 @@ describe('Symbol API', () => {
 
     describe('check FeedSymbol of Signing User by Feed', () => {
       const endpoint: string = '/symbols/check';
+      let token: string;
 
       beforeAll(async () => {
         await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+        token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
       });
 
       afterAll(async () => {
@@ -235,7 +237,7 @@ describe('Symbol API', () => {
         const testFeedId: number = 7;
         const stringTestFeedId: string = `/${testFeedId}`;
         const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-          existingUserSigningInfo,
+          token,
           endpoint + stringTestFeedId
         );
 
@@ -249,7 +251,7 @@ describe('Symbol API', () => {
         const testFeedId: number = 8;
         const stringTestFeedId: string = `/${testFeedId}`;
         const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-          existingUserSigningInfo,
+          token,
           endpoint + stringTestFeedId
         );
 
@@ -263,9 +265,10 @@ describe('Symbol API', () => {
       const endpoint = (feedId: number): string => {
         return `/symbols/${feedId}`;
       };
-
+      let token: string;
       beforeEach(async () => {
         await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+        token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
       });
 
       afterEach(async () => {
@@ -284,7 +287,7 @@ describe('Symbol API', () => {
         ).count;
 
         const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          existingUserSigningInfo,
+          token,
           testEndpoint,
           testContent
         );
@@ -318,7 +321,7 @@ describe('Symbol API', () => {
           ).count;
 
         const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          existingUserSigningInfo,
+          token,
           testEndpoint,
           testContent
         );
@@ -354,9 +357,11 @@ describe('Symbol API', () => {
       const endpoint = (feedId: number): string => {
         return `/symbols/${feedId}`;
       };
+      let token: string;
 
       beforeEach(async () => {
         await dataSource.manager.save(FeedSymbol, testFeedSymbols);
+        token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
       });
 
       afterEach(async () => {
@@ -374,7 +379,7 @@ describe('Symbol API', () => {
         ).count;
 
         const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
-          existingUserSigningInfo,
+          token,
           testEndpoint
         );
 
@@ -398,7 +403,7 @@ describe('Symbol API', () => {
         const testEndpoint: string = endpoint(testFeedId);
 
         const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
-          existingUserSigningInfo,
+          token,
           testEndpoint
         );
 

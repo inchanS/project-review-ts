@@ -46,10 +46,12 @@ describe('Feed CRUD API Test', () => {
     const existingUserSigningInfo: TestSignIn =
       TestUserFactory.createSignInInfo(existingUser);
 
+    let token: string;
     beforeEach(async () => {
       await dataSource.transaction(async transactionalEntityManager => {
         await transactionalEntityManager.save(User, existingUserEntity);
       });
+      token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
     });
     afterEach(async () => {
       await TestUtils.clearDatabaseTables(dataSource);
@@ -72,7 +74,7 @@ describe('Feed CRUD API Test', () => {
         };
 
         const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          existingUserSigningInfo,
+          token,
           endpoint,
           postBody
         );

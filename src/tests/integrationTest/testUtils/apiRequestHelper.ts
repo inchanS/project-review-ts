@@ -18,21 +18,18 @@ export class ApiRequestHelper {
 
   // 토큰을 필요로 하는 http get 메소드
   public static async makeAuthGetRequest(
-    user: TestSignIn,
+    token: string,
     endpoint: string
   ): Promise<Response> {
-    const token: string = await this.getAuthToken(user);
     return request(this.app).get(endpoint).set('Authorization', token);
   }
 
   // 토큰을 필요로 하는 http post 메소드
   public static async makeAuthPostRequest(
-    user: TestSignIn,
+    token: string,
     endpoint: string,
     content: any
   ): Promise<Response> {
-    const token: string = await this.getAuthToken(user);
-
     return request(this.app)
       .post(endpoint)
       .set('Authorization', token)
@@ -41,12 +38,10 @@ export class ApiRequestHelper {
 
   // 토큰을 필요로 하는 http patch 메소드
   public static async makeAuthPatchRequest(
-    user: TestSignIn,
+    token: string,
     endpoint: string,
     content: any
   ): Promise<Response> {
-    const token: string = await this.getAuthToken(user);
-
     return request(this.app)
       .patch(endpoint)
       .set('Authorization', token)
@@ -54,11 +49,9 @@ export class ApiRequestHelper {
   }
 
   public static async makeAuthDeleteRequest(
-    user: TestSignIn,
+    token: string,
     endpoint: string
   ): Promise<Response> {
-    const token: string = await this.getAuthToken(user);
-
     return request(this.app).delete(endpoint).set('Authorization', token);
   }
 }

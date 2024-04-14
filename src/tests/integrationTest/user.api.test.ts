@@ -311,6 +311,8 @@ describe('user API', () => {
       otherUserFeedSybols
     );
 
+    let token: string;
+
     beforeAll(async () => {
       await dataSource.transaction(async transactionalEntityManager => {
         // 이미 존재하는 유저 생성
@@ -323,6 +325,8 @@ describe('user API', () => {
         await transactionalEntityManager.save(Comment, testComments);
         await transactionalEntityManager.save(FeedSymbol, testFeedSymbols);
       });
+      // 미리 로그인하여 token을 획득
+      token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
     });
 
     afterAll(async () => {
@@ -361,7 +365,7 @@ describe('user API', () => {
 
     test('user Content - getMyInfo: success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        existingUserSigningInfo,
+        token,
         endpoint
       );
       TestUtils.validateUser(result, existingUser);
@@ -384,7 +388,7 @@ describe('user API', () => {
 
     test('user Content - getMyFeedList - success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        existingUser,
+        token,
         `${endpoint}/feeds`
       );
 
@@ -398,7 +402,7 @@ describe('user API', () => {
 
     test('user Content - getMyCommentList - success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        existingUser,
+        token,
         `${endpoint}/comments`
       );
 
@@ -444,7 +448,7 @@ describe('user API', () => {
     //
     test('user Content - getMyFeedSymbolList - success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        existingUser,
+        token,
         `${endpoint}/symbols`
       );
 
@@ -477,10 +481,14 @@ describe('user API', () => {
     const existingUserEntity: TestUserInfo =
       TestUserFactory.createUserEntity(existingUser);
 
+    let token: string;
+
     // 기존 사용자의 정보를 변경하거나 삭제하는 테스트들이기에 beforeAll이 아닌 beforeEach로 처리
     beforeEach(async () => {
       // 이미 존재하는 유저 생성 (토큰 생성을 위해 API 이용)
       await dataSource.manager.save(User, existingUserEntity);
+      // token 획득
+      token = await ApiRequestHelper.getAuthToken(existingUserSignIn);
     });
 
     afterEach(async () => {
@@ -490,10 +498,6 @@ describe('user API', () => {
     });
 
     test('user info - 사용자정보변경: 실패(로그인 후 탈퇴 후 정보변경시 - not found user', async () => {
-      const token: string = await ApiRequestHelper.getAuthToken(
-        existingUserSignIn
-      );
-
       await dataSource.manager.update(
         User,
         { id: existingUser.id },
@@ -520,7 +524,7 @@ describe('user API', () => {
       };
 
       const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
-        existingUserSignIn,
+        token,
         endpoint,
         updateSameUserInfo
       );
@@ -542,7 +546,7 @@ describe('user API', () => {
       'user info - 사용자 정보 변경(이메일, 닉네임): 성공',
       async (item: { email: string; nickname: string }) => {
         const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
-          existingUserSignIn,
+          token,
           endpoint,
           item
         );
@@ -561,7 +565,7 @@ describe('user API', () => {
       const updateUserInfo: { password: string } = { password: newPassword };
 
       await ApiRequestHelper.makeAuthPatchRequest(
-        existingUserSignIn,
+        token,
         endpoint,
         updateUserInfo
       );
@@ -668,6 +672,8 @@ describe('user API', () => {
       otherUserFeedSybols
     );
 
+    let token: string;
+
     beforeEach(async () => {
       await dataSource.transaction(async transactionalEntityManager => {
         // 이미 존재하는 유저 생성
@@ -684,6 +690,8 @@ describe('user API', () => {
           existingUserUploadFiles
         );
       });
+
+      token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
     });
 
     afterEach(async () => {
@@ -692,7 +700,7 @@ describe('user API', () => {
 
     test('delete User API - delete User: success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
-        existingUserSigningInfo,
+        token,
         endpoint
       );
 
