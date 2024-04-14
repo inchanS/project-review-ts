@@ -5,6 +5,7 @@ import { TestUserFactory } from './testUtils/testUserFactory';
 import { User } from '../../entities/users.entity';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { TempFeedDto } from '../../entities/dto/tempFeed.dto';
+import { TestSignIn, TestTempFeedDto, TestUserInfo } from '../../types/test';
 
 describe('Feed CRUD API Test', () => {
   beforeAll(async () => {
@@ -69,7 +70,7 @@ describe('Feed CRUD API Test', () => {
       };
 
       test('create temp feed without uploadFiles', async () => {
-        const postBody = {
+        const postBody: TestTempFeedDto = {
           content: feedInfo.content,
         };
 
