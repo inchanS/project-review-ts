@@ -4,11 +4,7 @@ import { Response } from 'superagent';
 import { TestUserFactory } from './testUtils/testUserFactory';
 import { User } from '../../entities/users.entity';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
-import { createApp } from '../../app';
 import { TempFeedDto } from '../../entities/dto/tempFeed.dto';
-import { Express } from 'express';
-
-const app: Express = createApp();
 
 describe('Feed CRUD API Test', () => {
   beforeAll(async () => {
@@ -76,7 +72,6 @@ describe('Feed CRUD API Test', () => {
         };
 
         const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          app,
           existingUserSigningInfo,
           endpoint,
           postBody

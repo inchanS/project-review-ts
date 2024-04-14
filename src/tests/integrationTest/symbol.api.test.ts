@@ -235,7 +235,6 @@ describe('Symbol API', () => {
         const testFeedId: number = 7;
         const stringTestFeedId: string = `/${testFeedId}`;
         const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-          app,
           existingUserSigningInfo,
           endpoint + stringTestFeedId
         );
@@ -250,7 +249,6 @@ describe('Symbol API', () => {
         const testFeedId: number = 8;
         const stringTestFeedId: string = `/${testFeedId}`;
         const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-          app,
           existingUserSigningInfo,
           endpoint + stringTestFeedId
         );
@@ -286,7 +284,6 @@ describe('Symbol API', () => {
         ).count;
 
         const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          app,
           existingUserSigningInfo,
           testEndpoint,
           testContent
@@ -321,7 +318,6 @@ describe('Symbol API', () => {
           ).count;
 
         const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          app,
           existingUserSigningInfo,
           testEndpoint,
           testContent
@@ -378,7 +374,6 @@ describe('Symbol API', () => {
         ).count;
 
         const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
-          app,
           existingUserSigningInfo,
           testEndpoint
         );
@@ -403,7 +398,6 @@ describe('Symbol API', () => {
         const testEndpoint: string = endpoint(testFeedId);
 
         const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
-          app,
           existingUserSigningInfo,
           testEndpoint
         );

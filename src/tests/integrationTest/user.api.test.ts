@@ -340,7 +340,6 @@ describe('user API', () => {
       const tempUserSigningInfo: TestSignIn =
         TestUserFactory.createSignInInfo(tempUser);
       const token: string = await ApiRequestHelper.getAuthToken(
-        app,
         tempUserSigningInfo
       );
 
@@ -362,7 +361,6 @@ describe('user API', () => {
 
     test('user Content - getMyInfo: success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        app,
         existingUserSigningInfo,
         endpoint
       );
@@ -386,7 +384,6 @@ describe('user API', () => {
 
     test('user Content - getMyFeedList - success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        app,
         existingUser,
         `${endpoint}/feeds`
       );
@@ -401,7 +398,6 @@ describe('user API', () => {
 
     test('user Content - getMyCommentList - success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        app,
         existingUser,
         `${endpoint}/comments`
       );
@@ -448,7 +444,6 @@ describe('user API', () => {
     //
     test('user Content - getMyFeedSymbolList - success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-        app,
         existingUser,
         `${endpoint}/symbols`
       );
@@ -496,7 +491,6 @@ describe('user API', () => {
 
     test('user info - 사용자정보변경: 실패(로그인 후 탈퇴 후 정보변경시 - not found user', async () => {
       const token: string = await ApiRequestHelper.getAuthToken(
-        app,
         existingUserSignIn
       );
 
@@ -526,7 +520,6 @@ describe('user API', () => {
       };
 
       const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
-        app,
         existingUserSignIn,
         endpoint,
         updateSameUserInfo
@@ -549,7 +542,6 @@ describe('user API', () => {
       'user info - 사용자 정보 변경(이메일, 닉네임): 성공',
       async (item: { email: string; nickname: string }) => {
         const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
-          app,
           existingUserSignIn,
           endpoint,
           item
@@ -569,7 +561,6 @@ describe('user API', () => {
       const updateUserInfo: { password: string } = { password: newPassword };
 
       await ApiRequestHelper.makeAuthPatchRequest(
-        app,
         existingUserSignIn,
         endpoint,
         updateUserInfo
@@ -580,7 +571,6 @@ describe('user API', () => {
         password: newPassword,
       };
       const successResultModel: Response = await ApiRequestHelper.signinUser(
-        app,
         newExistingUserSignIn
       );
 
@@ -589,7 +579,6 @@ describe('user API', () => {
       expect(successResultModel.body.message).toEqual('SIGNIN_SUCCESS');
 
       const failedResultModel: Response = await ApiRequestHelper.signinUser(
-        app,
         existingUserSignIn
       );
 
@@ -703,7 +692,6 @@ describe('user API', () => {
 
     test('delete User API - delete User: success', async () => {
       const result: Response = await ApiRequestHelper.makeAuthDeleteRequest(
-        app,
         existingUserSigningInfo,
         endpoint
       );
