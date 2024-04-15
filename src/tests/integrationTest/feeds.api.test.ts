@@ -125,8 +125,19 @@ describe('Feed CRUD API Test', () => {
           endpoint,
           postBody
         );
-
         expect(result.status).toBe(201);
+        expect(result.body.message).toBe('create temporary feed success');
+        expect(Object.keys(result.body.result).length).toBe(13);
+        expect(result.body.result.user.id).toBe(existingUser.id);
+        expect(result.body.result.content).toBe(feedInfo.content);
+        expect(result.body.result.uploadFiles.length).toBe(1);
+        expect(result.body.result.uploadFiles[0].id).toBe(uploadFiles1.id);
+        expect(result.body.result.uploadFiles[0].file_link).toBe(
+          uploadFiles1.file_link
+        );
+        expect(result.body.result.uploadFiles[0].file_name).toBe(
+          uploadFiles1.file_name
+        );
       });
     });
   });
