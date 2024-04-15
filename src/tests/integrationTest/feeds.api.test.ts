@@ -75,14 +75,14 @@ describe('Feed CRUD API Test', () => {
     const testUploadFiles: UploadFiles[] = [uploadFiles1, uploadFiles2];
 
     let token: string;
-    beforeAll(async () => {
+    beforeEach(async () => {
       await dataSource.transaction(async transactionalEntityManager => {
         await transactionalEntityManager.save(User, existingUserEntity);
         await transactionalEntityManager.save(UploadFiles, testUploadFiles);
       });
       token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
     });
-    afterAll(async () => {
+    afterEach(async () => {
       await TestUtils.clearDatabaseTables(dataSource);
     });
 
@@ -96,14 +96,6 @@ describe('Feed CRUD API Test', () => {
         estimation: 1,
         category: 1,
       };
-
-      afterEach(async () => {
-        await dataSource.transaction(async transactionalEntityManager => {
-          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
-          await transactionalEntityManager.clear(Feed);
-          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
-        });
-      });
 
       test('create temp feed without uploadFiles', async () => {
         const postBody: TestTempFeedDto = {
@@ -180,14 +172,6 @@ describe('Feed CRUD API Test', () => {
         await dataSource.manager.save(Feed, existingTempFeedWithoutUploadfiles);
       });
 
-      afterEach(async () => {
-        await dataSource.transaction(async transactionalEntityManager => {
-          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
-          await transactionalEntityManager.clear(Feed);
-          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
-        });
-      });
-
       test('update title of temp feed', async () => {
         const patchBody = {
           feedId: existingTempFeedWithoutUploadfiles.id,
@@ -238,6 +222,23 @@ describe('Feed CRUD API Test', () => {
         expect(result.body.message).toBe('update temporary feed success');
         expect(result.body.result.estimation.id).toBe(1);
         expect(result.body.result.category.id).toBe(1);
+      });
+
+      test('update fileLinks of temp feed', async () => {
+        const patchBody = {
+          feedId: existingTempFeedWithoutUploadfiles.id,
+          fileLinks: [uploadFiles1.file_link],
+        };
+
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+          token,
+          endpoint,
+          patchBody
+        );
+
+        expect(result.status).toBe(200);
+        expect(result.body.result.uploadFiles.length).toBe(1);
+        expect(result.body.result.uploadFiles[0].id).toBe(uploadFiles1.id);
       });
     });
   });
