@@ -8,6 +8,7 @@ import { TempFeedDto } from '../../entities/dto/tempFeed.dto';
 import { TestSignIn, TestTempFeedDto, TestUserInfo } from '../../types/test';
 import { UploadFiles } from '../../entities/uploadFiles.entity';
 import { MakeTestClass } from './testUtils/makeTestClass';
+import { Feed } from '../../entities/feed.entity';
 
 // @aws-sdk/client-s3 모의
 jest.mock('@aws-sdk/client-s3', () => {
@@ -74,14 +75,14 @@ describe('Feed CRUD API Test', () => {
     const testUploadFiles: UploadFiles[] = [uploadFiles1, uploadFiles2];
 
     let token: string;
-    beforeEach(async () => {
+    beforeAll(async () => {
       await dataSource.transaction(async transactionalEntityManager => {
         await transactionalEntityManager.save(User, existingUserEntity);
         await transactionalEntityManager.save(UploadFiles, testUploadFiles);
       });
       token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
     });
-    afterEach(async () => {
+    afterAll(async () => {
       await TestUtils.clearDatabaseTables(dataSource);
     });
 
@@ -95,6 +96,14 @@ describe('Feed CRUD API Test', () => {
         estimation: 1,
         category: 1,
       };
+
+      afterEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
+        });
+      });
 
       test('create temp feed without uploadFiles', async () => {
         const postBody: TestTempFeedDto = {
@@ -116,7 +125,7 @@ describe('Feed CRUD API Test', () => {
         expect(result.body.result.uploadFiles.length).toBe(0);
       });
 
-      test('create temp feed with uploadfiles', async () => {
+      test('create temp feed with uploadFiles', async () => {
         const postBody: TestTempFeedDto = {
           content: feedInfo.content,
           fileLinks: [uploadFiles1.file_link],
@@ -156,6 +165,79 @@ describe('Feed CRUD API Test', () => {
         expect(DBResult.length).toBe(1);
         expect(DBResult[0].user).toBe(existingUser.id);
         expect(DBResult[0].feed).toBe(apiResult.body.result.id);
+      });
+    });
+
+    describe('update temp feed', () => {
+      const endpoint: string = '/feeds/temp';
+
+      const existingTempFeedWithoutUploadfiles: Feed = new MakeTestClass(
+        1,
+        existingUser.id
+      ).tempFeedData();
+
+      beforeEach(async () => {
+        await dataSource.manager.save(Feed, existingTempFeedWithoutUploadfiles);
+      });
+
+      afterEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 0;`);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS = 1;`);
+        });
+      });
+
+      test('update title of temp feed', async () => {
+        const patchBody = {
+          feedId: existingTempFeedWithoutUploadfiles.id,
+          title: 'this is title',
+        };
+
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+          token,
+          endpoint,
+          patchBody
+        );
+        expect(result.status).toBe(200);
+        expect(result.body.message).toBe('update temporary feed success');
+        expect(result.body.result.title).toBe('this is title');
+      });
+
+      test('update content of temp feed', async () => {
+        const patchBody = {
+          feedId: existingTempFeedWithoutUploadfiles.id,
+          content: 'this is update content',
+        };
+
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+          token,
+          endpoint,
+          patchBody
+        );
+
+        expect(result.status).toBe(200);
+        expect(result.body.message).toBe('update temporary feed success');
+        expect(result.body.result.content).toBe(patchBody.content);
+      });
+
+      test('update estimation and category of temp feed', async () => {
+        const patchBody = {
+          feedId: existingTempFeedWithoutUploadfiles.id,
+          estimation: 1,
+          category: 1,
+        };
+
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+          token,
+          endpoint,
+          patchBody
+        );
+
+        expect(result.status).toBe(200);
+        expect(result.body.message).toBe('update temporary feed success');
+        expect(result.body.result.estimation.id).toBe(1);
+        expect(result.body.result.category.id).toBe(1);
       });
     });
   });
