@@ -36,7 +36,7 @@ export class MakeTestClass {
     return testFeed;
   };
 
-  public uploadData = (fileName: string, feedId: number): UploadFiles => {
+  public uploadData = (fileName: string, feedId?: number): UploadFiles => {
     const generateRandomString = (): string => {
       return Math.random().toString(36).substring(2, 12);
     };
