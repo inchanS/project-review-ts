@@ -9,6 +9,7 @@ import { User } from '../../entities/users.entity';
 import { Response } from 'superagent';
 import request from 'supertest';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
+import { TestUserInfo } from '../../types/test';
 
 const app: Express = createApp();
 

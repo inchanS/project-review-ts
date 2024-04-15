@@ -11,6 +11,7 @@ import { Response } from 'superagent';
 import request from 'supertest';
 import { Symbol, symbolType } from '../../entities/symbol.entity';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
+import { TestSignIn, TestUserInfo } from '../../types/test';
 
 const app: Express = createApp();
 

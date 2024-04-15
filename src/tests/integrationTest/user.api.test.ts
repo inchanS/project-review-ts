@@ -13,6 +13,7 @@ import { TestUserFactory } from './testUtils/testUserFactory';
 import { TestUtils } from './testUtils/testUtils';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { UploadFiles } from '../../entities/uploadFiles.entity';
+import { TestSignIn, TestUserInfo } from '../../types/test';
 
 // AWS SDK의 S3 서비스 부분을 모의 처리합니다.
 jest.mock('@aws-sdk/client-s3', () => {
