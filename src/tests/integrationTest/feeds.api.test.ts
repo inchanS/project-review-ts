@@ -111,7 +111,9 @@ describe('Feed CRUD API Test', () => {
         expect(result.body.message).toBe('create temporary feed success');
         expect(Object.keys(result.body.result).length).toBe(13);
         expect(result.body.result.user.id).toBe(existingUser.id);
+        expect(result.body.result.status.id).toBe(2);
         expect(result.body.result.content).toBe(feedInfo.content);
+        expect(result.body.result.uploadFiles.length).toBe(0);
       });
 
       test('create temp feed with uploadfiles', async () => {
@@ -120,24 +122,40 @@ describe('Feed CRUD API Test', () => {
           fileLinks: [uploadFiles1.file_link],
         };
 
-        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+        const apiResult: Response = await ApiRequestHelper.makeAuthPostRequest(
           token,
           endpoint,
           postBody
         );
-        expect(result.status).toBe(201);
-        expect(result.body.message).toBe('create temporary feed success');
-        expect(Object.keys(result.body.result).length).toBe(13);
-        expect(result.body.result.user.id).toBe(existingUser.id);
-        expect(result.body.result.content).toBe(feedInfo.content);
-        expect(result.body.result.uploadFiles.length).toBe(1);
-        expect(result.body.result.uploadFiles[0].id).toBe(uploadFiles1.id);
-        expect(result.body.result.uploadFiles[0].file_link).toBe(
+
+        const DBResult: UploadFiles[] = await dataSource.manager.find(
+          UploadFiles,
+          {
+            loadRelationIds: true,
+            where: { feed: { id: apiResult.body.result.id } },
+          }
+        );
+
+        expect(apiResult.status).toBe(201);
+        expect(apiResult.body.message).toBe('create temporary feed success');
+        expect(Object.keys(apiResult.body.result).length).toBe(13);
+        expect(apiResult.body.result.user.id).toBe(existingUser.id);
+        expect(apiResult.body.result.status.id).toBe(2);
+        expect(apiResult.body.result.content).toBe(feedInfo.content);
+        // Response 값의 uploadFiles 확인
+        expect(apiResult.body.result.uploadFiles.length).toBe(1);
+        expect(apiResult.body.result.uploadFiles[0].id).toBe(uploadFiles1.id);
+        expect(apiResult.body.result.uploadFiles[0].file_link).toBe(
           uploadFiles1.file_link
         );
-        expect(result.body.result.uploadFiles[0].file_name).toBe(
+        expect(apiResult.body.result.uploadFiles[0].file_name).toBe(
           uploadFiles1.file_name
         );
+
+        // uploadFiles DB에서의 Feed 연결 및 사용자 확인
+        expect(DBResult.length).toBe(1);
+        expect(DBResult[0].user).toBe(existingUser.id);
+        expect(DBResult[0].feed).toBe(apiResult.body.result.id);
       });
     });
   });
