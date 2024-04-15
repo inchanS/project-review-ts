@@ -6,6 +6,21 @@ import { User } from '../../entities/users.entity';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { TempFeedDto } from '../../entities/dto/tempFeed.dto';
 import { TestSignIn, TestTempFeedDto, TestUserInfo } from '../../types/test';
+import { UploadFiles } from '../../entities/uploadFiles.entity';
+import { MakeTestClass } from './testUtils/makeTestClass';
+
+// @aws-sdk/client-s3 모의
+jest.mock('@aws-sdk/client-s3', () => {
+  const originalModule = jest.requireActual('@aws-sdk/client-s3');
+  return {
+    ...originalModule,
+    S3Client: jest.fn(() => ({
+      send: jest.fn().mockResolvedValue({
+        $metadata: { httpStatusCode: 200 },
+      }),
+    })),
+  };
+});
 
 describe('Feed CRUD API Test', () => {
   beforeAll(async () => {
@@ -47,10 +62,22 @@ describe('Feed CRUD API Test', () => {
     const existingUserSigningInfo: TestSignIn =
       TestUserFactory.createSignInInfo(existingUser);
 
+    const uploadFiles1: UploadFiles = new MakeTestClass(
+      1,
+      existingUser.id
+    ).uploadData('testfile1.jpeg');
+    const uploadFiles2: UploadFiles = new MakeTestClass(
+      2,
+      existingUser.id
+    ).uploadData('testfile2.txt');
+
+    const testUploadFiles: UploadFiles[] = [uploadFiles1, uploadFiles2];
+
     let token: string;
     beforeEach(async () => {
       await dataSource.transaction(async transactionalEntityManager => {
         await transactionalEntityManager.save(User, existingUserEntity);
+        await transactionalEntityManager.save(UploadFiles, testUploadFiles);
       });
       token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
     });
@@ -85,6 +112,21 @@ describe('Feed CRUD API Test', () => {
         expect(Object.keys(result.body.result).length).toBe(13);
         expect(result.body.result.user.id).toBe(existingUser.id);
         expect(result.body.result.content).toBe(feedInfo.content);
+      });
+
+      test('create temp feed with uploadfiles', async () => {
+        const postBody: TestTempFeedDto = {
+          content: feedInfo.content,
+          fileLinks: [uploadFiles1.file_link],
+        };
+
+        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+          token,
+          endpoint,
+          postBody
+        );
+
+        expect(result.status).toBe(201);
       });
     });
   });
