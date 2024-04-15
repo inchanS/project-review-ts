@@ -7,6 +7,7 @@ import { Comment } from '../../../entities/comment.entity';
 import { FeedSymbol } from '../../../entities/feedSymbol.entity';
 import { Symbol } from '../../../entities/symbol.entity';
 import { UploadFiles } from '../../../entities/uploadFiles.entity';
+import { plainToInstance } from 'class-transformer';
 
 export class MakeTestClass {
   private readonly id: number;
@@ -32,6 +33,18 @@ export class MakeTestClass {
     );
     testFeed.id = this.id;
     testFeed.posted_at = new Date();
+
+    return testFeed;
+  };
+
+  public tempFeedData = (content: string = 'test content'): Feed => {
+    const testFeedInfo = {
+      user: this.userId,
+      content: content,
+      status: 2,
+    };
+    const testFeed: Feed = plainToInstance(Feed, testFeedInfo);
+    testFeed.id = this.id;
 
     return testFeed;
   };
