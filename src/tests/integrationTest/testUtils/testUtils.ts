@@ -5,6 +5,7 @@ import { UploadFiles } from '../../../entities/uploadFiles.entity';
 import { Comment } from '../../../entities/comment.entity';
 import { Feed } from '../../../entities/feed.entity';
 import { User } from '../../../entities/users.entity';
+import { TestUserInfo } from '../../../types/test';
 
 export class TestUtils {
   // 사용자 아이디 조회시 반환값의 종류와 유형 및 값을 정확히 반환하고 있는지 확인하는 메소드

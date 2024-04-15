@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { TestSignIn, TestUserInfo } from '../../../types/test';
 
 export class TestUserFactory {
   // hash Password 생성 함수

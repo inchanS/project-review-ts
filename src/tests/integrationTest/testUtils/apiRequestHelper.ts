@@ -2,6 +2,7 @@ import { Express } from 'express';
 import request from 'supertest';
 import { Response } from 'superagent';
 import { createApp } from '../../../app';
+import { TestSignIn } from '../../../types/test';
 
 export class ApiRequestHelper {
   private static app: Express = createApp();
