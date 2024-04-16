@@ -71,8 +71,16 @@ describe('Feed CRUD API Test', () => {
       2,
       existingUser.id
     ).uploadData('testfile2.txt');
+    const uploadFiles3: UploadFiles = new MakeTestClass(
+      3,
+      existingUser.id
+    ).uploadData('testfile3.txt');
 
-    const testUploadFiles: UploadFiles[] = [uploadFiles1, uploadFiles2];
+    const testUploadFiles: UploadFiles[] = [
+      uploadFiles1,
+      uploadFiles2,
+      uploadFiles3,
+    ];
 
     let token: string;
     beforeEach(async () => {
@@ -239,6 +247,89 @@ describe('Feed CRUD API Test', () => {
         expect(result.status).toBe(200);
         expect(result.body.result.uploadFiles.length).toBe(1);
         expect(result.body.result.uploadFiles[0].id).toBe(uploadFiles1.id);
+      });
+
+      describe('update fileLinks of temp feed', () => {
+        // 기존 임시 게시물에 업로드 파일이 하나 등록되어 있는 상태로 만든다.
+        beforeEach(async () => {
+          await dataSource.manager.update(
+            UploadFiles,
+            { id: uploadFiles1.id },
+            { feed: existingTempFeedWithoutUploadfiles }
+          );
+        });
+
+        test('update fileLinks of temp feed with fileLinks', async () => {
+          // 다른 업로드 파일을 2개 등록하는 수정내용
+          const patchBody = {
+            feedId: existingTempFeedWithoutUploadfiles.id,
+            fileLinks: [uploadFiles2.file_link, uploadFiles3.file_link],
+          };
+
+          const apiResult: Response =
+            await ApiRequestHelper.makeAuthPatchRequest(
+              token,
+              endpoint,
+              patchBody
+            );
+
+          const DBResult: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              withDeleted: true,
+              where: {
+                feed: { id: existingTempFeedWithoutUploadfiles.id },
+              },
+            }
+          );
+
+          // api Response 검사
+          expect(apiResult.status).toBe(200);
+          expect(apiResult.body.message).toBe('update temporary feed success');
+          expect(apiResult.body.result.uploadFiles.length).toBe(2);
+          expect(apiResult.body.result.uploadFiles[0].id).toBe(uploadFiles2.id);
+          expect(apiResult.body.result.uploadFiles[1].id).toBe(uploadFiles3.id);
+
+          // DB 검사
+          // 기존 등록되어있던 업로드 파일 1개 + 수정된 업로드 파일 2개 = 3개
+          expect(DBResult.length).toBe(3);
+          // 기존 등록되어있던 업로드 파일은 softDelete 처리 되어야 한다.
+          expect(
+            DBResult.find(item => item.id === uploadFiles1.id)?.deleted_at
+          ).not.toBe(null);
+        });
+
+        test('update without fileLinks of temp feed with fileLinks', async () => {
+          const patchBody = {
+            feedId: existingTempFeedWithoutUploadfiles.id,
+          };
+
+          const apiResult: Response =
+            await ApiRequestHelper.makeAuthPatchRequest(
+              token,
+              endpoint,
+              patchBody
+            );
+
+          const DBResult: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              withDeleted: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          expect(apiResult.status).toBe(200);
+          expect(apiResult.body.message).toBe('update temporary feed success');
+          expect(apiResult.body.result.uploadFiles.length).toBe(0);
+
+          // 기존 사용자가 업로드한 모든 파일은 3개이고 그 중 1개가 기존 게시물과 연결되어 있었다.
+          // 때문에 게시물 수정시 업로드 파일이 없다면 모든 사용자의 모든 업로드 파일들은 사용되지 않는 것으로 간주하여 모두 제거되어야 한다.
+          expect(DBResult.length).toBe(3);
+          expect(DBResult.every(item => item.deleted_at !== null)).toBe(true);
+        });
       });
     });
   });
