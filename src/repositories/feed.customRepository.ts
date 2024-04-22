@@ -101,7 +101,10 @@ export class FeedCustomRepository {
     await this.feedRepository
       .createQueryBuilder()
       .update(Feed)
-      .set({ viewCnt: () => 'viewCnt + 1' })
+      .set({
+        viewCnt: () => 'viewCnt + 1',
+        updated_at: () => 'updated_at',
+      })
       .where('id = :feedId', { feedId: feedId })
       .execute();
   }
