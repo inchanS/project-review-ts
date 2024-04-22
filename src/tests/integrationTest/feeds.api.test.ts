@@ -392,8 +392,6 @@ describe('Feed CRUD API Test', () => {
           }
         );
 
-        console.log('🔥feeds.api.test/:392- dbResult = ', dbResult);
-
         const apiResult = result.body.result;
 
         expect(result.status).toBe(201);
