@@ -5,7 +5,12 @@ import { TestUserFactory } from './testUtils/testUserFactory';
 import { User } from '../../entities/users.entity';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { TempFeedDto } from '../../entities/dto/tempFeed.dto';
-import { TestSignIn, TestTempFeedDto, TestUserInfo } from '../../types/test';
+import {
+  TestFeedDto,
+  TestSignIn,
+  TestTempFeedDto,
+  TestUserInfo,
+} from '../../types/test';
 import { UploadFiles } from '../../entities/uploadFiles.entity';
 import { MakeTestClass } from './testUtils/makeTestClass';
 import { Feed } from '../../entities/feed.entity';
@@ -105,7 +110,7 @@ describe('Feed CRUD API Test', () => {
         category: 1,
       };
 
-      test('create temp feed without uploadFiles', async () => {
+      test('create a temp feed without uploadFiles', async () => {
         const postBody: TestTempFeedDto = {
           content: feedInfo.content,
         };
@@ -121,11 +126,12 @@ describe('Feed CRUD API Test', () => {
         expect(Object.keys(result.body.result).length).toBe(13);
         expect(result.body.result.user.id).toBe(existingUser.id);
         expect(result.body.result.status.id).toBe(2);
+        expect(result.body.result.status.is_status).toBe('temporary');
         expect(result.body.result.content).toBe(feedInfo.content);
         expect(result.body.result.uploadFiles.length).toBe(0);
       });
 
-      test('create temp feed with uploadFiles', async () => {
+      test('create a temp feed with uploadFiles', async () => {
         const postBody: TestTempFeedDto = {
           content: feedInfo.content,
           fileLinks: [uploadFiles1.file_link],
@@ -150,6 +156,7 @@ describe('Feed CRUD API Test', () => {
         expect(Object.keys(apiResult.body.result).length).toBe(13);
         expect(apiResult.body.result.user.id).toBe(existingUser.id);
         expect(apiResult.body.result.status.id).toBe(2);
+        expect(apiResult.body.result.status.is_status).toBe('temporary');
         expect(apiResult.body.result.content).toBe(feedInfo.content);
         // Response 값의 uploadFiles 확인
         expect(apiResult.body.result.uploadFiles.length).toBe(1);
@@ -168,7 +175,7 @@ describe('Feed CRUD API Test', () => {
       });
     });
 
-    describe('update temp feed', () => {
+    describe('update a temp feed', () => {
       const endpoint: string = '/feeds/temp';
 
       const existingTempFeedWithoutUploadfiles: Feed = new MakeTestClass(
@@ -180,7 +187,7 @@ describe('Feed CRUD API Test', () => {
         await dataSource.manager.save(Feed, existingTempFeedWithoutUploadfiles);
       });
 
-      test('update title of temp feed', async () => {
+      test('update title of a temp feed', async () => {
         const patchBody = {
           feedId: existingTempFeedWithoutUploadfiles.id,
           title: 'this is title',
@@ -194,9 +201,10 @@ describe('Feed CRUD API Test', () => {
         expect(result.status).toBe(200);
         expect(result.body.message).toBe('update temporary feed success');
         expect(result.body.result.title).toBe('this is title');
+        expect(result.body.result.status.is_status).toBe('temporary');
       });
 
-      test('update content of temp feed', async () => {
+      test('update content of a temp feed', async () => {
         const patchBody = {
           feedId: existingTempFeedWithoutUploadfiles.id,
           content: 'this is update content',
@@ -211,9 +219,10 @@ describe('Feed CRUD API Test', () => {
         expect(result.status).toBe(200);
         expect(result.body.message).toBe('update temporary feed success');
         expect(result.body.result.content).toBe(patchBody.content);
+        expect(result.body.result.status.is_status).toBe('temporary');
       });
 
-      test('update estimation and category of temp feed', async () => {
+      test('update estimation and category of a temp feed', async () => {
         const patchBody = {
           feedId: existingTempFeedWithoutUploadfiles.id,
           estimation: 1,
@@ -228,11 +237,12 @@ describe('Feed CRUD API Test', () => {
 
         expect(result.status).toBe(200);
         expect(result.body.message).toBe('update temporary feed success');
+        expect(result.body.result.status.is_status).toBe('temporary');
         expect(result.body.result.estimation.id).toBe(1);
         expect(result.body.result.category.id).toBe(1);
       });
 
-      test('update fileLinks of temp feed', async () => {
+      test('update fileLinks of a temp feed', async () => {
         const patchBody = {
           feedId: existingTempFeedWithoutUploadfiles.id,
           fileLinks: [uploadFiles1.file_link],
@@ -246,6 +256,7 @@ describe('Feed CRUD API Test', () => {
 
         expect(result.status).toBe(200);
         expect(result.body.result.uploadFiles.length).toBe(1);
+        expect(result.body.result.status.is_status).toBe('temporary');
         expect(result.body.result.uploadFiles[0].id).toBe(uploadFiles1.id);
       });
 
@@ -287,6 +298,7 @@ describe('Feed CRUD API Test', () => {
           // api Response 검사
           expect(apiResult.status).toBe(200);
           expect(apiResult.body.message).toBe('update temporary feed success');
+          expect(apiResult.body.result.status.is_status).toBe('temporary');
           expect(apiResult.body.result.uploadFiles.length).toBe(2);
           expect(apiResult.body.result.uploadFiles[0].id).toBe(uploadFiles2.id);
           expect(apiResult.body.result.uploadFiles[1].id).toBe(uploadFiles3.id);
@@ -323,6 +335,7 @@ describe('Feed CRUD API Test', () => {
 
           expect(apiResult.status).toBe(200);
           expect(apiResult.body.message).toBe('update temporary feed success');
+          expect(apiResult.body.result.status.is_status).toBe('temporary');
           expect(apiResult.body.result.uploadFiles.length).toBe(0);
 
           // 기존 사용자가 업로드한 모든 파일은 3개이고 그 중 1개가 기존 게시물과 연결되어 있었다.
@@ -330,6 +343,92 @@ describe('Feed CRUD API Test', () => {
           expect(DBResult.length).toBe(3);
           expect(DBResult.every(item => item.deleted_at !== null)).toBe(true);
         });
+      });
+    });
+
+    describe('create a Regular feed', () => {
+      const endpoint: string = '/feeds/post';
+      const postBody: TestFeedDto = {
+        title: 'test Feed Title',
+        content: 'this is content of Test Feed',
+        estimation: 1,
+        category: 1,
+      };
+      const regexPostedAt: RegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
+
+      test('create a feed without fileLinks', async () => {
+        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+          token,
+          endpoint,
+          postBody
+        );
+
+        const apiResult = result.body.result;
+
+        expect(result.status).toBe(201);
+        expect(result.body.message).toBe('create feed success');
+        expect(apiResult.title).toBe('test Feed Title');
+        expect(apiResult.content).toBe('this is content of Test Feed');
+        expect(apiResult.estimation.id).toBe(postBody.estimation);
+        expect(apiResult.category.id).toBe(postBody.category);
+        expect(apiResult.status.is_status).toBe('published');
+        expect(regexPostedAt.test(apiResult.posted_at)).toBe(true);
+      });
+
+      test('create a feed with fileLinks', async () => {
+        postBody.fileLinks = [uploadFiles1.file_link, uploadFiles2.file_link];
+
+        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+          token,
+          endpoint,
+          postBody
+        );
+
+        const dbResult: UploadFiles[] = await dataSource.manager.find(
+          UploadFiles,
+          {
+            loadRelationIds: true,
+            where: { user: { id: existingUser.id } },
+          }
+        );
+
+        console.log('🔥feeds.api.test/:392- dbResult = ', dbResult);
+
+        const apiResult = result.body.result;
+
+        expect(result.status).toBe(201);
+        expect(result.body.message).toBe('create feed success');
+        expect(apiResult.title).toBe('test Feed Title');
+        expect(apiResult.content).toBe('this is content of Test Feed');
+        expect(apiResult.estimation.id).toBe(postBody.estimation);
+        expect(apiResult.category.id).toBe(postBody.category);
+        expect(apiResult.status.is_status).toBe('published');
+        expect(regexPostedAt.test(apiResult.posted_at)).toBe(true);
+
+        // uploadFiles check
+        expect(apiResult.uploadFiles.length).toBe(2);
+        expect(
+          apiResult.uploadFiles.find(
+            (item: UploadFiles) => item.id === uploadFiles1.id
+          ).file_link
+        ).toBe(uploadFiles1.file_link);
+        expect(
+          apiResult.uploadFiles.find(
+            (item: UploadFiles) => item.id === uploadFiles2.id
+          ).file_link
+        ).toBe(uploadFiles2.file_link);
+
+        // DB check
+        expect(
+          dbResult.find(
+            (item: UploadFiles): boolean => item.id === uploadFiles1.id
+          )!.feed
+        ).toBe(apiResult.id);
+        expect(
+          dbResult.find(
+            (item: UploadFiles): boolean => item.id === uploadFiles2.id
+          )!.feed
+        ).toBe(apiResult.id);
       });
     });
   });
