@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ValidatorService } from '../../services/users/validator.service';
 import { User } from '../../entities/users.entity';
+import { createValidateService } from '../../utils/serviceFactory';
 
 class ValidatorController {
   constructor(private validatorService: ValidatorService) {}
@@ -49,4 +50,4 @@ class ValidatorController {
   };
 }
 
-export default new ValidatorController(new ValidatorService());
+export default new ValidatorController(createValidateService());

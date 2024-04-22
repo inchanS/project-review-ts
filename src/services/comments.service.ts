@@ -1,18 +1,21 @@
 import { plainToInstance } from 'class-transformer';
 import { CommentDto } from '../entities/dto/comment.dto';
-import { CommentRepository } from '../repositories/comment.repository';
-import { FeedRepository } from '../repositories/feed.repository';
+import { CommentCustomRepository } from '../repositories/comment.customRepository';
 import { Comment } from '../entities/comment.entity';
 import { CustomError, transformAndValidateDTO } from '../utils/util';
 import { CommentFormatter } from '../utils/commentFormatter';
+import { Repository } from 'typeorm';
+import { Feed } from '../entities/feed.entity';
 
 export class CommentsService {
-  private feedRepository: FeedRepository;
-  private commentRepository: CommentRepository;
-
-  constructor() {
-    this.feedRepository = FeedRepository.getInstance();
-    this.commentRepository = CommentRepository.getInstance();
+  constructor(
+    private commentCustomRepository: CommentCustomRepository,
+    private feedRepository: Repository<Feed>,
+    private commentRepository: Repository<Comment>
+  ) {
+    this.commentCustomRepository = commentCustomRepository;
+    this.feedRepository = feedRepository;
+    this.commentRepository = commentRepository;
   }
 
   public getCommentList = async (
@@ -28,7 +31,7 @@ export class CommentsService {
         throw new CustomError(404, 'FEED_NOT_FOUND');
       });
 
-    const result: Comment[] = await this.commentRepository.getCommentList(
+    const result: Comment[] = await this.commentCustomRepository.getCommentList(
       feedId
     );
 
@@ -54,7 +57,7 @@ export class CommentsService {
 
     const newComment: Comment = plainToInstance(Comment, commentInfo);
 
-    return await this.commentRepository.createComment(newComment);
+    return await this.commentCustomRepository.createComment(newComment);
   };
 
   public updateComment = async (
@@ -81,7 +84,10 @@ export class CommentsService {
       throw new CustomError(405, `COMMENT_IS_NOT_CHANGED`);
     }
 
-    return await this.commentRepository.updateComment(commentId, updatedFields);
+    return await this.commentCustomRepository.updateComment(
+      commentId,
+      updatedFields
+    );
   };
 
   public deleteComment = async (
@@ -152,7 +158,9 @@ export class CommentsService {
     return parentComment;
   };
 
-  private validateMaximumCommentDepth = async (parentComment: Comment) => {
+  private validateMaximumCommentDepth = async (
+    parentComment: Comment
+  ): Promise<void> => {
     // depth 3이상의 댓글 생성을 막기 위한 에러 반환
     if (parentComment.parent) {
       const grandparentId: number = Number(parentComment.parent);

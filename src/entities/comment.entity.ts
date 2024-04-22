@@ -22,18 +22,17 @@ export class Comment extends Base {
 
   @ManyToOne(() => Comment, comment => comment.children)
   @JoinColumn({ name: 'parentId' })
-  parent: Comment;
+  parent?: Comment;
 
   @OneToMany(() => Comment, comment => comment.parent)
-  children: Comment[];
+  children?: Comment[];
 
   constructor(
     user: User,
     feed: Feed,
     comment: string,
     is_private: boolean,
-    parent: Comment,
-    children: Comment[]
+    parent?: Comment
   ) {
     super();
     this.user = user;
@@ -41,6 +40,5 @@ export class Comment extends Base {
     this.comment = comment;
     this.is_private = is_private;
     this.parent = parent;
-    this.children = children;
   }
 }

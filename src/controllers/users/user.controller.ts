@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserDto } from '../../entities/dto/user.dto';
 import { UserService } from '../../services/users/user.service';
 import { User } from '../../entities/users.entity';
+import { createUserService } from '../../utils/serviceFactory';
 
 class UserController {
   constructor(private userService: UserService) {}
@@ -25,4 +26,4 @@ class UserController {
   };
 }
 
-export default new UserController(new UserService());
+export default new UserController(createUserService());

@@ -1,34 +1,39 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserDto } from '../../entities/dto/user.dto';
-import { UserRepository } from '../../repositories/user.repository';
+import { UserCustomRepository } from '../../repositories/user.customRepository';
 import { ValidatorService } from './validator.service';
 import { User } from '../../entities/users.entity';
 import { MailOptions, SendMail } from '../../utils/sendMail';
 import Mail from 'nodemailer/lib/mailer';
 import { CustomError, transformAndValidateDTO } from '../../utils/util';
+import { Repository } from 'typeorm';
 
 export class AuthService {
-  private userRepository: UserRepository;
-  private validatorService: ValidatorService;
-
-  constructor() {
-    this.validatorService = new ValidatorService();
-    this.userRepository = UserRepository.getInstance();
+  constructor(
+    private validatorService: ValidatorService,
+    private userCustomRepository: UserCustomRepository,
+    private userRepository: Repository<User>
+  ) {
+    this.validatorService = validatorService;
+    this.userCustomRepository = userCustomRepository;
+    this.userRepository = userRepository;
   }
 
   public signUp = async (userInfo: UserDto): Promise<void> => {
     userInfo = await transformAndValidateDTO(UserDto, userInfo);
     await this.checkUserUniqueness(userInfo);
     userInfo.password = await this.hashPassword(userInfo.password);
-    await this.userRepository.createUser(userInfo);
+    await this.userCustomRepository.createUser(userInfo);
   };
 
   public signIn = async (
     email: string,
     password: string
   ): Promise<{ token: string }> => {
-    const user: User | null = await this.userRepository.findByEmail(email);
+    const user: User | null = await this.userCustomRepository.findByEmail(
+      email
+    );
 
     if (!user || user.deleted_at) {
       throw new CustomError(404, `${email}_IS_NOT_FOUND`);

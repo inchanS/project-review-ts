@@ -5,7 +5,7 @@ import {
   authValidateOrReject,
 } from '../middleware/jwt.strategy';
 import UserContentController from '../controllers/users/userContent.controller';
-import UsersController from '../controllers/users/users.controller';
+import UsersController from '../controllers/users/user.controller';
 import AuthController from '../controllers/users/auth.controller';
 import ValidatorController from '../controllers/users/validator.controller';
 

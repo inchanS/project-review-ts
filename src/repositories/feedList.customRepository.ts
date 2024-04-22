@@ -1,18 +1,12 @@
-import { Like, Repository } from 'typeorm';
+import { DataSource, Like } from 'typeorm';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
-import dataSource from './data-source';
 import { CustomError } from '../utils/util';
 
-export class FeedListRepository extends Repository<FeedList> {
-  private static instance: FeedListRepository;
-  private constructor() {
-    super(FeedList, dataSource.createEntityManager());
-  }
-  public static getInstance(): FeedListRepository {
-    if (!this.instance) {
-      this.instance = new this();
-    }
-    return this.instance;
+export class FeedListCustomRepository {
+  constructor(private dataSource: DataSource) {}
+
+  private get feedListRepository() {
+    return this.dataSource.getRepository(FeedList);
   }
 
   async getFeedList(
@@ -38,7 +32,7 @@ export class FeedListRepository extends Repository<FeedList> {
       ];
     }
 
-    const result: FeedList[] = await this.find({
+    const result: FeedList[] = await this.feedListRepository.find({
       order: {
         postedAt: 'DESC',
         id: 'DESC',
@@ -100,7 +94,7 @@ export class FeedListRepository extends Repository<FeedList> {
       ...pageCondition,
     };
 
-    const result: FeedList[] = await this.find(findOption);
+    const result: FeedList[] = await this.feedListRepository.find(findOption);
 
     return result;
   }

@@ -1,22 +1,17 @@
-import dataSource from './data-source';
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
-import { Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 
-export class CommentRepository extends Repository<Comment> {
-  private static instance: CommentRepository;
-  private constructor() {
-    super(Comment, dataSource.createEntityManager());
-  }
-  public static getInstance(): CommentRepository {
-    if (!this.instance) {
-      this.instance = new this();
-    }
-    return this.instance;
+export class CommentCustomRepository {
+  constructor(private dataSource: DataSource) {}
+
+  private get commentRepository() {
+    return this.dataSource.getRepository(Comment);
   }
 
   async getCommentList(id: number): Promise<Comment[]> {
-    return await this.createQueryBuilder('comment')
+    return await this.commentRepository
+      .createQueryBuilder('comment')
       .withDeleted()
       .addSelect(['user.id', 'user.nickname', 'user.email'])
       .addSelect(['feed.id', 'feed.title', 'feedUser'])
@@ -46,28 +41,26 @@ export class CommentRepository extends Repository<Comment> {
   }
 
   async createComment(commentInfo: Comment): Promise<Comment> {
-    const newComment = this.create(commentInfo);
-    return await this.save(newComment);
+    const newComment: Comment = this.commentRepository.create(commentInfo);
+    return await this.commentRepository.save(newComment);
   }
 
   async updateComment(
     commentId: number,
     commentInfo: CommentDto
   ): Promise<Comment> {
-    await this.update(commentId, {
+    await this.commentRepository.update(commentId, {
       comment: commentInfo.comment,
       is_private: commentInfo.is_private,
     });
 
-    const result: Comment = await this.findOneOrFail({
+    return await this.commentRepository.findOneOrFail({
       where: { id: commentId },
     });
-
-    return result;
   }
 
   async getCommentCountByUserId(userId: number): Promise<number> {
-    return await this.count({
+    return await this.commentRepository.count({
       where: { user: { id: userId } },
       withDeleted: true,
     });
@@ -92,7 +85,7 @@ export class CommentRepository extends Repository<Comment> {
     }
 
     // version 1 (단순 조회용 : typeORM의 find Option에서는 관계테이블의 세부 내역만을 특정하여 추릴 수 없다.)
-    // return await this.find({
+    // return await this.repository.find({
     //   withDeleted: true,
     //   loadRelationIds: true,
     //   where: { user: { id: userId } },
@@ -101,7 +94,8 @@ export class CommentRepository extends Repository<Comment> {
     // });
 
     // version 2 (로그인한 사용자와의 관계로 비공개 덧글 내용을 조회하기 위한 로직 : 관계 테이블의 세부 정보를 조회하기 위해 queryBuilder를 이용한 join 사용)
-    return await this.createQueryBuilder('comment')
+    return await this.commentRepository
+      .createQueryBuilder('comment')
       .withDeleted()
       .addSelect('user.id')
       .addSelect(['feed.id', 'feed.title', 'feedUser.id'])

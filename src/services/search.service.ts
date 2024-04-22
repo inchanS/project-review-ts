@@ -1,17 +1,17 @@
-import { FeedRepository } from '../repositories/feed.repository';
-import { Brackets } from 'typeorm';
-import { FeedListRepository } from '../repositories/feedList.repository';
+import { Brackets, Repository } from 'typeorm';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { DateUtils } from '../utils/dateUtils';
 import { PageValidator } from '../utils/pageValidator';
+import { Feed } from '../entities/feed.entity';
+import { FeedListCustomRepository } from '../repositories/feedList.customRepository';
 
 export class SearchService {
-  private feedRepository: FeedRepository;
-  private feedListRepository: FeedListRepository;
-
-  constructor() {
-    this.feedRepository = FeedRepository.getInstance();
-    this.feedListRepository = FeedListRepository.getInstance();
+  constructor(
+    private feedListCustomRepository: FeedListCustomRepository,
+    private feedRepository: Repository<Feed>
+  ) {
+    this.feedListCustomRepository = feedListCustomRepository;
+    this.feedRepository = feedRepository;
   }
   public searchContent = async (query: string, page: Pagination) => {
     const validatedPage: Pagination | undefined = PageValidator.validate(
@@ -98,7 +98,7 @@ export class SearchService {
 
     page = validatedPage ? validatedPage : { startIndex: 0, limit: 10 };
 
-    const result: FeedList[] = await this.feedListRepository.getFeedList(
+    const result: FeedList[] = await this.feedListCustomRepository.getFeedList(
       undefined,
       page,
       query

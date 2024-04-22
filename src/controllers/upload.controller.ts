@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UploadService } from '../services/upload.service';
+import { createUploadService } from '../utils/serviceFactory';
 
 class UploadController {
   constructor(private uploadService: UploadService) {}
@@ -28,4 +29,4 @@ class UploadController {
   };
 }
 
-export default new UploadController(new UploadService());
+export default new UploadController(createUploadService());

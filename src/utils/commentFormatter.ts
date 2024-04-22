@@ -60,7 +60,7 @@ export class CommentFormatter {
   };
 
   private formatChildrenComments = (): Comment[] => {
-    let result: Comment[] = this.comment.children;
+    let result: Comment[] | undefined = this.comment.children;
 
     if (result && result.length > 0) {
       result.map((child: Comment) => {
