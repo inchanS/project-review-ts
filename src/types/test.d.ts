@@ -15,4 +15,6 @@ interface TestTempFeedDto extends Omit<Partial<TempFeedDto>, 'user'> {
   content: string;
 }
 
-interface TestFeedDto extends Omit<FeedDto, 'user'> {}
+interface TestFeedDto extends Omit<FeedDto, 'user'> {
+  fileLinks?: string[];
+}
