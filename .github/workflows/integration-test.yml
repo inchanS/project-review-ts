@@ -1,0 +1,51 @@
+name: Integration Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:latest
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: ${{ secrets.DB_USERNAME }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Verify MySQL connection
+        run: |
+          mysql --version
+          sudo apt-get install -y mysql-client
+          mysql --host ${{ secrets.DB_HOST }} --port 3306 -u ${{ secrets.DB_USERNAME }} -p${{ secrets.DB_PASSWORD }} -e "SHOW DATABASES;"
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Create ./env/.env.test file
+        run: |
+          mkdir -p ./env
+          echo "TYPEORM_CONNECTION=mysql" > ./env/.env.test
+          echo "TYPEORM_HOST=${{ secrets.DB_HOST }}" >> ./env/.env.test
+          echo "TYPEORM_DATABASE=test_db" >> ./env/.env.test
+          echo "TYPEORM_USERNAME=${{ secrets.DB_USERNAME }}" >> ./env/.env.test
+          echo "TYPEORM_PASSWORD=${{ secrets.DB_PASSWORD }}" >> ./env/.env.test
+          echo "TYPEORM_PORT=3306" >> ./env/.env.test
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> ./env/.env.test
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Run integration tests
+        run: npm run test-integration
