@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UploadService } from '../services/upload.service';
 import { createUploadService } from '../utils/serviceFactory';
 
+// 게시글의 첨부파일 관련
 class UploadController {
   constructor(private uploadService: UploadService) {}
   // 파일 업로드를 처리하는 API 엔드포인트 ----------------------

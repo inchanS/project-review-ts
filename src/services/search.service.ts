@@ -5,6 +5,7 @@ import { PageValidator } from '../utils/pageValidator';
 import { Feed } from '../entities/feed.entity';
 import { FeedListCustomRepository } from '../repositories/feedList.customRepository';
 
+// 검색 관련
 export class SearchService {
   constructor(
     private feedListCustomRepository: FeedListCustomRepository,

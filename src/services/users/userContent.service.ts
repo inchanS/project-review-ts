@@ -15,6 +15,7 @@ import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { CommentFormatter } from '../../utils/commentFormatter';
 import { PageValidator } from '../../utils/pageValidator';
 
+// 사용자 가입정보, 사용자별 게시물, 덧글, 공감등에 대한 정보 확인과 관련된 서비스
 export class UserContentService {
   constructor(
     private feedRepository: FeedCustomRepository,
