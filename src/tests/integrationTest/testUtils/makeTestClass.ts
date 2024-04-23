@@ -32,6 +32,8 @@ export class MakeTestClass {
       '1' as unknown as FeedStatus
     );
     testFeed.id = this.id;
+    testFeed.created_at = new Date();
+    testFeed.updated_at = new Date();
     testFeed.posted_at = new Date();
 
     return testFeed;
