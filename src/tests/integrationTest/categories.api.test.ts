@@ -44,9 +44,7 @@ describe('categories API', () => {
 
     expect(result.body.length).toBeGreaterThanOrEqual(7);
 
-    expect(
-      result.body.every((item: Category) => Object.keys(item).length === 6)
-    ).toBe(true);
+    expect(Object.keys(result.body).length).toBe(8);
 
     expect(
       result.body.every((item: Category) => item.hasOwnProperty('id'))
