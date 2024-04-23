@@ -7,7 +7,7 @@ export class FeedListCustomRepository {
 
   constructor(private dataSource: DataSource) {
     this.feedListRepository = this.dataSource.getRepository(FeedList);
-  }
+ }
 
   async getFeedList(
     categoryId: number | undefined,
