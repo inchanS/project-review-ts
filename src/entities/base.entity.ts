@@ -19,10 +19,10 @@ export abstract class Base extends BaseEntity {
   id!: number;
 
   @CreateDateColumn({ type: 'timestamp', transformer: dateTransformer })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ type: 'timestamp', transformer: dateTransformer })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', transformer: dateTransformer })
   deleted_at?: Date | null;
