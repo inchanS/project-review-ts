@@ -8,6 +8,8 @@ import { Estimation } from '../entities/estimation.entity';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { createFeedsService } from '../utils/serviceFactory';
 
+// 게시글 관련
+
 // 임시저장 ==================================================================
 // 임시저장 게시글 리스트 --------------------------------------------------------
 export class FeedsController {

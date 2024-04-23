@@ -9,6 +9,7 @@ import Mail from 'nodemailer/lib/mailer';
 import { CustomError, transformAndValidateDTO } from '../../utils/util';
 import { Repository } from 'typeorm';
 
+// 사용자 회원가입, 로그인, 패스워드 리셋 관련 서비스
 export class AuthService {
   constructor(
     private validatorService: ValidatorService,

@@ -3,6 +3,7 @@ import { CategoriesService } from '../services/categories.service';
 import { Category } from '../entities/category.entity';
 import { createCategoriesService } from '../utils/serviceFactory';
 
+// 카테고리 관련
 class CategoriesController {
   constructor(private categoriesService: CategoriesService) {}
 

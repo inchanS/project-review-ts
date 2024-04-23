@@ -7,6 +7,7 @@ import { CommentFormatter } from '../utils/commentFormatter';
 import { Repository } from 'typeorm';
 import { Feed } from '../entities/feed.entity';
 
+// 덧글 관련
 export class CommentsService {
   constructor(
     private commentCustomRepository: CommentCustomRepository,

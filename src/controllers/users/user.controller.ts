@@ -4,6 +4,7 @@ import { UserService } from '../../services/users/user.service';
 import { User } from '../../entities/users.entity';
 import { createUserService } from '../../utils/serviceFactory';
 
+// 사용자 정보 수정, 삭제와 관련한 컨트롤러
 class UserController {
   constructor(private userService: UserService) {}
 
