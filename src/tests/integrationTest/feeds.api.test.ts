@@ -125,7 +125,7 @@ describe('Feed CRUD API Test', () => {
 
         expect(result.status).toBe(201);
         expect(result.body.message).toBe(successMessage);
-        expect(Object.keys(result.body.result).length).toBe(13);
+        expect(Object.keys(result.body.result).length).toBe(12);
         expect(result.body.result.user.id).toBe(existingUser.id);
         expect(result.body.result.status.id).toBe(2);
         expect(result.body.result.status.is_status).toBe(isStatus);
@@ -155,7 +155,7 @@ describe('Feed CRUD API Test', () => {
 
         expect(apiResult.status).toBe(201);
         expect(apiResult.body.message).toBe(successMessage);
-        expect(Object.keys(apiResult.body.result).length).toBe(13);
+        expect(Object.keys(apiResult.body.result).length).toBe(12);
         expect(apiResult.body.result.user.id).toBe(existingUser.id);
         expect(apiResult.body.result.status.id).toBe(2);
         expect(apiResult.body.result.status.is_status).toBe(isStatus);
@@ -436,6 +436,51 @@ describe('Feed CRUD API Test', () => {
             (item: UploadFiles): boolean => item.id === uploadFiles2.id
           )!.feed
         ).toBe(apiResult.id);
+      });
+    });
+
+    describe('update a feed', () => {
+      const endpoint: string = '/feeds/post';
+      const successMessage: string = 'update feed success';
+      const isStatus: string = 'published';
+      const updateStatusCode: number = 200;
+
+      const existingFeed: Feed = new MakeTestClass(1, existingUser.id).feedData(
+        'existing title',
+        'existing content'
+      );
+
+      beforeEach(async () => {
+        await dataSource.manager.save(Feed, existingFeed);
+      });
+
+      test('update a feed without fileLinks', async () => {
+        const patchBody = {
+          feedId: existingFeed.id,
+          title: 'update title',
+        };
+
+        const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
+          loadRelationIds: true,
+          where: { id: existingFeed.id },
+        });
+
+        await new Promise(resolve => {
+          setTimeout(resolve, 1000);
+        });
+
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+          token,
+          endpoint,
+          patchBody
+        );
+        const apiResult = result.body.result;
+
+        expect(result.status).toBe(updateStatusCode);
+        expect(result.body.message).toBe(successMessage);
+        expect(apiResult.status.is_status).toBe(isStatus);
+        expect(apiResult.title).toBe(patchBody.title);
+        expect(beforeDB!.updated_at !== apiResult.updated_at).toBe(true);
       });
     });
   });
