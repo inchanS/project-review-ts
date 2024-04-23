@@ -1,12 +1,12 @@
 import { Comment } from '../entities/comment.entity';
 import { CommentDto } from '../entities/dto/comment.dto';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 export class CommentCustomRepository {
-  constructor(private dataSource: DataSource) {}
+  private commentRepository: Repository<Comment>;
 
-  private get commentRepository() {
-    return this.dataSource.getRepository(Comment);
+  constructor(private dataSource: DataSource) {
+    this.commentRepository = this.dataSource.getRepository(Comment);
   }
 
   async getCommentList(id: number): Promise<Comment[]> {

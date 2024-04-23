@@ -1,11 +1,16 @@
 import { Feed } from '../entities/feed.entity';
-import { DataSource, QueryRunner, SelectQueryBuilder } from 'typeorm';
+import {
+  DataSource,
+  QueryRunner,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 
 export class FeedCustomRepository {
-  constructor(private dataSource: DataSource) {}
+  private feedRepository: Repository<Feed>;
 
-  private get feedRepository() {
-    return this.dataSource.getRepository(Feed);
+  constructor(private dataSource: DataSource) {
+    this.feedRepository = this.dataSource.getRepository(Feed);
   }
 
   async createFeed(feedInfo: Feed, queryRunner: QueryRunner): Promise<Feed> {

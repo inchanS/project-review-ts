@@ -25,12 +25,9 @@ export abstract class Base extends BaseEntity {
   updated_at: Date;
 
   @DeleteDateColumn({ type: 'timestamp', transformer: dateTransformer })
-  deleted_at: Date | null;
+  deleted_at?: Date | null;
 
   constructor() {
     super();
-    this.created_at = new Date();
-    this.updated_at = new Date();
-    this.deleted_at = null;
   }
 }

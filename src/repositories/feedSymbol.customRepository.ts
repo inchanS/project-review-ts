@@ -1,13 +1,14 @@
 import { FeedSymbol } from '../entities/feedSymbol.entity';
 import { CustomError } from '../utils/util';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 export class FeedSymbolCustomRepository {
-  constructor(private dataSource: DataSource) {}
+  private feedSymbolRepository: Repository<FeedSymbol>;
 
-  private get feedSymbolRepository() {
-    return this.dataSource.getRepository(FeedSymbol);
+  constructor(private dataSource: DataSource) {
+    this.feedSymbolRepository = this.dataSource.getRepository(FeedSymbol);
   }
+
   async getFeedSymbol(
     feedId: number,
     userId: number

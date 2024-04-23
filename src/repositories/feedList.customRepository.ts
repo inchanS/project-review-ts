@@ -1,13 +1,13 @@
-import { DataSource, Like } from 'typeorm';
+import { DataSource, Like, Repository } from 'typeorm';
 import { FeedList } from '../entities/viewEntities/viewFeedList.entity';
 import { CustomError } from '../utils/util';
 
 export class FeedListCustomRepository {
-  constructor(private dataSource: DataSource) {}
+  private feedListRepository: Repository<FeedList>;
 
-  private get feedListRepository() {
-    return this.dataSource.getRepository(FeedList);
-  }
+  constructor(private dataSource: DataSource) {
+    this.feedListRepository = this.dataSource.getRepository(FeedList);
+ }
 
   async getFeedList(
     categoryId: number | undefined,

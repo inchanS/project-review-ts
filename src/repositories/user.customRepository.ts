@@ -1,12 +1,12 @@
 import { User } from '../entities/users.entity';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { UserDto } from '../entities/dto/user.dto';
 
 export class UserCustomRepository {
-  constructor(private dataSource: DataSource) {}
+  private userRepository: Repository<User>;
 
-  private get userRepository() {
-    return this.dataSource.getRepository(User);
+  constructor(private dataSource: DataSource) {
+    this.userRepository = this.dataSource.getRepository(User);
   }
 
   async createUser(userInfo: UserDto): Promise<void> {
