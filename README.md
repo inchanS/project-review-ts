@@ -1,3 +1,5 @@
+[![Integration Tests](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml/badge.svg)](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml)  
+
 # project-review
 ## 프로젝트 소개
 - 프로젝트명 : project-review
