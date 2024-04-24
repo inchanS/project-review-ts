@@ -1,4 +1,4 @@
-[![Integration Tests](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml/badge.svg)](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml)  
+[![Integration Tests](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml/badge.svg?branch=main)](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml)  
 
 # project-review
 ## 프로젝트 소개
