@@ -353,18 +353,10 @@ describe('Feed CRUD API Test', () => {
       });
     });
 
-    describe('get a temp feed', () => {
-      const endpoint: string = '/feeds';
+    describe('get a temp feed and temp feeds API test', () => {
       const successCode: number = 200;
-      const successMessage: string = 'check feed success';
       const statusId: number = 2;
       const regexDateValue: RegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
-
-      // make feeds for test
-      const tempFeed: Feed = new MakeTestClass(
-        1,
-        existingUser.id
-      ).tempFeedData();
 
       // other Users data
       const otherUser: TestUserInfo = {
@@ -373,15 +365,50 @@ describe('Feed CRUD API Test', () => {
         password: 'existingPassword@1234',
         email: 'otherEmail@email.com',
       };
-
       const otherUserEntity: TestUserInfo =
         TestUserFactory.createUserEntity(otherUser);
-      const otherUsersTempFeed: Feed = new MakeTestClass(
+
+      // make feeds for test
+      const tempTitle: string = 'this is title';
+
+      const tempFeed1withoutTitle: Feed = new MakeTestClass(
+        1,
+        existingUser.id
+      ).tempFeedData(undefined, 'this is new content');
+      const tempFeed2withTitle: Feed = new MakeTestClass(
         2,
+        existingUser.id
+      ).tempFeedData(tempTitle);
+      const tempFeed3: Feed = new MakeTestClass(
+        3,
+        existingUser.id
+      ).tempFeedData();
+      const tempFeed4: Feed = new MakeTestClass(
+        4,
+        existingUser.id
+      ).tempFeedData();
+      const tempFeed5: Feed = new MakeTestClass(
+        5,
+        existingUser.id
+      ).tempFeedData();
+
+      const existingUsersTempFeeds: Feed[] = [
+        tempFeed1withoutTitle,
+        tempFeed2withTitle,
+        tempFeed3,
+        tempFeed4,
+        tempFeed5,
+      ];
+
+      const otherUsersTempFeed: Feed = new MakeTestClass(
+        6,
         otherUser.id
       ).tempFeedData();
 
-      const testTempFeeds: Feed[] = [tempFeed, otherUsersTempFeed];
+      const testTempFeeds: Feed[] = [
+        ...existingUsersTempFeeds,
+        otherUsersTempFeed,
+      ];
 
       beforeEach(async () => {
         await dataSource.transaction(async transactionalEntityManager => {
@@ -390,43 +417,102 @@ describe('Feed CRUD API Test', () => {
         });
       });
 
-      test('get a temp feed api test: success', async () => {
-        const testEndpoint: string = `${endpoint}/${tempFeed.id}`;
-        const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-          token,
-          testEndpoint
-        );
-        const resultBody = result.body.result;
+      describe('get a temp feed api test', () => {
+        const endpoint: string = '/feeds';
+        const successMessage: string = 'check feed success';
 
-        const expectedTitle: string = resultBody.updated_at.replace(
-          /^\d{2}/,
-          ''
-        );
+        test('get a temp feed without title api test: success', async () => {
+          const testEndpoint: string = `${endpoint}/${tempFeed1withoutTitle.id}`;
+          const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+            token,
+            testEndpoint
+          );
+          const resultBody: Feed = result.body.result;
 
-        expect(result.status).toBe(successCode);
-        expect(result.body.message).toBe(successMessage);
-        expect(resultBody.id).toBe(tempFeed.id);
-        expect(resultBody.status.id).toBe(statusId);
-        expect(resultBody.title).toBe(
-          `${expectedTitle}에 임시저장된 글입니다.`
-        );
-        expect(regexDateValue.test(resultBody.created_at)).toBe(true);
-        expect(regexDateValue.test(resultBody.updated_at)).toBe(true);
+          const alterUpdatedAt: string = resultBody.updated_at
+            .toString()
+            .replace(/^\d{2}/, '');
+          const expectedTitle: string = `${alterUpdatedAt}에 임시저장된 글입니다.`;
+
+          expect(result.status).toBe(successCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(resultBody.id).toBe(tempFeed1withoutTitle.id);
+          expect(resultBody.status.id).toBe(statusId);
+          expect(resultBody.title).toBe(expectedTitle);
+          expect(regexDateValue.test(resultBody.created_at.toString())).toBe(
+            true
+          );
+          expect(regexDateValue.test(resultBody.updated_at.toString())).toBe(
+            true
+          );
+        });
+
+        test('get a temp feed with title api test: success', async () => {
+          const testEndpoint: string = `${endpoint}/${tempFeed2withTitle.id}`;
+          const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+            token,
+            testEndpoint
+          );
+          const resultBody = result.body.result;
+
+          expect(result.status).toBe(successCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(resultBody.id).toBe(tempFeed2withTitle.id);
+          expect(resultBody.status.id).toBe(statusId);
+          expect(resultBody.title).toBe(tempTitle);
+          expect(regexDateValue.test(resultBody.created_at)).toBe(true);
+          expect(regexDateValue.test(resultBody.updated_at)).toBe(true);
+        });
+
+        test('get a otherUsers temp feed api test: failed', async () => {
+          const testEndpoint: string = `${endpoint}/${otherUsersTempFeed.id}`;
+
+          const expectStatusCode: number = 403;
+          const expectErrorMessage: string = 'UNAUTHORIZED_TO_ACCESS_THE_POST';
+
+          const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+            token,
+            testEndpoint
+          );
+
+          expect(result.status).toBe(expectStatusCode);
+          expect(result.body.message).toBe(expectErrorMessage);
+        });
       });
 
-      test('get a otherUsers temp feed api test: failed', async () => {
-        const testEndpoint: string = `${endpoint}/${otherUsersTempFeed.id}`;
+      describe('get temp feed list API test', () => {
+        const endpoint: string = '/feeds/temp';
+        const successMessage: string = 'check temporary feed success';
 
-        const expectStatusCode: number = 403;
-        const expectErrorMessage: string = 'UNAUTHORIZED_TO_ACCESS_THE_POST';
+        test('get temp feed list api test', async () => {
+          const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+            token,
+            endpoint
+          );
+          const resultBody = result.body.result;
 
-        const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-          token,
-          testEndpoint
-        );
+          const tempFeedWithoutTitleOfTempFeedList: FeedList = resultBody.find(
+            (item: FeedList) => item.id === tempFeed1withoutTitle.id
+          );
+          const alterUpdatedAt: string =
+            tempFeedWithoutTitleOfTempFeedList.updatedAt
+              .toString()
+              .replace(/^\d{2}/, '');
+          const expectedTitle: string = `${alterUpdatedAt}에 임시저장된 글입니다.`;
 
-        expect(result.status).toBe(expectStatusCode);
-        expect(result.body.message).toBe(expectErrorMessage);
+          expect(result.status).toBe(successCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(resultBody).toHaveLength(existingUsersTempFeeds.length);
+          expect(
+            resultBody.every((item: FeedList) => item.statusId === statusId)
+          );
+          expect(
+            resultBody.every(
+              (item: FeedList) => item.userId === existingUser.id
+            )
+          );
+          expect(tempFeedWithoutTitleOfTempFeedList.title).toBe(expectedTitle);
+        });
       });
     });
 
@@ -491,7 +577,7 @@ describe('Feed CRUD API Test', () => {
         expect(regexPostedAt.test(apiResult.posted_at)).toBe(true);
 
         // uploadFiles check
-        expect(apiResult.uploadFiles.length).toBe(2);
+        expect(apiResult.uploadFiles).toHaveLength(2);
         expect(
           apiResult.uploadFiles.find(
             (item: UploadFiles) => item.id === uploadFiles1.id
@@ -628,7 +714,9 @@ describe('Feed CRUD API Test', () => {
           expect(result.body.message).toBe(successMessage);
           expect(apiResult.status.is_status).toBe(isStatus);
           expect(apiResult.title).toBe(patchBody.title);
-          expect(apiResult.uploadFiles.length).toBe(patchBody.fileLinks.length);
+          expect(apiResult.uploadFiles).toHaveLength(
+            patchBody.fileLinks.length
+          );
 
           expect(
             beforeDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
@@ -674,7 +762,7 @@ describe('Feed CRUD API Test', () => {
           expect(result.body.message).toBe(successMessage);
           expect(apiResult.status.is_status).toBe(isStatus);
           expect(apiResult.title).toBe(patchBody.title);
-          expect(apiResult.uploadFiles.length).toBe(0);
+          expect(apiResult.uploadFiles).toHaveLength(0);
 
           expect(
             afterDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
@@ -685,40 +773,5 @@ describe('Feed CRUD API Test', () => {
     });
 
     describe('get a feed', () => {});
-
-    describe('get temp feed list API test', () => {
-      const endpoint: string = '/feeds/temp';
-      const successCode: number = 200;
-      const successMessage: string = 'check temporary feed success';
-      const statusId: number = 2;
-
-      // make feeds for test
-      const feed1: Feed = new MakeTestClass(1, existingUser.id).tempFeedData();
-      const feed2: Feed = new MakeTestClass(2, existingUser.id).tempFeedData();
-      const feed3: Feed = new MakeTestClass(3, existingUser.id).tempFeedData();
-      const feed4: Feed = new MakeTestClass(4, existingUser.id).tempFeedData();
-      const feed5: Feed = new MakeTestClass(5, existingUser.id).tempFeedData();
-
-      const testTempFeeds: Feed[] = [feed1, feed2, feed3, feed4, feed5];
-
-      beforeEach(async () => {
-        await dataSource.manager.save(Feed, testTempFeeds);
-      });
-
-      test('get temp feed list api test', async () => {
-        const result: Response = await ApiRequestHelper.makeAuthGetRequest(
-          token,
-          endpoint
-        );
-        const resultBody = result.body.result;
-
-        expect(result.status).toBe(successCode);
-        expect(result.body.message).toBe(successMessage);
-        expect(resultBody).toHaveLength(testTempFeeds.length);
-        expect(
-          resultBody.every((item: FeedList) => item.statusId === statusId)
-        );
-      });
-    });
   });
 });
