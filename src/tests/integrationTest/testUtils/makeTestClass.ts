@@ -39,9 +39,13 @@ export class MakeTestClass {
     return testFeed;
   };
 
-  public tempFeedData = (content: string = 'test content'): Feed => {
+  public tempFeedData = (
+    title?: string,
+    content: string = 'test content'
+  ): Feed => {
     const testFeedInfo = {
       user: this.userId,
+      title: title,
       content: content,
       status: 2,
     };
