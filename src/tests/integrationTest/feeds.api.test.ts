@@ -318,7 +318,7 @@ describe('Feed CRUD API Test', () => {
           ).not.toBe(null);
         });
 
-        test('update without fileLinks of temp feed with fileLinks', async () => {
+        test('update the temp feed by removing fileLinks from it', async () => {
           const patchBody = {
             feedId: existingTempFeedWithoutUploadfiles.id,
           };
@@ -352,7 +352,7 @@ describe('Feed CRUD API Test', () => {
       });
     });
 
-    describe('create a Regular feed', () => {
+    describe('create a feed', () => {
       const endpoint: string = '/feeds/post';
       const successMessage: string = 'create feed success';
       const isStatus: string = 'published';
@@ -454,7 +454,7 @@ describe('Feed CRUD API Test', () => {
         await dataSource.manager.save(Feed, existingFeed);
       });
 
-      test('update a feed without fileLinks', async () => {
+      test('update the title of a feed without using fileLinks', async () => {
         const patchBody = {
           feedId: existingFeed.id,
           title: 'update title',
@@ -463,10 +463,6 @@ describe('Feed CRUD API Test', () => {
         const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
           loadRelationIds: true,
           where: { id: existingFeed.id },
-        });
-
-        await new Promise(resolve => {
-          setTimeout(resolve, 1000);
         });
 
         const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
@@ -481,6 +477,132 @@ describe('Feed CRUD API Test', () => {
         expect(apiResult.status.is_status).toBe(isStatus);
         expect(apiResult.title).toBe(patchBody.title);
         expect(beforeDB!.updated_at !== apiResult.updated_at).toBe(true);
+      });
+
+      test('update the content and category of a feed without using fileLinks', async () => {
+        const patchBody = {
+          feedId: existingFeed.id,
+          content: 'update content',
+          category: 2,
+        };
+
+        const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
+          loadRelationIds: true,
+          where: { id: existingFeed.id },
+        });
+
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+          token,
+          endpoint,
+          patchBody
+        );
+        const apiResult = result.body.result;
+
+        expect(result.status).toBe(updateStatusCode);
+        expect(result.body.message).toBe(successMessage);
+        expect(apiResult.status.is_status).toBe(isStatus);
+        expect(apiResult.content).toBe(patchBody.content);
+        expect(apiResult.category.id).toBe(patchBody.category);
+        expect(beforeDB!.updated_at !== apiResult.updated_at).toBe(true);
+      });
+
+      describe('update the feed with using fileLinks', () => {
+        beforeEach(async () => {
+          await dataSource.manager.update(
+            UploadFiles,
+            { id: uploadFiles1.id },
+            { feed: existingFeed }
+          );
+        });
+
+        test('update the title of a feed with using fileLinks', async () => {
+          const patchBody = {
+            feedId: existingFeed.id,
+            title: 'update title',
+            fileLinks: [uploadFiles2.file_link, uploadFiles3.file_link],
+          };
+
+          const beforeDB: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+            token,
+            endpoint,
+            patchBody
+          );
+          const apiResult = result.body.result;
+
+          const afterDB: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              withDeleted: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          expect(result.status).toBe(updateStatusCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(apiResult.status.is_status).toBe(isStatus);
+          expect(apiResult.title).toBe(patchBody.title);
+          expect(apiResult.uploadFiles.length).toBe(patchBody.fileLinks.length);
+
+          expect(
+            beforeDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
+              ?.deleted_at
+          ).toBe(null);
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
+              ?.deleted_at
+          ).not.toBe(null);
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles2.id)
+              ?.feed
+          ).toBe(existingFeed.id);
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles3.id)
+              ?.feed
+          ).toBe(existingFeed.id);
+        });
+
+        test('update the feed by removing fileLinks from it', async () => {
+          const patchBody = {
+            feedId: existingFeed.id,
+            title: 'update title',
+          };
+
+          const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+            token,
+            endpoint,
+            patchBody
+          );
+          const apiResult = result.body.result;
+
+          const afterDB: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              withDeleted: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          expect(result.status).toBe(updateStatusCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(apiResult.status.is_status).toBe(isStatus);
+          expect(apiResult.title).toBe(patchBody.title);
+          expect(apiResult.uploadFiles.length).toBe(0);
+
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
+              ?.deleted_at
+          ).not.toBe(null);
+        });
       });
     });
   });
