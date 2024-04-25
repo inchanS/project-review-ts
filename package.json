@@ -21,6 +21,7 @@
     "inspect": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"node --inspect dist/main.js\"",
     "test:integration-coverage": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --coverage --coverageReporters=json-summary --selectProjects integration",
     "test:integration": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --selectProjects integration",
+    "test:unit-coverage": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --coverage --coverageReporters=json-summary --selectProjects unit",
     "test:unit": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --selectProjects unit"
   },
   "repository": {

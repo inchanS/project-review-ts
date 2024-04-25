@@ -1,4 +1,4 @@
-name: Integration Tests
+name: Unit Tests
 
 on:
   push:
@@ -11,26 +11,9 @@ on:
       - dev
 
 jobs:
-  integration-test:
+  unit-test:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:latest
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: test_db
-          MYSQL_USER: ${{ secrets.DB_USERNAME }}
-          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
     steps:
-      - name: Verify MySQL connection
-        run: |
-          mysql --version
-          sudo apt-get install -y mysql-client
-          mysql --host ${{ secrets.DB_HOST }} --port 3306 -u ${{ secrets.DB_USERNAME }} -p${{ secrets.DB_PASSWORD }} -e "SHOW DATABASES;"
       - name: Check out repository
         uses: actions/checkout@v3
 
@@ -42,12 +25,6 @@ jobs:
       - name: Create ./env/.env.test file
         run: |
           mkdir -p ./env
-          echo "TYPEORM_CONNECTION=mysql" > ./env/.env.test
-          echo "TYPEORM_HOST=${{ secrets.DB_HOST }}" >> ./env/.env.test
-          echo "TYPEORM_DATABASE=test_db" >> ./env/.env.test
-          echo "TYPEORM_USERNAME=${{ secrets.DB_USERNAME }}" >> ./env/.env.test
-          echo "TYPEORM_PASSWORD=${{ secrets.DB_PASSWORD }}" >> ./env/.env.test
-          echo "TYPEORM_PORT=3306" >> ./env/.env.test
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> ./env/.env.test
       - name: Install dependencies
         run: npm install
@@ -55,8 +32,8 @@ jobs:
       - name: Build the project
         run: npm run build
 
-      - name: Run integration tests
-        run: npm run test:integration-coverage
+      - name: Run unit tests
+        run: npm run test:unit-coverage
 
       # The following Steps has been modified based on the following Github-Action.
       # https://github.com/marketplace/actions/coverage-badge
@@ -82,7 +59,7 @@ jobs:
           export COV=${{ steps.get-values.outputs.coverage }}
           COLOR=$(node -p '+process.env.COV >= 90 ? `green` : +process.env.COV >= 60 ? `orange` : `red`')
           mkdir -p badges
-          badgen -j "Integration Coverage" -s $COV% -c $COLOR > badges/coverage.svg
+          badgen -j "Unit Coverage" -s $COV% -c $COLOR > badges/unitcoverage.svg
 
       - name: Deploy Badges
         if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
