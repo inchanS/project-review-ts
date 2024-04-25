@@ -371,33 +371,23 @@ describe('Feed CRUD API Test', () => {
       // make feeds for test
       const tempTitle: string = 'this is title';
 
-      const tempFeed1withoutTitle: Feed = new MakeTestClass(
+      const tempFeedWithoutTitle: Feed = new MakeTestClass(
         1,
         existingUser.id
       ).tempFeedData(undefined, 'this is new content');
-      const tempFeed2withTitle: Feed = new MakeTestClass(
+      const tempFeedWithTitle: Feed = new MakeTestClass(
         2,
         existingUser.id
       ).tempFeedData(tempTitle);
-      const tempFeed3: Feed = new MakeTestClass(
+      const tempFeedWithUploadFiles: Feed = new MakeTestClass(
         3,
-        existingUser.id
-      ).tempFeedData();
-      const tempFeed4: Feed = new MakeTestClass(
-        4,
-        existingUser.id
-      ).tempFeedData();
-      const tempFeed5: Feed = new MakeTestClass(
-        5,
         existingUser.id
       ).tempFeedData();
 
       const existingUsersTempFeeds: Feed[] = [
-        tempFeed1withoutTitle,
-        tempFeed2withTitle,
-        tempFeed3,
-        tempFeed4,
-        tempFeed5,
+        tempFeedWithoutTitle,
+        tempFeedWithTitle,
+        tempFeedWithUploadFiles,
       ];
 
       const otherUsersTempFeed: Feed = new MakeTestClass(
@@ -414,15 +404,37 @@ describe('Feed CRUD API Test', () => {
         await dataSource.transaction(async transactionalEntityManager => {
           await transactionalEntityManager.save(User, otherUserEntity);
           await transactionalEntityManager.save(Feed, testTempFeeds);
+          // 사용자의 게시물에 uploadFiles 연결
+          await transactionalEntityManager.update(
+            UploadFiles,
+            { id: uploadFiles1.id },
+            { feed: tempFeedWithUploadFiles }
+          );
+          await transactionalEntityManager.update(
+            UploadFiles,
+            { id: uploadFiles2.id },
+            { feed: tempFeedWithUploadFiles }
+          );
         });
       });
+
+      async function getUploadFilesLength(): Promise<number> {
+        const tempFeedsUploadFiles: UploadFiles[] =
+          await dataSource.manager.find(UploadFiles, {
+            loadRelationIds: true,
+            where: {
+              feed: tempFeedWithUploadFiles,
+            },
+          });
+        return tempFeedsUploadFiles.length;
+      }
 
       describe('get a temp feed api test', () => {
         const endpoint: string = '/feeds';
         const successMessage: string = 'check feed success';
 
-        test('get a temp feed without title api test: success', async () => {
-          const testEndpoint: string = `${endpoint}/${tempFeed1withoutTitle.id}`;
+        test('get a temp feed without title api test', async () => {
+          const testEndpoint: string = `${endpoint}/${tempFeedWithoutTitle.id}`;
           const result: Response = await ApiRequestHelper.makeAuthGetRequest(
             token,
             testEndpoint
@@ -436,7 +448,7 @@ describe('Feed CRUD API Test', () => {
 
           expect(result.status).toBe(expectedCode);
           expect(result.body.message).toBe(successMessage);
-          expect(resultBody.id).toBe(tempFeed1withoutTitle.id);
+          expect(resultBody.id).toBe(tempFeedWithoutTitle.id);
           expect(resultBody.status.id).toBe(expectedStatusId);
           expect(resultBody.title).toBe(expectedTitle);
           expect(regexDateValue.test(resultBody.created_at.toString())).toBe(
@@ -447,8 +459,8 @@ describe('Feed CRUD API Test', () => {
           );
         });
 
-        test('get a temp feed with title api test: success', async () => {
-          const testEndpoint: string = `${endpoint}/${tempFeed2withTitle.id}`;
+        test('get a temp feed with title api test', async () => {
+          const testEndpoint: string = `${endpoint}/${tempFeedWithTitle.id}`;
           const result: Response = await ApiRequestHelper.makeAuthGetRequest(
             token,
             testEndpoint
@@ -457,14 +469,14 @@ describe('Feed CRUD API Test', () => {
 
           expect(result.status).toBe(expectedCode);
           expect(result.body.message).toBe(successMessage);
-          expect(resultBody.id).toBe(tempFeed2withTitle.id);
+          expect(resultBody.id).toBe(tempFeedWithTitle.id);
           expect(resultBody.status.id).toBe(expectedStatusId);
           expect(resultBody.title).toBe(tempTitle);
           expect(regexDateValue.test(resultBody.created_at)).toBe(true);
           expect(regexDateValue.test(resultBody.updated_at)).toBe(true);
         });
 
-        test('get a otherUsers temp feed api test: failed', async () => {
+        test('get a otherUsers temp feed api test', async () => {
           const testEndpoint: string = `${endpoint}/${otherUsersTempFeed.id}`;
 
           const expectedCode: number = 403;
@@ -480,8 +492,8 @@ describe('Feed CRUD API Test', () => {
           expect(result.body.message).toBe(expectedErrorMessage);
         });
 
-        test('get a temp feed without token: failed', async () => {
-          const testEndpoint: string = `${endpoint}/${tempFeed1withoutTitle.id}`;
+        test('get a temp feed without token', async () => {
+          const testEndpoint: string = `${endpoint}/${tempFeedWithoutTitle.id}`;
           const expectedStatusCode: number = 403;
           const expectedMessage: string = 'UNAUTHORIZED_TO_ACCESS_THE_POST';
 
@@ -508,6 +520,22 @@ describe('Feed CRUD API Test', () => {
           expect(result.status).toBe(expectedStatusCode);
           expect(result.body.message).toBe(expectedMessage);
         });
+
+        test('get a temp feed with uploadFiles api test', async () => {
+          const testEndpoint: string = `${endpoint}/${tempFeedWithUploadFiles.id}`;
+          const expectedStatusCode: number = 200;
+
+          const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+            token,
+            testEndpoint
+          );
+
+          const countUploadFiles: number = await getUploadFilesLength();
+
+          expect(result.status).toBe(expectedStatusCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(result.body.result.uploadFiles).toHaveLength(countUploadFiles);
+        });
       });
 
       describe('get temp feed list API test', () => {
@@ -522,7 +550,7 @@ describe('Feed CRUD API Test', () => {
           const resultBody = result.body.result;
 
           const tempFeedWithoutTitleOfTempFeedList: FeedList = resultBody.find(
-            (item: FeedList) => item.id === tempFeed1withoutTitle.id
+            (item: FeedList) => item.id === tempFeedWithoutTitle.id
           );
           const alterUpdatedAt: string =
             tempFeedWithoutTitleOfTempFeedList.updatedAt
