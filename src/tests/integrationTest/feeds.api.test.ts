@@ -14,6 +14,7 @@ import {
 import { UploadFiles } from '../../entities/uploadFiles.entity';
 import { MakeTestClass } from './testUtils/makeTestClass';
 import { Feed } from '../../entities/feed.entity';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 
 // @aws-sdk/client-s3 모의
 jest.mock('@aws-sdk/client-s3', () => {
@@ -99,7 +100,7 @@ describe('Feed CRUD API Test', () => {
       await TestUtils.clearDatabaseTables(dataSource);
     });
 
-    describe('Create a Temp Feed ', () => {
+    describe('create a Temp Feed ', () => {
       const endpoint: string = '/feeds/temp';
       const successMessage: string = 'create temporary feed success';
       const isStatus: string = 'temporary';
@@ -318,7 +319,7 @@ describe('Feed CRUD API Test', () => {
           ).not.toBe(null);
         });
 
-        test('update without fileLinks of temp feed with fileLinks', async () => {
+        test('update the temp feed by removing fileLinks from it', async () => {
           const patchBody = {
             feedId: existingTempFeedWithoutUploadfiles.id,
           };
@@ -352,7 +353,84 @@ describe('Feed CRUD API Test', () => {
       });
     });
 
-    describe('create a Regular feed', () => {
+    describe('get a temp feed', () => {
+      const endpoint: string = '/feeds';
+      const successCode: number = 200;
+      const successMessage: string = 'check feed success';
+      const statusId: number = 2;
+      const regexDateValue: RegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
+
+      // make feeds for test
+      const tempFeed: Feed = new MakeTestClass(
+        1,
+        existingUser.id
+      ).tempFeedData();
+
+      // other Users data
+      const otherUser: TestUserInfo = {
+        id: 2,
+        nickname: 'otherNickname',
+        password: 'existingPassword@1234',
+        email: 'otherEmail@email.com',
+      };
+
+      const otherUserEntity: TestUserInfo =
+        TestUserFactory.createUserEntity(otherUser);
+      const otherUsersTempFeed: Feed = new MakeTestClass(
+        2,
+        otherUser.id
+      ).tempFeedData();
+
+      const testTempFeeds: Feed[] = [tempFeed, otherUsersTempFeed];
+
+      beforeEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.save(User, otherUserEntity);
+          await transactionalEntityManager.save(Feed, testTempFeeds);
+        });
+      });
+
+      test('get a temp feed api test: success', async () => {
+        const testEndpoint: string = `${endpoint}/${tempFeed.id}`;
+        const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+          token,
+          testEndpoint
+        );
+        const resultBody = result.body.result;
+
+        const expectedTitle: string = resultBody.updated_at.replace(
+          /^\d{2}/,
+          ''
+        );
+
+        expect(result.status).toBe(successCode);
+        expect(result.body.message).toBe(successMessage);
+        expect(resultBody.id).toBe(tempFeed.id);
+        expect(resultBody.status.id).toBe(statusId);
+        expect(resultBody.title).toBe(
+          `${expectedTitle}에 임시저장된 글입니다.`
+        );
+        expect(regexDateValue.test(resultBody.created_at)).toBe(true);
+        expect(regexDateValue.test(resultBody.updated_at)).toBe(true);
+      });
+
+      test('get a otherUsers temp feed api test: failed', async () => {
+        const testEndpoint: string = `${endpoint}/${otherUsersTempFeed.id}`;
+
+        const expectStatusCode: number = 403;
+        const expectErrorMessage: string = 'UNAUTHORIZED_TO_ACCESS_THE_POST';
+
+        const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+          token,
+          testEndpoint
+        );
+
+        expect(result.status).toBe(expectStatusCode);
+        expect(result.body.message).toBe(expectErrorMessage);
+      });
+    });
+
+    describe('create a feed', () => {
       const endpoint: string = '/feeds/post';
       const successMessage: string = 'create feed success';
       const isStatus: string = 'published';
@@ -454,7 +532,7 @@ describe('Feed CRUD API Test', () => {
         await dataSource.manager.save(Feed, existingFeed);
       });
 
-      test('update a feed without fileLinks', async () => {
+      test('update the title of a feed without using fileLinks', async () => {
         const patchBody = {
           feedId: existingFeed.id,
           title: 'update title',
@@ -463,10 +541,6 @@ describe('Feed CRUD API Test', () => {
         const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
           loadRelationIds: true,
           where: { id: existingFeed.id },
-        });
-
-        await new Promise(resolve => {
-          setTimeout(resolve, 1000);
         });
 
         const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
@@ -481,6 +555,169 @@ describe('Feed CRUD API Test', () => {
         expect(apiResult.status.is_status).toBe(isStatus);
         expect(apiResult.title).toBe(patchBody.title);
         expect(beforeDB!.updated_at !== apiResult.updated_at).toBe(true);
+      });
+
+      test('update the content and category of a feed without using fileLinks', async () => {
+        const patchBody = {
+          feedId: existingFeed.id,
+          content: 'update content',
+          category: 2,
+        };
+
+        const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
+          loadRelationIds: true,
+          where: { id: existingFeed.id },
+        });
+
+        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+          token,
+          endpoint,
+          patchBody
+        );
+        const apiResult = result.body.result;
+
+        expect(result.status).toBe(updateStatusCode);
+        expect(result.body.message).toBe(successMessage);
+        expect(apiResult.status.is_status).toBe(isStatus);
+        expect(apiResult.content).toBe(patchBody.content);
+        expect(apiResult.category.id).toBe(patchBody.category);
+        expect(beforeDB!.updated_at !== apiResult.updated_at).toBe(true);
+      });
+
+      describe('update the feed with using fileLinks', () => {
+        beforeEach(async () => {
+          await dataSource.manager.update(
+            UploadFiles,
+            { id: uploadFiles1.id },
+            { feed: existingFeed }
+          );
+        });
+
+        test('update the title of a feed with using fileLinks', async () => {
+          const patchBody = {
+            feedId: existingFeed.id,
+            title: 'update title',
+            fileLinks: [uploadFiles2.file_link, uploadFiles3.file_link],
+          };
+
+          const beforeDB: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+            token,
+            endpoint,
+            patchBody
+          );
+          const apiResult = result.body.result;
+
+          const afterDB: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              withDeleted: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          expect(result.status).toBe(updateStatusCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(apiResult.status.is_status).toBe(isStatus);
+          expect(apiResult.title).toBe(patchBody.title);
+          expect(apiResult.uploadFiles.length).toBe(patchBody.fileLinks.length);
+
+          expect(
+            beforeDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
+              ?.deleted_at
+          ).toBe(null);
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
+              ?.deleted_at
+          ).not.toBe(null);
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles2.id)
+              ?.feed
+          ).toBe(existingFeed.id);
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles3.id)
+              ?.feed
+          ).toBe(existingFeed.id);
+        });
+
+        test('update the feed by removing fileLinks from it', async () => {
+          const patchBody = {
+            feedId: existingFeed.id,
+            title: 'update title',
+          };
+
+          const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+            token,
+            endpoint,
+            patchBody
+          );
+          const apiResult = result.body.result;
+
+          const afterDB: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              withDeleted: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          expect(result.status).toBe(updateStatusCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(apiResult.status.is_status).toBe(isStatus);
+          expect(apiResult.title).toBe(patchBody.title);
+          expect(apiResult.uploadFiles.length).toBe(0);
+
+          expect(
+            afterDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
+              ?.deleted_at
+          ).not.toBe(null);
+        });
+      });
+    });
+
+    describe('get a feed', () => {});
+
+    describe('get temp feed list API test', () => {
+      const endpoint: string = '/feeds/temp';
+      const successCode: number = 200;
+      const successMessage: string = 'check temporary feed success';
+      const statusId: number = 2;
+
+      // make feeds for test
+      const feed1: Feed = new MakeTestClass(1, existingUser.id).tempFeedData();
+      const feed2: Feed = new MakeTestClass(2, existingUser.id).tempFeedData();
+      const feed3: Feed = new MakeTestClass(3, existingUser.id).tempFeedData();
+      const feed4: Feed = new MakeTestClass(4, existingUser.id).tempFeedData();
+      const feed5: Feed = new MakeTestClass(5, existingUser.id).tempFeedData();
+
+      const testTempFeeds: Feed[] = [feed1, feed2, feed3, feed4, feed5];
+
+      beforeEach(async () => {
+        await dataSource.manager.save(Feed, testTempFeeds);
+      });
+
+      test('get temp feed list api test', async () => {
+        const result: Response = await ApiRequestHelper.makeAuthGetRequest(
+          token,
+          endpoint
+        );
+        const resultBody = result.body.result;
+
+        expect(result.status).toBe(successCode);
+        expect(result.body.message).toBe(successMessage);
+        expect(resultBody).toHaveLength(testTempFeeds.length);
+        expect(
+          resultBody.every((item: FeedList) => item.statusId === statusId)
+        );
       });
     });
   });
