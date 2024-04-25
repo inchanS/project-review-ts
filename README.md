@@ -1,4 +1,4 @@
-[![Integration Tests](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml/badge.svg?branch=main)](https://github.com/inchanS/project-review-ts/actions/workflows/integration-test.yml)  [![cov](https://inchanS.github.io/project-review-ts/badges/coverage.svg)](https://github.com/inchanS/project-review-ts/actions)  
+[![Integration Tests](https://github.com/inchanS/project-review-ts/actions/workflows/integration-tests.yml/badge.svg?branch=main)](https://github.com/inchanS/project-review-ts/actions/workflows/integration-tests.yml)  [![cov](https://inchanS.github.io/project-review-ts/badges/coverage.svg)](https://github.com/inchanS/project-review-ts/actions)  
 
 # project-review
 ## 프로젝트 소개
