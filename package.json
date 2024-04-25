@@ -1,14 +1,12 @@
 {
   "name": "project-review-ts",
-  "version": "3.3",
+  "version": "3.4.8",
   "description": "230118 project start / with front-end : Oh DaWon ",
   "engines": {
     "node": ">=16.0.0"
   },
   "main": "dist/main.js",
   "scripts": {
-    "test-integration": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --selectProjects integration",
-    "test-unit": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --selectProjects unit",
     "build": "npx tsc",
     "api-docs": "swagger-cli bundle api-docs/swagger/index.yaml --outfile api-docs/_build/index.yaml --type yaml",
     "predev": "npm run api-docs",
@@ -20,7 +18,10 @@
     "typeorm-dev-revert": "NODE_ENV=develop ts-node ./node_modules/typeorm/cli.js migration:revert -d ./src/repositories/data-source.ts",
     "typeorm-product": "NODE_ENV=production ts-node ./node_modules/typeorm/cli.js migration:run -d ./src/repositories/data-source.ts",
     "typeorm-product-revert": "NODE_ENV=production ts-node ./node_modules/typeorm/cli.js migration:revert -d ./src/repositories/data-source.ts",
-    "inspect": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"node --inspect dist/main.js\""
+    "inspect": "NODE_ENV=develop concurrently \"npx tsc --watch\" \"node --inspect dist/main.js\"",
+    "test:integration-coverage": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --coverage --coverageReporters=json-summary --selectProjects integration",
+    "test:integration": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --selectProjects integration",
+    "test:unit": "NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit --selectProjects unit"
   },
   "repository": {
     "type": "git",
