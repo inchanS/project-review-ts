@@ -27,9 +27,9 @@ export class MakeTestClass {
       title,
       content,
       0,
-      '1' as unknown as Estimation,
-      '1' as unknown as Category,
-      '1' as unknown as FeedStatus
+      1 as unknown as Estimation,
+      1 as unknown as Category,
+      1 as unknown as FeedStatus
     );
     testFeed.id = this.id;
     testFeed.created_at = new Date();
