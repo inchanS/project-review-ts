@@ -889,5 +889,26 @@ describe('Feed CRUD API Test', () => {
         expect(uploadFileIds).toContain(uploadFilesForFeed[1].id);
       });
     });
+
+    describe('get a feed: not found feed', () => {
+      const endpoint: string = '/feeds/';
+      const wrongFeedId: number = 55;
+
+      let result: Response;
+      beforeEach(async () => {
+        result = await ApiRequestHelper.makeAuthGetRequest(
+          token,
+          endpoint + wrongFeedId
+        );
+      });
+
+      test('check statusCode, errMessage', async () => {
+        const errCode: number = 404;
+        const errMessage: string = 'NOT_FOUND_FEED';
+
+        expect(result.status).toBe(errCode);
+        expect(result.body.message).toBe(errMessage);
+      });
+    });
   });
 });
