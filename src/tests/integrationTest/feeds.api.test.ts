@@ -832,6 +832,62 @@ describe('Feed CRUD API Test', () => {
       });
     });
 
-    describe('get a feed', () => {});
+    describe('get a feed: success', () => {
+      const endpoint: string = '/feeds/';
+      const successCode: number = 200;
+      const expectedMessage: string = 'check feed success';
+
+      const existingUsersFeed: Feed = new MakeTestClass(1, 1).feedData();
+      const uploadFilesForFeed: UploadFiles[] = [uploadFiles1, uploadFiles2];
+
+      let result: Response;
+      let apiResult: Feed;
+
+      beforeEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.save(Feed, existingUsersFeed);
+          await transactionalEntityManager.update(
+            UploadFiles,
+            { id: uploadFiles1.id },
+            { feed: existingUsersFeed }
+          );
+          await transactionalEntityManager.update(
+            UploadFiles,
+            { id: uploadFiles2.id },
+            { feed: existingUsersFeed }
+          );
+        });
+
+        result = await ApiRequestHelper.makeAuthGetRequest(
+          token,
+          endpoint + existingUsersFeed.id
+        );
+        apiResult = result.body.result;
+      });
+
+      test('check status and message', async () => {
+        expect(result.status).toBe(successCode);
+        expect(result.body.message).toBe(expectedMessage);
+      });
+
+      test('check feeds title and content', async () => {
+        expect(apiResult.title).toBe(existingUsersFeed.title);
+        expect(apiResult.content).toBe(existingUsersFeed.content);
+        expect(apiResult.status.is_status).toBe('published');
+        expect(apiResult.category.id).toBe(existingUsersFeed.category);
+        expect(apiResult.estimation.id).toBe(existingUsersFeed.estimation);
+      });
+
+      test('check uploadFiles for feed', async () => {
+        expect(apiResult.uploadFiles).toHaveLength(uploadFilesForFeed.length);
+
+        const uploadFileIds: number[] = apiResult.uploadFiles!.map(
+          (file: UploadFiles) => file.id
+        );
+
+        expect(uploadFileIds).toContain(uploadFilesForFeed[0].id);
+        expect(uploadFileIds).toContain(uploadFilesForFeed[1].id);
+      });
+    });
   });
 });
