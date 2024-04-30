@@ -14,6 +14,7 @@ import { TestUtils } from './testUtils/testUtils';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { UploadFiles } from '../../entities/uploadFiles.entity';
 import { TestSignIn, TestUserInfo } from '../../types/test';
+import { TestInitializer } from './testUtils/testInitializer';
 
 // AWS SDK의 S3 서비스 부분을 모의 처리합니다.
 jest.mock('@aws-sdk/client-s3', () => {
@@ -40,27 +41,7 @@ jest.mock('@aws-sdk/client-s3', () => {
 
 const app: Express = createApp();
 
-describe('user API', () => {
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log('💥TEST Data Source for User API has been initialized!');
-        }
-      })
-      .catch(error => {
-        console.log('Data Source for User API Initializing failed:', error);
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source for User API has been destroyed!');
-    });
-  });
-
+TestInitializer.initialize('user API', () => {
   describe('user validator service API', () => {
     const existingUser: UserDto = new UserDto(
       'existingNickname',

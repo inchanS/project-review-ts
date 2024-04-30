@@ -12,32 +12,11 @@ import request from 'supertest';
 import { Symbol, symbolType } from '../../entities/symbol.entity';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { TestSignIn, TestUserInfo } from '../../types/test';
+import { TestInitializer } from './testUtils/testInitializer';
 
 const app: Express = createApp();
 
-describe('Symbol API', () => {
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log(
-            '💥TEST Data Source for Symbol API has been initialized!'
-          );
-        }
-      })
-      .catch(error => {
-        console.log('Data Source for Symbol API Initializing failed:', error);
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source for Symbol API has been destroyed!');
-    });
-  });
-
+TestInitializer.initialize('Symbol API', () => {
   describe('set Symbol API', () => {
     // test users
     const existingUser: TestUserInfo = {

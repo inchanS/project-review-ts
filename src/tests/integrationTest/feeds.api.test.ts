@@ -15,6 +15,7 @@ import { UploadFiles } from '../../entities/uploadFiles.entity';
 import { MakeTestClass } from './testUtils/makeTestClass';
 import { Feed } from '../../entities/feed.entity';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
+import { TestInitializer } from './testUtils/testInitializer';
 
 // @aws-sdk/client-s3 모의
 jest.mock('@aws-sdk/client-s3', () => {
@@ -29,32 +30,7 @@ jest.mock('@aws-sdk/client-s3', () => {
   };
 });
 
-describe('Feed CRUD API Test', () => {
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log(
-            '💥TEST Data Source for Feed CRUD API has been initialized!'
-          );
-        }
-      })
-      .catch(error => {
-        console.log(
-          'Data Source for Feed CRUD API Initializing failed:',
-          error
-        );
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source for Feed CRUD API has been destroyed!');
-    });
-  });
-
+TestInitializer.initialize('Feed CRUD API Test', () => {
   describe('set for feed CRUD API Test', () => {
     // test users
     const existingUser: TestUserInfo = {

@@ -10,32 +10,11 @@ import { Response } from 'superagent';
 import request from 'supertest';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { TestUserInfo } from '../../types/test';
+import { TestInitializer } from './testUtils/testInitializer';
 
 const app: Express = createApp();
 
-describe('Search API', () => {
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log(
-            '💥TEST Data Source for Search API has been initialized!'
-          );
-        }
-      })
-      .catch(error => {
-        console.log('Data Source for Search API Initializing failed:', error);
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source for Search API has been destroyed!');
-    });
-  });
-
+TestInitializer.initialize('Search API', () => {
   describe('set Search API', () => {
     // test users
     const testUser: TestUserInfo = {

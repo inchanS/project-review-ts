@@ -7,35 +7,9 @@ import { MakeTestClass } from './testUtils/makeTestClass';
 import { User } from '../../entities/users.entity';
 import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { Response } from 'superagent';
+import { TestInitializer } from './testUtils/testInitializer';
 
-describe('Comments CRUD API Test', () => {
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log(
-            '💥TEST Data Source for Comments CRUD API has been initialized!'
-          );
-        }
-      })
-      .catch(error => {
-        console.log(
-          'Data Source for Comments CRUD API Initializing failed:',
-          error
-        );
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log(
-        '💥TEST Data Source for Comments CRUD API has been destroyed!'
-      );
-    });
-  });
-
+TestInitializer.initialize('Comments CRUD API Test', () => {
   describe('setup Comments CRUD API test', () => {
     // test users
     const existingUser: TestUserInfo = {

@@ -1,40 +1,14 @@
-import dataSource from '../../repositories/data-source';
-import { TestUtils } from './testUtils/testUtils';
 import { Express } from 'express';
 import { createApp } from '../../app';
 import request from 'supertest';
 import { Response } from 'superagent';
 import { Category } from '../../entities/category.entity';
+import { TestInitializer } from './testUtils/testInitializer';
 
 const app: Express = createApp();
 
-describe('categories API', () => {
+TestInitializer.initialize('Categories API', () => {
   const endpoint: string = '/categories';
-
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log(
-            '💥TEST Data Source for Categories API has been initialized!'
-          );
-        }
-      })
-      .catch(error => {
-        console.log(
-          'Data Source for Categories API Initializing failed:',
-          error
-        );
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source for Categories API has been destroyed!');
-    });
-  });
 
   test('get Categories: success', async () => {
     const result: Response = await request(app).get(endpoint);
