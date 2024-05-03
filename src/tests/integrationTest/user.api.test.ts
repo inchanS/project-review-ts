@@ -244,14 +244,12 @@ TestInitializer.initialize('user API', () => {
       TestUserFactory.createUserEntity(tempUser);
 
     // test feeds
-    const existingUserFeeds: Feed[] = [
-      new MakeTestClass(1, existingUser.id).feedData(),
-      new MakeTestClass(2, existingUser.id).feedData(),
-      new MakeTestClass(3, existingUser.id).feedData(),
-    ];
+    const existingUserFeeds: Feed[] = new MakeTestClass(
+      existingUser.id
+    ).generateMultipleFeeds(3, 1);
 
     const otherUserFeeds: Feed[] = [
-      new MakeTestClass(4, otherUser.id).feedData(),
+      new MakeTestClass(otherUser.id).feedData(4),
     ];
 
     const testFeeds: Feed[] = TestUtils.sortedMergedById(
@@ -261,11 +259,12 @@ TestInitializer.initialize('user API', () => {
 
     //test comments
     const existingUserComments: Comment[] = [
-      new MakeTestClass(1, existingUser.id).commentData(4, false), // 공개 댓글
-      new MakeTestClass(2, existingUser.id).commentData(4, true), // 비공개 댓글
-      new MakeTestClass(3, existingUser.id).commentData(4, false, 1), // 공개 대댓글
-      new MakeTestClass(5, existingUser.id).commentData(1, true, 4), // 비공개 대댓글
-      new MakeTestClass(6, existingUser.id).commentData(
+      new MakeTestClass(existingUser.id).commentData(1, 4, false), // 공개 댓글
+      new MakeTestClass(existingUser.id).commentData(2, 4, true), // 비공개 댓글
+      new MakeTestClass(existingUser.id).commentData(3, 4, false, 1), // 공개 대댓글
+      new MakeTestClass(existingUser.id).commentData(5, 1, true, 4), // 비공개 대댓글
+      new MakeTestClass(existingUser.id).commentData(
+        6,
         1,
         false,
         undefined,
@@ -274,7 +273,7 @@ TestInitializer.initialize('user API', () => {
     ];
 
     const otherUserComments: Comment[] = [
-      new MakeTestClass(4, otherUser.id).commentData(1, true),
+      new MakeTestClass(otherUser.id).commentData(4, 1, true),
     ];
     const testComments: Comment[] = TestUtils.sortedMergedById(
       existingUserComments,
@@ -283,10 +282,10 @@ TestInitializer.initialize('user API', () => {
 
     // test feed symbols
     const existingUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(1, existingUser.id).feedSymbolData(4, 1),
+      new MakeTestClass(existingUser.id).feedSymbolData(4, 1),
     ];
     const otherUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(2, otherUser.id).feedSymbolData(1, 1),
+      new MakeTestClass(otherUser.id).feedSymbolData(1, 1),
     ];
     const testFeedSymbols: FeedSymbol[] = TestUtils.sortedMergedById(
       existingUserFeedSybols,
@@ -600,14 +599,12 @@ TestInitializer.initialize('user API', () => {
       TestUserFactory.createUserEntity(otherUser);
 
     // test feeds
-    const existingUserFeeds: Feed[] = [
-      new MakeTestClass(1, existingUser.id).feedData(),
-      new MakeTestClass(2, existingUser.id).feedData(),
-      new MakeTestClass(3, existingUser.id).feedData(),
-    ];
+    const existingUserFeeds: Feed[] = new MakeTestClass(
+      existingUser.id
+    ).generateMultipleFeeds(3);
 
     const otherUserFeeds: Feed[] = [
-      new MakeTestClass(4, otherUser.id).feedData(),
+      new MakeTestClass(otherUser.id).feedData(4),
     ];
 
     const testFeeds: Feed[] = TestUtils.sortedMergedById(
@@ -616,17 +613,18 @@ TestInitializer.initialize('user API', () => {
     );
 
     const existingUserUploadFiles: UploadFiles[] = [
-      new MakeTestClass(1, existingUser.id).uploadData('image.jpg', 1),
-      new MakeTestClass(2, existingUser.id).uploadData('image.txt', 1),
+      new MakeTestClass(existingUser.id).uploadData(1, 'jpg', 1),
+      new MakeTestClass(existingUser.id).uploadData(2, 'txt', 1),
     ];
 
     //test comments
     const existingUserComments: Comment[] = [
-      new MakeTestClass(1, existingUser.id).commentData(4, false), // 공개 댓글
-      new MakeTestClass(2, existingUser.id).commentData(4, true), // 비공개 댓글
-      new MakeTestClass(3, existingUser.id).commentData(4, false, 1), // 공개 대댓글
-      new MakeTestClass(5, existingUser.id).commentData(1, true, 4), // 비공개 대댓글
-      new MakeTestClass(6, existingUser.id).commentData(
+      new MakeTestClass(existingUser.id).commentData(1, 4, false), // 공개 댓글
+      new MakeTestClass(existingUser.id).commentData(2, 4, true), // 비공개 댓글
+      new MakeTestClass(existingUser.id).commentData(3, 4, false, 1), // 공개 대댓글
+      new MakeTestClass(existingUser.id).commentData(5, 1, true, 4), // 비공개 대댓글
+      new MakeTestClass(existingUser.id).commentData(
+        6,
         1,
         false,
         undefined,
@@ -635,7 +633,7 @@ TestInitializer.initialize('user API', () => {
     ];
 
     const otherUserComments: Comment[] = [
-      new MakeTestClass(4, otherUser.id).commentData(1, true),
+      new MakeTestClass(otherUser.id).commentData(4, 1, true),
     ];
     const testComments: Comment[] = TestUtils.sortedMergedById(
       existingUserComments,
@@ -644,10 +642,10 @@ TestInitializer.initialize('user API', () => {
 
     // test feed symbols
     const existingUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(1, existingUser.id).feedSymbolData(4, 1),
+      new MakeTestClass(existingUser.id).feedSymbolData(4, 1),
     ];
     const otherUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(2, otherUser.id).feedSymbolData(1, 1),
+      new MakeTestClass(otherUser.id).feedSymbolData(1, 1),
     ];
     const testFeedSymbols: FeedSymbol[] = TestUtils.sortedMergedById(
       existingUserFeedSybols,

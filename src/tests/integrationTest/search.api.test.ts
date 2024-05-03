@@ -32,11 +32,11 @@ TestInitializer.initialize('Search API', () => {
 
     // test feeds
     const testUserFeeds: Feed[] = [
-      new MakeTestClass(1, testUser.id).feedData(),
-      new MakeTestClass(2, testUser.id).feedData(testTitle, testContent),
-      new MakeTestClass(3, testUser.id).feedData(testTitle),
-      new MakeTestClass(4, testUser.id).feedData(undefined, testContent),
-      new MakeTestClass(5, testUser.id).feedData(),
+      new MakeTestClass(testUser.id).feedData(1),
+      new MakeTestClass(testUser.id).feedData(2, testTitle, testContent),
+      new MakeTestClass(testUser.id).feedData(3, testTitle),
+      new MakeTestClass(testUser.id).feedData(4, undefined, testContent),
+      new MakeTestClass(testUser.id).feedData(5),
     ];
 
     beforeAll(async () => {

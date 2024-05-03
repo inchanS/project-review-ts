@@ -50,23 +50,17 @@ TestInitializer.initialize('Symbol API', () => {
       TestUserFactory.createUserEntity(anotherUser);
 
     // test feeds
-    const existingUserFeeds: Feed[] = [
-      new MakeTestClass(1, existingUser.id).feedData(),
-      new MakeTestClass(2, existingUser.id).feedData(),
-      new MakeTestClass(3, existingUser.id).feedData(),
-    ];
+    const existingUserFeeds: Feed[] = new MakeTestClass(
+      existingUser.id
+    ).generateMultipleFeeds(3, 1);
 
-    const otherUserFeeds: Feed[] = [
-      new MakeTestClass(4, otherUser.id).feedData(),
-      new MakeTestClass(5, otherUser.id).feedData(),
-      new MakeTestClass(6, otherUser.id).feedData(),
-    ];
+    const otherUserFeeds: Feed[] = new MakeTestClass(
+      otherUser.id
+    ).generateMultipleFeeds(3, 4);
 
-    const anotherUserFeeds: Feed[] = [
-      new MakeTestClass(7, anotherUser.id).feedData(),
-      new MakeTestClass(8, anotherUser.id).feedData(),
-      new MakeTestClass(9, anotherUser.id).feedData(),
-    ];
+    const anotherUserFeeds: Feed[] = new MakeTestClass(
+      anotherUser.id
+    ).generateMultipleFeeds(3, 7);
 
     const testFeeds: Feed[] = TestUtils.sortedMergedById(
       existingUserFeeds,
@@ -75,16 +69,16 @@ TestInitializer.initialize('Symbol API', () => {
     );
 
     // test feed symbols
-    const existingUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(1, existingUser.id).feedSymbolData(7, 1),
+    const existingUserFeedSymbols: FeedSymbol[] = [
+      new MakeTestClass(existingUser.id).feedSymbolData(7, 1),
     ];
-    const otherUserFeedSybols: FeedSymbol[] = [
-      new MakeTestClass(2, otherUser.id).feedSymbolData(7, 2),
-      new MakeTestClass(2, otherUser.id).feedSymbolData(8, 1),
+    const otherUserFeedSymbols: FeedSymbol[] = [
+      new MakeTestClass(otherUser.id).feedSymbolData(7, 2),
+      new MakeTestClass(otherUser.id).feedSymbolData(8, 1),
     ];
     const testFeedSymbols: FeedSymbol[] = TestUtils.sortedMergedById(
-      existingUserFeedSybols,
-      otherUserFeedSybols
+      existingUserFeedSymbols,
+      otherUserFeedSymbols
     );
 
     beforeAll(async () => {

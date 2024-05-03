@@ -46,17 +46,14 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
       TestUserFactory.createSignInInfo(existingUser);
 
     const uploadFiles1: UploadFiles = new MakeTestClass(
-      1,
       existingUser.id
-    ).uploadData('testfile1.jpeg');
+    ).uploadData(1, 'testfile1.jpeg');
     const uploadFiles2: UploadFiles = new MakeTestClass(
-      2,
       existingUser.id
-    ).uploadData('testfile2.txt');
+    ).uploadData(2, 'testfile2.txt');
     const uploadFiles3: UploadFiles = new MakeTestClass(
-      3,
       existingUser.id
-    ).uploadData('testfile3.txt');
+    ).uploadData(3, 'testfile3.txt');
 
     const testUploadFiles: UploadFiles[] = [
       uploadFiles1,
@@ -166,9 +163,8 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
       const isStatus: string = 'temporary';
 
       const existingTempFeedWithoutUploadfiles: Feed = new MakeTestClass(
-        1,
         existingUser.id
-      ).tempFeedData();
+      ).tempFeedData(1);
 
       beforeEach(async () => {
         await dataSource.manager.save(Feed, existingTempFeedWithoutUploadfiles);
@@ -364,17 +360,14 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
       const tempTitle: string = 'this is title';
 
       const tempFeedWithoutTitle: Feed = new MakeTestClass(
-        1,
         existingUser.id
-      ).tempFeedData(undefined, 'this is new content');
+      ).tempFeedData(1, undefined, 'this is new content');
       const tempFeedWithTitle: Feed = new MakeTestClass(
-        2,
         existingUser.id
-      ).tempFeedData(tempTitle);
+      ).tempFeedData(2, tempTitle);
       const tempFeedWithUploadFiles: Feed = new MakeTestClass(
-        3,
         existingUser.id
-      ).tempFeedData();
+      ).tempFeedData(3);
 
       const existingUsersTempFeeds: Feed[] = [
         tempFeedWithoutTitle,
@@ -383,9 +376,8 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
       ];
 
       const otherUsersTempFeed: Feed = new MakeTestClass(
-        6,
         otherUser.id
-      ).tempFeedData();
+      ).tempFeedData(4);
 
       const testTempFeeds: Feed[] = [
         ...existingUsersTempFeeds,
@@ -675,7 +667,8 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
       const isStatus: string = 'published';
       const updateStatusCode: number = 200;
 
-      const existingFeed: Feed = new MakeTestClass(1, existingUser.id).feedData(
+      const existingFeed: Feed = new MakeTestClass(existingUser.id).feedData(
+        1,
         'existing title',
         'existing content'
       );
@@ -917,7 +910,7 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
       const successCode: number = 200;
       const expectedMessage: string = 'check feed success';
 
-      const existingUsersFeed: Feed = new MakeTestClass(1, 1).feedData();
+      const existingUsersFeed: Feed = new MakeTestClass(1).feedData(1);
       const uploadFilesForFeed: UploadFiles[] = [uploadFiles1, uploadFiles2];
 
       let result: Response;

@@ -47,14 +47,10 @@ TestInitializer.initialize('Comments CRUD API Test', () => {
     //   TestUserFactory.createSignInInfo(otherUser2);
 
     // test feeds
-    const existingUsersFeed: Feed = new MakeTestClass(
-      1,
-      existingUser.id
-    ).feedData();
-    const otherUser1sFeed: Feed = new MakeTestClass(
-      2,
-      otherUser1.id
-    ).feedData();
+    const existingUsersFeed: Feed = new MakeTestClass(existingUser.id).feedData(
+      1
+    );
+    const otherUser1sFeed: Feed = new MakeTestClass(otherUser1.id).feedData(2);
 
     // set DB
     const testUserEntities: TestUserInfo[] = [
