@@ -15,6 +15,7 @@ import { ApiRequestHelper } from './testUtils/apiRequestHelper';
 import { UploadFiles } from '../../entities/uploadFiles.entity';
 import { TestSignIn, TestUserInfo } from '../../types/test';
 import { TestInitializer } from './testUtils/testInitializer';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 
 // AWS SDK의 S3 서비스 부분을 모의 처리합니다.
 jest.mock('@aws-sdk/client-s3', () => {
@@ -377,8 +378,16 @@ TestInitializer.initialize('user API', () => {
       expect(Object.keys(result.body)).toHaveLength(3);
       expect(result.body.feedCntByUserId).toEqual(existingUserFeeds.length);
       expect(result.body.totalPage).toEqual(1);
-      expect(result.body.feedListByUserId[0].userId).toEqual(existingUser.id);
-      expect(result.body.feedListByUserId[0].title).toEqual('test title');
+      expect(
+        result.body.feedListByUserId.every(
+          (item: FeedList) => item.userId === existingUser.id
+        )
+      ).toBe(true);
+      expect(
+        result.body.feedListByUserId.every((item: FeedList) =>
+          item.title.includes('test title')
+        )
+      ).toBeTruthy();
     });
 
     test('user Content - getMyCommentList - success', async () => {

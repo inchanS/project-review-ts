@@ -44,8 +44,9 @@ export class MakeTestClass {
   ): Feed[] => {
     const testFeeds: Feed[] = [];
     for (let i: number = startIndexId; i < startIndexId + numFiles; i++) {
+      const title: string = `test title ${i}`;
       const content: string = `test content ${i}`;
-      const testFeed: Feed = this.feedData(i, undefined, content);
+      const testFeed: Feed = this.feedData(i, title, content);
       testFeeds.push(testFeed);
     }
     return testFeeds;
