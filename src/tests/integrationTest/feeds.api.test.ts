@@ -368,16 +368,20 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
       const tempFeedWithUploadFiles: Feed = new MakeTestClass(
         existingUser.id
       ).tempFeedData(3);
+      const tempFeedList: Feed[] = new MakeTestClass(
+        existingUser.id
+      ).generateMultipleTempFeeds(3, 4);
 
       const existingUsersTempFeeds: Feed[] = [
         tempFeedWithoutTitle,
         tempFeedWithTitle,
         tempFeedWithUploadFiles,
+        ...tempFeedList,
       ];
 
       const otherUsersTempFeed: Feed = new MakeTestClass(
         otherUser.id
-      ).tempFeedData(4);
+      ).tempFeedData(7);
 
       const testTempFeeds: Feed[] = [
         ...existingUsersTempFeeds,
