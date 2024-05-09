@@ -697,6 +697,7 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
         expectedContendUpdates: Partial<Feed>,
         expectedEntityUpdates?: Record<any, number>
       ) {
+        await new Promise(resolve => setTimeout(resolve, 100));
         const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
           token,
           endpoint,
@@ -974,6 +975,19 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
 
         expect(uploadFileIds).toContain(uploadFilesForFeed[0].id);
         expect(uploadFileIds).toContain(uploadFilesForFeed[1].id);
+      });
+
+      test('check verify increment in view count after feed', async () => {
+        const secondGetFeed: Response =
+          await ApiRequestHelper.makeAuthGetRequest(
+            token,
+            endpoint + existingUsersFeed.id
+          );
+
+        const beforeViewCnt: number = apiResult.viewCnt;
+        const afterViewCnt: number = secondGetFeed.body.result.viewCnt;
+
+        expect(afterViewCnt).toBe(beforeViewCnt + 1);
       });
     });
 
