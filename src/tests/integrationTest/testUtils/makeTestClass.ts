@@ -103,6 +103,9 @@ export class MakeTestClass {
       this.userId as unknown as User
     );
     testUploadFiles.id = id;
+    testUploadFiles.is_img = Boolean(
+      fileExtension.match(/(jpg|jpeg|png|gif)$/)
+    );
 
     return testUploadFiles;
   };
@@ -117,9 +120,16 @@ export class MakeTestClass {
       (_, index: number): string =>
         `file${index + startIndexId}.${fileExtension}`
     );
-    return fileNames.map((fileName: string, index: number) =>
-      this.uploadData(index + startIndexId, fileName, index + startIndexId)
-    );
+    return fileNames.map((fileName: string, index: number) => {
+      const uploadData: UploadFiles = this.uploadData(
+        index + startIndexId,
+        fileName,
+        index + startIndexId
+      );
+      uploadData.is_img = Boolean(fileExtension.match(/(jpg|jpeg|png|gif)$/));
+
+      return uploadData;
+    });
   };
 
   // 테스트간 댓글생성을 위한 댓글 클래스 생성
@@ -167,11 +177,33 @@ export class MakeTestClass {
   };
 
   // 테스트간 게시물공감 데이터 생성을 위한 클래스 생성
-  public feedSymbolData = (feedId: number, symbolId: number): FeedSymbol => {
+  public feedSymbolData = (feedId: number, symbolId: 1 | 2): FeedSymbol => {
     return new FeedSymbol(
       this.userId as unknown as User,
       feedId as unknown as Feed,
       symbolId as unknown as Symbol
     );
+  };
+
+  public generateFeedSymbolDatas = (
+    feedId: number,
+    symbolId: 1 | 2,
+    numFiles: number,
+    startUserId: number
+  ) => {
+    const feedSymbols: FeedSymbol[] = [];
+    for (let i: number = startUserId; i < startUserId + numFiles; i++) {
+      if (i === this.userId) {
+        continue;
+      } else {
+        const feedSymbol: FeedSymbol = new FeedSymbol(
+          i as unknown as User,
+          feedId as unknown as Feed,
+          symbolId as unknown as Symbol
+        );
+        feedSymbols.push(feedSymbol);
+      }
+    }
+    return feedSymbols;
   };
 }
