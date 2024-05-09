@@ -7,7 +7,6 @@ import dataSource from '../../repositories/data-source';
 import { User } from '../../entities/users.entity';
 import { Feed } from '../../entities/feed.entity';
 import { FeedSymbol } from '../../entities/feedSymbol.entity';
-import { ObjectLiteral } from 'typeorm';
 
 TestInitializer.initialize('FeedList API test', () => {
   describe('set for FeedList API test', () => {
@@ -69,25 +68,6 @@ TestInitializer.initialize('FeedList API test', () => {
         await transactionalEntityManager.save(UploadFiles, uploadFiles);
         await transactionalEntityManager.save(FeedSymbol, feedSymbols);
       });
-
-      const [user, uploadFile, feed, feedsymbol]: Awaited<ObjectLiteral[]>[] =
-        await Promise.all([
-          dataSource.manager.find(User),
-          dataSource.manager.find(UploadFiles),
-          dataSource.manager.find(Feed),
-          dataSource.manager.find(FeedSymbol),
-        ]);
-
-      console.log('🔥feedList.api.test/:84- user = ', user);
-      console.log('🔥feedList.api.test/:85- uploadFile = ', uploadFile);
-      console.log('🔥feedList.api.test/:86- feed = ', feed);
-      console.log('🔥feedList.api.test/:87- feedsymbol = ', feedsymbol);
-    });
-
-    test('test', async () => {
-      const abc = 'abc';
-
-      expect(abc).toBe(abc);
     });
   });
 });
