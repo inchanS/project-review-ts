@@ -81,47 +81,45 @@ TestInitializer.initialize('FeedList API test', () => {
       });
     });
 
-    describe('get feedList - default API', () => {
-      const endpoint: string = '/feeds/post';
-      const limit: number = 10;
+    const endpoint: string = '/feeds/post';
 
-      let result: Response;
-      beforeAll(async () => {
-        const response: Response = await request(app).get(endpoint);
-        result = response.body;
+    const testFeedList = async (pagination?: Pagination) => {
+      const response: Response = await request(app).get(
+        `${endpoint}${
+          pagination
+            ? `?index=${pagination.startIndex}&limit=${pagination.limit}`
+            : ''
+        }`
+      );
+      const result = response.body;
+      const expectedLength: number =
+        pagination && pagination.limit > numberOfTotalFeeds
+          ? numberOfTotalFeeds
+          : pagination
+          ? pagination.limit
+          : 10;
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(expectedLength);
+    };
+
+    describe('get feedList', () => {
+      test('default API', async () => {
+        await testFeedList();
       });
 
-      test('get feedList', async () => {
-        expect(Array.isArray(result)).toBe(true);
-        expect(result).toHaveLength(limit);
-      });
-    });
-
-    describe('get feedList - use Query String: index&limit', () => {
-      const endpoint: string = '/feeds/post';
-
-      const testQueryString: Pagination[] = [
+      const testQueryStrings: Pagination[] = [
         { startIndex: 0, limit: 1 },
         { startIndex: 0, limit: 5 },
         { startIndex: 0, limit: 12 },
         { startIndex: 0, limit: 100 },
       ];
-      test.each(testQueryString)(
-        'check returned feed list length',
-        async pagination => {
-          const response: Response = await request(app).get(
-            `${endpoint}?index=${pagination.startIndex}&limit=${pagination.limit}`
-          );
-          const result = response.body;
 
-          expect(Array.isArray(result)).toBe(true);
-          expect(result).toHaveLength(
-            pagination.limit > numberOfTotalFeeds
-              ? numberOfTotalFeeds
-              : pagination.limit
-          );
-        }
-      );
+      testQueryStrings.forEach(pagination => {
+        test(`use Query String: index=${pagination.startIndex}&limit=${pagination.limit}`, async () => {
+          await testFeedList(pagination);
+        });
+      });
     });
   });
 });
