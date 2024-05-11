@@ -106,19 +106,22 @@ TestInitializer.initialize('FeedList API test', () => {
         { startIndex: 0, limit: 12 },
         { startIndex: 0, limit: 100 },
       ];
-      test.each(testQeuryString)('get feedList', async pagination => {
-        const response: Response = await request(app).get(
-          `${endpoint}?index=${pagination.startIndex}&limit=${pagination.limit}`
-        );
-        const result = response.body;
+      test.each(testQeuryString)(
+        'check returned feed list length',
+        async pagination => {
+          const response: Response = await request(app).get(
+            `${endpoint}?index=${pagination.startIndex}&limit=${pagination.limit}`
+          );
+          const result = response.body;
 
-        expect(Array.isArray(result)).toBe(true);
-        expect(result).toHaveLength(
-          pagination.limit > numberOfTotalFeeds
-            ? numberOfTotalFeeds
-            : pagination.limit
-        );
-      });
+          expect(Array.isArray(result)).toBe(true);
+          expect(result).toHaveLength(
+            pagination.limit > numberOfTotalFeeds
+              ? numberOfTotalFeeds
+              : pagination.limit
+          );
+        }
+      );
     });
   });
 });
