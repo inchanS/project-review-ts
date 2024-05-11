@@ -100,13 +100,13 @@ TestInitializer.initialize('FeedList API test', () => {
     describe('get feedList - use Query String: index&limit', () => {
       const endpoint: string = '/feeds/post';
 
-      const testQeuryString: Pagination[] = [
+      const testQueryString: Pagination[] = [
         { startIndex: 0, limit: 1 },
         { startIndex: 0, limit: 5 },
         { startIndex: 0, limit: 12 },
         { startIndex: 0, limit: 100 },
       ];
-      test.each(testQeuryString)(
+      test.each(testQueryString)(
         'check returned feed list length',
         async pagination => {
           const response: Response = await request(app).get(
