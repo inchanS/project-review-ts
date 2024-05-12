@@ -19,7 +19,8 @@ export class MakeTestClass {
   public feedData = (
     id: number,
     title: string = 'test title',
-    content: string = 'test content'
+    content: string = 'test content',
+    category: number = 1
   ): Feed => {
     const testFeed: Feed = new Feed(
       this.userId as unknown as User,
@@ -27,7 +28,7 @@ export class MakeTestClass {
       content,
       0,
       1 as unknown as Estimation,
-      1 as unknown as Category,
+      category as unknown as Category,
       1 as unknown as FeedStatus
     );
     testFeed.id = id;
