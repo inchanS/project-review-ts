@@ -41,13 +41,14 @@ export class MakeTestClass {
 
   public generateMultipleFeeds = (
     numFiles: number,
-    startIndexId: number = 1
+    startIndexId: number = 1,
+    category: number = 1
   ): Feed[] => {
     const testFeeds: Feed[] = [];
     for (let i: number = startIndexId; i < startIndexId + numFiles; i++) {
       const title: string = `test title ${i}`;
       const content: string = `test content ${i}`;
-      const testFeed: Feed = this.feedData(i, title, content);
+      const testFeed: Feed = this.feedData(i, title, content, category);
       testFeeds.push(testFeed);
     }
     return testFeeds;
