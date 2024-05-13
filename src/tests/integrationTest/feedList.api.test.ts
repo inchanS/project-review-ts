@@ -11,6 +11,7 @@ import { Response } from 'superagent';
 import request from 'supertest';
 import { createApp } from '../../app';
 import { Express } from 'express';
+import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 
 const app: Express = createApp();
 
@@ -129,8 +130,12 @@ TestInitializer.initialize('FeedList API test', () => {
         { startIndex: 0, limit: 100 },
       ];
 
-      const categoryOptions = [
-        null,
+      interface CategoryOptions {
+        category: number;
+        numberOfFeeds: number;
+        expect: number;
+      }
+      const categoryOptions: CategoryOptions[] = [
         {
           category: 0,
           numberOfFeeds: allFeeds.length,
@@ -153,24 +158,42 @@ TestInitializer.initialize('FeedList API test', () => {
         },
       ];
 
-      const sendRequest = async (pagination?: Pagination, category?: number) =>
+      const sendRequest = async (
+        pagination?: Pagination,
+        categoryId?: number
+      ) =>
         await request(app).get(
           `${endpoint}${
             pagination
               ? `?index=${pagination.startIndex}&limit=${pagination.limit}${
-                  category ? `&categoryId=${category}` : ''
+                  categoryId ? `&categoryId=${categoryId}` : ''
                 }`
-              : category
-              ? `?categoryId=${category}`
+              : categoryId
+              ? `?categoryId=${categoryId}`
               : ''
           }`
         );
 
+      // Test default API
+      test('not use Query String', async () => {
+        const response: Response = await request(app).get(endpoint);
+        const result: FeedList[] = response.body;
+
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).toHaveLength(
+          Math.min(allFeeds.length, paginationDefaultLimit)
+        );
+      });
+
       // Test pagination only
-      paginationOptions.forEach(pagination => {
-        test(`use Query String for pagination only: index=${pagination.startIndex}&limit=${pagination.limit}`, async () => {
+      paginationOptions.forEach((pagination: Pagination) => {
+        const indexString: string = pagination
+          ? `?index=${pagination.startIndex}&limit=${pagination.limit}`
+          : '';
+
+        test(`use Query String for pagination only: endpoint${indexString}`, async () => {
           const response: Response = await sendRequest(pagination);
-          const result = response.body;
+          const result: FeedList[] = response.body;
           expect(Array.isArray(result)).toBe(true);
           expect(result).toHaveLength(
             getExpectedLength(pagination, allFeeds.length)
@@ -180,39 +203,65 @@ TestInitializer.initialize('FeedList API test', () => {
 
       // Test category only
       categoryOptions.forEach(sort => {
-        test(`use Query String for category only: category=${sort?.category}`, async () => {
+        const categoryIdString: string = sort
+          ? `?categoryId=${sort.category}`
+          : '';
+
+        test(`use Query String for category only: endpoint${categoryIdString}`, async () => {
           const response: Response = await sendRequest(
             undefined,
-            sort?.category
+            sort.category
           );
           const result = response.body;
           expect(result).toHaveLength(
-            sort?.expect ? sort.expect : paginationDefaultLimit
+            sort.expect ? sort.expect : paginationDefaultLimit
           );
         });
       });
 
       // Test pagination and category together
-      const generateTest = (pagination: Pagination, category: any) => {
+      const generateTest = (
+        pagination: Pagination,
+        category: CategoryOptions
+      ) => {
         return async () => {
           const response: Response = await sendRequest(
             pagination,
-            category?.category
+            category.category
           );
           const result = response.body;
 
-          const expectedLength: number = category?.expect
-            ? Math.min(pagination.limit, category.numberOfFeeds)
+          const expectedLength: number = category.expect
+            ? Math.min(
+                pagination ? pagination.limit : paginationDefaultLimit,
+                category.numberOfFeeds
+              )
             : getExpectedLength(pagination, allFeeds.length);
 
           expect(result).toHaveLength(expectedLength);
+
+          if (category.category !== 0) {
+            expect(
+              result.every(
+                (item: FeedList) => item.categoryId === category.category
+              )
+            ).toBe(true);
+          }
         };
       };
 
       paginationOptions
         .reduce<Array<[string, () => Promise<void>]>>((acc, pagination) => {
           return categoryOptions.reduce((acc, category) => {
-            const description: string = `use Query String for both pagination and category: index=${pagination.startIndex}&limit=${pagination.limit}&categoryId=${category?.category}`;
+            const indexString: string = pagination
+              ? `?index=${pagination.startIndex}&limit=${pagination.limit}`
+              : '';
+            const categoryIdString: string = category
+              ? `categoryId=${category.category}`
+              : '';
+            const mark: string = indexString ? '&' : '?';
+
+            const description: string = `use Query String for both pagination and category: endpoint${indexString}${mark}${categoryIdString}`;
 
             acc.push([description, generateTest(pagination, category)]);
             return acc;
