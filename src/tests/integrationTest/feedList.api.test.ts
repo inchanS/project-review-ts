@@ -79,6 +79,9 @@ TestInitializer.initialize('FeedList API test', () => {
       ...category3Feeds,
     ];
 
+    const idsOfAllFeeds: number[] = allFeeds.map((feed: Feed) => feed.id);
+    idsOfAllFeeds.sort((a, b) => b - a);
+
     // feedSymbols
     const numberOfFeedSymbolsPerFeed: number[] = [5, 3];
     const feedSymbolIds: number[] = [1, 2];
@@ -116,44 +119,54 @@ TestInitializer.initialize('FeedList API test', () => {
       const getExpectedLength = (
         pagination: Pagination | null,
         feedsLength: number
-      ) =>
-        pagination
-          ? Math.min(pagination.limit, feedsLength)
-          : paginationDefaultLimit;
+      ) => {
+        if (!pagination) return paginationDefaultLimit;
+
+        const min: number = Math.min(pagination.limit, feedsLength);
+
+        if (pagination.startIndex === 0) {
+          return min;
+        } else {
+          return Math.max(0, min - pagination.startIndex);
+        }
+      };
 
       const paginationOptions: Pagination[] = [
         { startIndex: 0, limit: 1 },
-        { startIndex: 0, limit: 5 },
-        { startIndex: 0, limit: 10 },
+        { startIndex: allFeeds.length, limit: 10 },
         { startIndex: 0, limit: 12 },
-        { startIndex: 0, limit: 15 },
+        { startIndex: 0, limit: 20 },
+        { startIndex: 10, limit: 20 },
+        { startIndex: allFeeds.length, limit: 20 },
         { startIndex: 0, limit: 100 },
+        { startIndex: 15, limit: 100 },
       ];
 
       interface CategoryOptions {
         category: number;
-        numberOfFeeds: number;
+        feeds: Feed[];
         expect: number;
       }
+
       const categoryOptions: CategoryOptions[] = [
         {
           category: 0,
-          numberOfFeeds: allFeeds.length,
+          feeds: allFeeds,
           expect: paginationDefaultLimit,
         },
         {
           category: 1,
-          numberOfFeeds: category1Feeds.length,
+          feeds: category1Feeds,
           expect: Math.min(paginationDefaultLimit, category1Feeds.length),
         },
         {
           category: 2,
-          numberOfFeeds: category2Feeds.length,
+          feeds: category2Feeds,
           expect: Math.min(paginationDefaultLimit, category2Feeds.length),
         },
         {
           category: 3,
-          numberOfFeeds: category3Feeds.length,
+          feeds: category3Feeds,
           expect: Math.min(paginationDefaultLimit, category3Feeds.length),
         },
       ];
@@ -198,6 +211,10 @@ TestInitializer.initialize('FeedList API test', () => {
           expect(result).toHaveLength(
             getExpectedLength(pagination, allFeeds.length)
           );
+
+          if (result.length > 0) {
+            expect(result[0].id).toBe(idsOfAllFeeds[0 + pagination.startIndex]);
+          }
         });
       });
 
@@ -231,11 +248,13 @@ TestInitializer.initialize('FeedList API test', () => {
           );
           const result = response.body;
 
+          const min: number = Math.min(
+            pagination.limit ?? paginationDefaultLimit,
+            category.feeds.length
+          );
+
           const expectedLength: number = category.expect
-            ? Math.min(
-                pagination ? pagination.limit : paginationDefaultLimit,
-                category.numberOfFeeds
-              )
+            ? Math.max(0, min - pagination.startIndex)
             : getExpectedLength(pagination, allFeeds.length);
 
           expect(result).toHaveLength(expectedLength);
@@ -246,6 +265,14 @@ TestInitializer.initialize('FeedList API test', () => {
                 (item: FeedList) => item.categoryId === category.category
               )
             ).toBe(true);
+          }
+
+          if (result.length > 0 && pagination && pagination.startIndex > 0) {
+            const categoryIds: number[] = category.feeds
+              .map(item => item.id)
+              .sort((a, b) => b - a);
+
+            expect(result[0].id).toBe(categoryIds[0 + pagination.startIndex]);
           }
         };
       };
