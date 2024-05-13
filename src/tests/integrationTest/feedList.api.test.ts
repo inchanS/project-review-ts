@@ -111,77 +111,116 @@ TestInitializer.initialize('FeedList API test', () => {
     const endpoint: string = '/feeds/post';
     const paginationDefaultLimit: number = 10;
 
-    describe('verify length of feedList', () => {
-      const testFeedList = async (pagination?: Pagination) => {
-        const response: Response = await request(app).get(
-          `${endpoint}${
-            pagination
-              ? `?index=${pagination.startIndex}&limit=${pagination.limit}`
-              : ''
-          }`
-        );
-        const result = response.body;
-        const expectedLength: number =
-          pagination && pagination.limit > allFeeds.length
-            ? allFeeds.length
-            : pagination
-            ? pagination.limit
-            : paginationDefaultLimit;
+    describe('verify feedList based on query strings', () => {
+      const getExpectedLength = (
+        pagination: Pagination | null,
+        feedsLength: number
+      ) =>
+        pagination
+          ? Math.min(pagination.limit, feedsLength)
+          : paginationDefaultLimit;
 
-        expect(Array.isArray(result)).toBe(true);
-        expect(result).toHaveLength(expectedLength);
-      };
+      const paginationOptions: Pagination[] = [
+        { startIndex: 0, limit: 1 },
+        { startIndex: 0, limit: 5 },
+        { startIndex: 0, limit: 10 },
+        { startIndex: 0, limit: 12 },
+        { startIndex: 0, limit: 15 },
+        { startIndex: 0, limit: 100 },
+      ];
 
-      describe('get feedList', () => {
-        test('default API', async () => {
-          await testFeedList();
-        });
-
-        const testQueryStrings: Pagination[] = [
-          { startIndex: 0, limit: 1 },
-          { startIndex: 0, limit: 5 },
-          { startIndex: 0, limit: 12 },
-          { startIndex: 0, limit: 100 },
-        ];
-
-        testQueryStrings.forEach(pagination => {
-          test(`use Query String: index=${pagination.startIndex}&limit=${pagination.limit}`, async () => {
-            await testFeedList(pagination);
-          });
-        });
-      });
-
-      const testQueryStringsOfCategories = [
+      const categoryOptions = [
         null,
-        { category: 0, expect: paginationDefaultLimit },
+        {
+          category: 0,
+          numberOfFeeds: allFeeds.length,
+          expect: paginationDefaultLimit,
+        },
         {
           category: 1,
+          numberOfFeeds: category1Feeds.length,
           expect: Math.min(paginationDefaultLimit, category1Feeds.length),
         },
         {
           category: 2,
+          numberOfFeeds: category2Feeds.length,
           expect: Math.min(paginationDefaultLimit, category2Feeds.length),
         },
         {
           category: 3,
+          numberOfFeeds: category3Feeds.length,
           expect: Math.min(paginationDefaultLimit, category3Feeds.length),
         },
       ];
 
-      testQueryStringsOfCategories.forEach(sort => {
-        test(`use Query String Category: category=${sort?.category}`, async () => {
-          const response: Response = await request(app).get(
-            `${endpoint}${sort?.category ? `?categoryId=${sort.category}` : ''}`
-          );
+      const sendRequest = async (pagination?: Pagination, category?: number) =>
+        await request(app).get(
+          `${endpoint}${
+            pagination
+              ? `?index=${pagination.startIndex}&limit=${pagination.limit}${
+                  category ? `&categoryId=${category}` : ''
+                }`
+              : category
+              ? `?categoryId=${category}`
+              : ''
+          }`
+        );
 
+      // Test pagination only
+      paginationOptions.forEach(pagination => {
+        test(`use Query String for pagination only: index=${pagination.startIndex}&limit=${pagination.limit}`, async () => {
+          const response: Response = await sendRequest(pagination);
           const result = response.body;
-          const expectedLength: number = sort?.expect
-            ? sort.expect
-            : paginationDefaultLimit;
-
-          expect(result).toHaveLength(expectedLength);
+          expect(Array.isArray(result)).toBe(true);
+          expect(result).toHaveLength(
+            getExpectedLength(pagination, allFeeds.length)
+          );
         });
       });
+
+      // Test category only
+      categoryOptions.forEach(sort => {
+        test(`use Query String for category only: category=${sort?.category}`, async () => {
+          const response: Response = await sendRequest(
+            undefined,
+            sort?.category
+          );
+          const result = response.body;
+          expect(result).toHaveLength(
+            sort?.expect ? sort.expect : paginationDefaultLimit
+          );
+        });
+      });
+
+      // Test pagination and category together
+      const generateTest = (pagination: Pagination, category: any) => {
+        return async () => {
+          const response: Response = await sendRequest(
+            pagination,
+            category?.category
+          );
+          const result = response.body;
+
+          const expectedLength: number = category?.expect
+            ? Math.min(pagination.limit, category.numberOfFeeds)
+            : getExpectedLength(pagination, allFeeds.length);
+
+          expect(result).toHaveLength(expectedLength);
+        };
+      };
+
+      paginationOptions
+        .reduce<Array<[string, () => Promise<void>]>>((acc, pagination) => {
+          return categoryOptions.reduce((acc, category) => {
+            const description: string = `use Query String for both pagination and category: index=${pagination.startIndex}&limit=${pagination.limit}&categoryId=${category?.category}`;
+
+            acc.push([description, generateTest(pagination, category)]);
+            return acc;
+          }, acc);
+        }, [])
+        .forEach(([description, testFunc]) => {
+          it(description, testFunc);
+        });
     });
   });
 });
