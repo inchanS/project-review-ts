@@ -278,22 +278,28 @@ TestInitializer.initialize('FeedList API test', () => {
       };
 
       paginationOptions
-        .reduce<Array<[string, () => Promise<void>]>>((acc, pagination) => {
-          return categoryOptions.reduce((acc, category) => {
-            const indexString: string = pagination
-              ? `?index=${pagination.startIndex}&limit=${pagination.limit}`
-              : '';
-            const categoryIdString: string = category
-              ? `categoryId=${category.category}`
-              : '';
-            const mark: string = indexString ? '&' : '?';
+        .reduce<Array<[string, () => Promise<void>]>>(
+          (
+            acc: Array<[string, () => Promise<void>]>,
+            pagination: Pagination
+          ) => {
+            return categoryOptions.reduce((acc, category) => {
+              const indexString: string = pagination
+                ? `?index=${pagination.startIndex}&limit=${pagination.limit}`
+                : '';
+              const categoryIdString: string = category
+                ? `categoryId=${category.category}`
+                : '';
+              const mark: string = indexString ? '&' : '?';
 
-            const description: string = `use Query String for both pagination and category: endpoint${indexString}${mark}${categoryIdString}`;
+              const description: string = `use Query String for both pagination and category: endpoint${indexString}${mark}${categoryIdString}`;
 
-            acc.push([description, generateTest(pagination, category)]);
-            return acc;
-          }, acc);
-        }, [])
+              acc.push([description, generateTest(pagination, category)]);
+              return acc;
+            }, acc);
+          },
+          []
+        )
         .forEach(([description, testFunc]) => {
           it(description, testFunc);
         });
