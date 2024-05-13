@@ -112,7 +112,7 @@ TestInitializer.initialize('FeedList API test', () => {
     const endpoint: string = '/feeds/post';
     const paginationDefaultLimit: number = 10;
 
-    describe('verify feedList based on query strings', () => {
+    describe('verify the length of feedList based on query string parameters', () => {
       const getExpectedLength = (
         pagination: Pagination | null,
         feedsLength: number
