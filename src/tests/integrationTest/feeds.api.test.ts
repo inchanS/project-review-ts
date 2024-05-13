@@ -634,11 +634,6 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
         ).toBe(true);
       };
 
-      // TODO 임시저장된 게시글, 즉 feedId가 있는 게시글을 정식게시글로 등록할때의 테스트 추가
-      //   1. beforeAll 함수에 임시저장 게시글 하나를 엔티티로 등록
-      //   2. 검증해야할 postBody값과 임시저장 게시글 값을 배열로 묶은 후,
-      //   3. 이하 test 코드를 test.each 코드로 수정
-
       test.each([postBody, tempPostBody])(
         'create a feed without fileLinks',
         async (body: TestFeedDto | ExtendedTestFeedDto) => {
@@ -672,23 +667,11 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
             (file: UploadFiles) => file.file_link
           );
 
-          console.log(
-            '🔥feeds.api.test/:670- await dataSource.manager.find(UploadFiles) = ',
-            await dataSource.manager.find(UploadFiles)
-          );
-          console.log(
-            '🔥feeds.api.test/:674- await dataSource.manager.find(Feed) = ',
-            await dataSource.manager.find(Feed)
-          );
-
-          console.log('🔥feeds.api.test/:670- body = ', body);
           const result: Response = await ApiRequestHelper.makeAuthPostRequest(
             token,
             endpoint,
             body
           );
-
-          console.log('🔥feeds.api.test/:677- result.body = ', result.body);
 
           const dbResult: UploadFiles[] = await dataSource.manager.find(
             UploadFiles,
