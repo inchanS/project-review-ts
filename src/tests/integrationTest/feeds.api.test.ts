@@ -16,6 +16,7 @@ import { Feed } from '../../entities/feed.entity';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { TestInitializer } from './testUtils/testInitializer';
 import { Category } from '../../entities/category.entity';
+import { FeedDto } from '../../entities/dto/feed.dto';
 
 // @aws-sdk/client-s3 모의
 jest.mock('@aws-sdk/client-s3', () => {
@@ -616,105 +617,163 @@ TestInitializer.initialize('Feed CRUD API Test', () => {
         feedId: tempFeedId,
       };
 
-      const regexPostedAt: RegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
+      describe('Checking all property values of a saved feed', () => {
+        const regexPostedAt: RegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
 
-      const validateApiResponse = (
-        result: Response,
-        body: TestFeedDto | ExtendedTestFeedDto
-      ) => {
-        expect(result.status).toBe(201);
-        expect(result.body.message).toBe(successMessage);
-        expect(result.body.result.title).toBe(body.title);
-        expect(result.body.result.content).toBe(body.content);
-        expect(result.body.result.estimation.id).toBe(body.estimation);
-        expect(result.body.result.category.id).toBe(body.category);
-        expect(result.body.result.status.is_status).toBe(isStatus);
-        expect(
-          regexPostedAt.test(result.body.result.posted_at as unknown as string)
-        ).toBe(true);
-      };
+        const validateApiResponse = (
+          result: Response,
+          body: TestFeedDto | ExtendedTestFeedDto
+        ) => {
+          expect(result.status).toBe(201);
+          expect(result.body.message).toBe(successMessage);
+          expect(result.body.result.title).toBe(body.title);
+          expect(result.body.result.content).toBe(body.content);
+          expect(result.body.result.estimation.id).toBe(body.estimation);
+          expect(result.body.result.category.id).toBe(body.category);
+          expect(result.body.result.status.is_status).toBe(isStatus);
+          expect(
+            regexPostedAt.test(
+              result.body.result.posted_at as unknown as string
+            )
+          ).toBe(true);
+        };
 
-      test.each([postBody, tempPostBody])(
-        'create a feed without fileLinks',
-        async (body: TestFeedDto | ExtendedTestFeedDto) => {
-          const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-            token,
-            endpoint,
-            body
-          );
-
-          const apiResult = result.body.result;
-
-          validateApiResponse(result, body);
-          expect(apiResult.uploadFiles).toHaveLength(body.fileLinks!.length);
-        }
-      );
-
-      test.each([postBody, tempPostBody])(
-        'create a feed with fileLinks',
-        async (body: TestFeedDto | ExtendedTestFeedDto) => {
-          const uploadFilesForPost: UploadFiles[] = [
-            uploadFiles1,
-            uploadFiles2,
-          ];
-
-          const uploadFilesForTempPost: UploadFiles[] = [uploadFiles3];
-
-          postBody.fileLinks = uploadFilesForPost.map(
-            (file: UploadFiles) => file.file_link
-          );
-          tempPostBody.fileLinks = uploadFilesForTempPost.map(
-            (file: UploadFiles) => file.file_link
-          );
-
-          const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-            token,
-            endpoint,
-            body
-          );
-
-          const dbResult: UploadFiles[] = await dataSource.manager.find(
-            UploadFiles,
-            {
-              loadRelationIds: true,
-              where: { user: { id: existingUser.id } },
-            }
-          );
-
-          const apiResult = result.body.result;
-
-          validateApiResponse(result, body);
-
-          // uploadFiles check
-          expect(apiResult.uploadFiles).toHaveLength(body.fileLinks?.length!);
-
-          apiResult.uploadFiles.forEach((files: UploadFiles) => {
-            let uploadFile: UploadFiles | undefined = testUploadFiles.find(
-              (item: UploadFiles) => item.id === files.id
+        test.each([postBody, tempPostBody])(
+          'create a feed without fileLinks',
+          async (body: TestFeedDto | ExtendedTestFeedDto) => {
+            const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+              token,
+              endpoint,
+              body
             );
-            expect(files.file_link).toBe(uploadFile?.file_link);
-          });
 
-          // DB check
-          if ((body as ExtendedTestFeedDto).feedId) {
-            uploadFilesForTempPost.forEach((files: UploadFiles) => {
-              expect(
-                dbResult.find(
-                  (item: UploadFiles): boolean => item.id === files.id
-                )!.feed
-              ).toBe(apiResult.id);
-            });
-          } else {
-            uploadFilesForPost.forEach((files: UploadFiles) => {
-              expect(
-                dbResult.find(
-                  (item: UploadFiles): boolean => item.id === files.id
-                )!.feed
-              ).toBe(apiResult.id);
-            });
+            const apiResult = result.body.result;
+
+            validateApiResponse(result, body);
+            expect(apiResult.uploadFiles).toHaveLength(body.fileLinks!.length);
           }
+        );
+
+        test.each([postBody, tempPostBody])(
+          'create a feed with fileLinks',
+          async (body: TestFeedDto | ExtendedTestFeedDto) => {
+            const uploadFilesForPost: UploadFiles[] = [
+              uploadFiles1,
+              uploadFiles2,
+            ];
+
+            const uploadFilesForTempPost: UploadFiles[] = [uploadFiles3];
+
+            postBody.fileLinks = uploadFilesForPost.map(
+              (file: UploadFiles) => file.file_link
+            );
+            tempPostBody.fileLinks = uploadFilesForTempPost.map(
+              (file: UploadFiles) => file.file_link
+            );
+
+            const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+              token,
+              endpoint,
+              body
+            );
+
+            const dbResult: UploadFiles[] = await dataSource.manager.find(
+              UploadFiles,
+              {
+                loadRelationIds: true,
+                where: { user: { id: existingUser.id } },
+              }
+            );
+
+            const apiResult = result.body.result;
+
+            validateApiResponse(result, body);
+
+            // uploadFiles check
+            expect(apiResult.uploadFiles).toHaveLength(body.fileLinks?.length!);
+
+            apiResult.uploadFiles.forEach((files: UploadFiles) => {
+              let uploadFile: UploadFiles | undefined = testUploadFiles.find(
+                (item: UploadFiles) => item.id === files.id
+              );
+              expect(files.file_link).toBe(uploadFile?.file_link);
+            });
+
+            // DB check
+            if ((body as ExtendedTestFeedDto).feedId) {
+              uploadFilesForTempPost.forEach((files: UploadFiles) => {
+                expect(
+                  dbResult.find(
+                    (item: UploadFiles): boolean => item.id === files.id
+                  )!.feed
+                ).toBe(apiResult.id);
+              });
+            } else {
+              uploadFilesForPost.forEach((files: UploadFiles) => {
+                expect(
+                  dbResult.find(
+                    (item: UploadFiles): boolean => item.id === files.id
+                  )!.feed
+                ).toBe(apiResult.id);
+              });
+            }
+          }
+        );
+      });
+
+      describe('Validating mandatory fields when saving a post', () => {
+        interface IncompleteFields {
+          body: Partial<FeedDto>;
+          describe: string;
+          expect: string;
         }
-      );
+
+        const incompleteFields: IncompleteFields[] = [
+          {
+            body: {
+              estimation: 1,
+              category: 1,
+            },
+            describe: 'without title',
+            expect: 'title should not be empty',
+          },
+          {
+            body: {
+              title: 'test Feed Title',
+              content: 'this is content of Test Feed',
+              category: 1,
+            },
+            describe: 'without estimation',
+            expect: 'estimation should not be empty',
+          },
+          {
+            body: {
+              title: 'test Feed Title',
+              content: 'this is content of Test Feed',
+              estimation: 1,
+            },
+            describe: 'without category',
+            expect: 'category should not be empty',
+          },
+        ];
+
+        const expectedStatus: number = 500;
+
+        test.each(incompleteFields)(
+          'validate test : create a feed',
+          async (arr: IncompleteFields) => {
+            const response: Response =
+              await ApiRequestHelper.makeAuthPostRequest(
+                token,
+                endpoint,
+                arr.body
+              );
+
+            expect(response.status).toBe(expectedStatus);
+            expect(response.body.message.isNotEmpty).toContain(arr.expect);
+          }
+        );
+      });
     });
 
     describe('update a feed', () => {
