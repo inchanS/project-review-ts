@@ -10,32 +10,11 @@ import { Response } from 'superagent';
 import request from 'supertest';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
 import { TestUserInfo } from '../../types/test';
+import { TestInitializer } from './testUtils/testInitializer';
 
 const app: Express = createApp();
 
-describe('Search API', () => {
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log(
-            '💥TEST Data Source for Search API has been initialized!'
-          );
-        }
-      })
-      .catch(error => {
-        console.log('Data Source for Search API Initializing failed:', error);
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source for Search API has been destroyed!');
-    });
-  });
-
+TestInitializer.initialize('Search API', () => {
   describe('set Search API', () => {
     // test users
     const testUser: TestUserInfo = {
@@ -53,11 +32,11 @@ describe('Search API', () => {
 
     // test feeds
     const testUserFeeds: Feed[] = [
-      new MakeTestClass(1, testUser.id).feedData(),
-      new MakeTestClass(2, testUser.id).feedData(testTitle, testContent),
-      new MakeTestClass(3, testUser.id).feedData(testTitle),
-      new MakeTestClass(4, testUser.id).feedData(undefined, testContent),
-      new MakeTestClass(5, testUser.id).feedData(),
+      new MakeTestClass(testUser.id).feedData(1),
+      new MakeTestClass(testUser.id).feedData(2, testTitle, testContent),
+      new MakeTestClass(testUser.id).feedData(3, testTitle),
+      new MakeTestClass(testUser.id).feedData(4, undefined, testContent),
+      new MakeTestClass(testUser.id).feedData(5),
     ];
 
     beforeAll(async () => {

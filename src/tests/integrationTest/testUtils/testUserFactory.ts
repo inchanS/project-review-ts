@@ -25,4 +25,25 @@ export class TestUserFactory {
       email: userInfo.email,
     };
   }
+
+  public static generateMultipleUsers = (
+    numFiles: number,
+    startIndexId: number = 1
+  ): TestUserInfo[] => {
+    const testUsers: TestUserInfo[] = [];
+    for (let i: number = startIndexId; i < startIndexId + numFiles; i++) {
+      const testUser: TestUserInfo = {
+        id: i,
+        nickname: `userName${i}`,
+        email: `user${i}@example.com`,
+        password: `user${i}!Password`,
+      };
+
+      const userEntity: TestUserInfo =
+        TestUserFactory.createUserEntity(testUser);
+
+      testUsers.push(userEntity);
+    }
+    return testUsers;
+  };
 }

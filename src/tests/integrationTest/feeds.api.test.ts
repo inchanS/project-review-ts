@@ -1,5 +1,4 @@
 import dataSource from '../../repositories/data-source';
-import { TestUtils } from './testUtils/testUtils';
 import { Response } from 'superagent';
 import { TestUserFactory } from './testUtils/testUserFactory';
 import { User } from '../../entities/users.entity';
@@ -15,6 +14,9 @@ import { UploadFiles } from '../../entities/uploadFiles.entity';
 import { MakeTestClass } from './testUtils/makeTestClass';
 import { Feed } from '../../entities/feed.entity';
 import { FeedList } from '../../entities/viewEntities/viewFeedList.entity';
+import { TestInitializer } from './testUtils/testInitializer';
+import { Category } from '../../entities/category.entity';
+import { FeedDto } from '../../entities/dto/feed.dto';
 
 // @aws-sdk/client-s3 모의
 jest.mock('@aws-sdk/client-s3', () => {
@@ -29,32 +31,7 @@ jest.mock('@aws-sdk/client-s3', () => {
   };
 });
 
-describe('Feed CRUD API Test', () => {
-  beforeAll(async () => {
-    await dataSource
-      .initialize()
-      .then(() => {
-        if (process.env.NODE_ENV === 'test') {
-          console.log(
-            '💥TEST Data Source for Feed CRUD API has been initialized!'
-          );
-        }
-      })
-      .catch(error => {
-        console.log(
-          'Data Source for Feed CRUD API Initializing failed:',
-          error
-        );
-      });
-  });
-
-  afterAll(async () => {
-    await TestUtils.clearDatabaseTables(dataSource);
-    await dataSource.destroy().then(() => {
-      console.log('💥TEST Data Source for Feed CRUD API has been destroyed!');
-    });
-  });
-
+TestInitializer.initialize('Feed CRUD API Test', () => {
   describe('set for feed CRUD API Test', () => {
     // test users
     const existingUser: TestUserInfo = {
@@ -70,17 +47,14 @@ describe('Feed CRUD API Test', () => {
       TestUserFactory.createSignInInfo(existingUser);
 
     const uploadFiles1: UploadFiles = new MakeTestClass(
-      1,
       existingUser.id
-    ).uploadData('testfile1.jpeg');
+    ).uploadData(1, 'testfile1.jpeg');
     const uploadFiles2: UploadFiles = new MakeTestClass(
-      2,
       existingUser.id
-    ).uploadData('testfile2.txt');
+    ).uploadData(2, 'testfile2.txt');
     const uploadFiles3: UploadFiles = new MakeTestClass(
-      3,
       existingUser.id
-    ).uploadData('testfile3.txt');
+    ).uploadData(3, 'testfile3.txt');
 
     const testUploadFiles: UploadFiles[] = [
       uploadFiles1,
@@ -89,15 +63,10 @@ describe('Feed CRUD API Test', () => {
     ];
 
     let token: string;
-    beforeEach(async () => {
-      await dataSource.transaction(async transactionalEntityManager => {
-        await transactionalEntityManager.save(User, existingUserEntity);
-        await transactionalEntityManager.save(UploadFiles, testUploadFiles);
-      });
+    beforeAll(async () => {
+      await dataSource.manager.save(User, existingUserEntity);
+
       token = await ApiRequestHelper.getAuthToken(existingUserSigningInfo);
-    });
-    afterEach(async () => {
-      await TestUtils.clearDatabaseTables(dataSource);
     });
 
     describe('create a Temp Feed ', () => {
@@ -112,6 +81,15 @@ describe('Feed CRUD API Test', () => {
         estimation: 1,
         category: 1,
       };
+
+      afterEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+          await transactionalEntityManager.clear(UploadFiles);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
+        });
+      });
 
       test('create a temp feed without uploadFiles', async () => {
         const postBody: TestTempFeedDto = {
@@ -135,6 +113,8 @@ describe('Feed CRUD API Test', () => {
       });
 
       test('create a temp feed with uploadFiles', async () => {
+        await dataSource.manager.save(UploadFiles, testUploadFiles);
+
         const postBody: TestTempFeedDto = {
           content: feedInfo.content,
           fileLinks: [uploadFiles1.file_link],
@@ -184,12 +164,21 @@ describe('Feed CRUD API Test', () => {
       const isStatus: string = 'temporary';
 
       const existingTempFeedWithoutUploadfiles: Feed = new MakeTestClass(
-        1,
         existingUser.id
-      ).tempFeedData();
+      ).tempFeedData(1);
 
       beforeEach(async () => {
         await dataSource.manager.save(Feed, existingTempFeedWithoutUploadfiles);
+        await dataSource.manager.save(UploadFiles, testUploadFiles);
+      });
+
+      afterEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+          await transactionalEntityManager.clear(UploadFiles);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
+        });
       });
 
       test('update title of a temp feed', async () => {
@@ -372,28 +361,28 @@ describe('Feed CRUD API Test', () => {
       const tempTitle: string = 'this is title';
 
       const tempFeedWithoutTitle: Feed = new MakeTestClass(
-        1,
         existingUser.id
-      ).tempFeedData(undefined, 'this is new content');
+      ).tempFeedData(1, undefined, 'this is new content');
       const tempFeedWithTitle: Feed = new MakeTestClass(
-        2,
         existingUser.id
-      ).tempFeedData(tempTitle);
+      ).tempFeedData(2, tempTitle);
       const tempFeedWithUploadFiles: Feed = new MakeTestClass(
-        3,
         existingUser.id
-      ).tempFeedData();
+      ).tempFeedData(3);
+      const tempFeedList: Feed[] = new MakeTestClass(
+        existingUser.id
+      ).generateMultipleTempFeeds(3, 4);
 
       const existingUsersTempFeeds: Feed[] = [
         tempFeedWithoutTitle,
         tempFeedWithTitle,
         tempFeedWithUploadFiles,
+        ...tempFeedList,
       ];
 
       const otherUsersTempFeed: Feed = new MakeTestClass(
-        6,
         otherUser.id
-      ).tempFeedData();
+      ).tempFeedData(7);
 
       const testTempFeeds: Feed[] = [
         ...existingUsersTempFeeds,
@@ -402,6 +391,7 @@ describe('Feed CRUD API Test', () => {
 
       beforeEach(async () => {
         await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.save(UploadFiles, testUploadFiles);
           await transactionalEntityManager.save(User, otherUserEntity);
           await transactionalEntityManager.save(Feed, testTempFeeds);
           // 사용자의 게시물에 uploadFiles 연결
@@ -415,6 +405,16 @@ describe('Feed CRUD API Test', () => {
             { id: uploadFiles2.id },
             { feed: tempFeedWithUploadFiles }
           );
+        });
+      });
+
+      afterEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+          await transactionalEntityManager.clear(UploadFiles);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.delete(User, otherUserEntity);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
         });
       });
 
@@ -586,80 +586,193 @@ describe('Feed CRUD API Test', () => {
         content: 'this is content of Test Feed',
         estimation: 1,
         category: 1,
+        fileLinks: [],
       };
-      const regexPostedAt: RegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
 
-      test('create a feed without fileLinks', async () => {
-        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          token,
-          endpoint,
-          postBody
-        );
+      const tempFeedId: number = 100;
+      const tempFeedInfo: Feed = new MakeTestClass(
+        existingUser.id
+      ).tempFeedData(tempFeedId, 'test title');
 
-        const apiResult = result.body.result;
-
-        expect(result.status).toBe(201);
-        expect(result.body.message).toBe(successMessage);
-        expect(apiResult.title).toBe(postBody.title);
-        expect(apiResult.content).toBe(postBody.content);
-        expect(apiResult.estimation.id).toBe(postBody.estimation);
-        expect(apiResult.category.id).toBe(postBody.category);
-        expect(apiResult.status.is_status).toBe(isStatus);
-        expect(regexPostedAt.test(apiResult.posted_at)).toBe(true);
+      beforeEach(async () => {
+        await dataSource.manager.save(Feed, tempFeedInfo);
+        await dataSource.manager.save(UploadFiles, testUploadFiles);
       });
 
-      test('create a feed with fileLinks', async () => {
-        postBody.fileLinks = [uploadFiles1.file_link, uploadFiles2.file_link];
+      afterEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.clear(UploadFiles);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
+        });
+      });
 
-        const result: Response = await ApiRequestHelper.makeAuthPostRequest(
-          token,
-          endpoint,
-          postBody
-        );
+      interface ExtendedTestFeedDto extends TestFeedDto {
+        feedId: number;
+      }
 
-        const dbResult: UploadFiles[] = await dataSource.manager.find(
-          UploadFiles,
-          {
-            loadRelationIds: true,
-            where: { user: { id: existingUser.id } },
+      const tempPostBody: ExtendedTestFeedDto = {
+        ...postBody,
+        feedId: tempFeedId,
+      };
+
+      describe('Checking all property values of a saved feed', () => {
+        const regexPostedAt: RegExp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/;
+
+        const validateApiResponse = (
+          result: Response,
+          body: TestFeedDto | ExtendedTestFeedDto
+        ) => {
+          expect(result.status).toBe(201);
+          expect(result.body.message).toBe(successMessage);
+          expect(result.body.result.title).toBe(body.title);
+          expect(result.body.result.content).toBe(body.content);
+          expect(result.body.result.estimation.id).toBe(body.estimation);
+          expect(result.body.result.category.id).toBe(body.category);
+          expect(result.body.result.status.is_status).toBe(isStatus);
+          expect(
+            regexPostedAt.test(
+              result.body.result.posted_at as unknown as string
+            )
+          ).toBe(true);
+        };
+
+        test.each([postBody, tempPostBody])(
+          'create a feed without fileLinks',
+          async (body: TestFeedDto | ExtendedTestFeedDto) => {
+            const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+              token,
+              endpoint,
+              body
+            );
+
+            const apiResult = result.body.result;
+
+            validateApiResponse(result, body);
+            expect(apiResult.uploadFiles).toHaveLength(body.fileLinks!.length);
           }
         );
 
-        const apiResult = result.body.result;
+        test.each([postBody, tempPostBody])(
+          'create a feed with fileLinks',
+          async (body: TestFeedDto | ExtendedTestFeedDto) => {
+            const uploadFilesForPost: UploadFiles[] = [
+              uploadFiles1,
+              uploadFiles2,
+            ];
 
-        expect(result.status).toBe(201);
-        expect(result.body.message).toBe(successMessage);
-        expect(apiResult.title).toBe(postBody.title);
-        expect(apiResult.content).toBe(postBody.content);
-        expect(apiResult.estimation.id).toBe(postBody.estimation);
-        expect(apiResult.category.id).toBe(postBody.category);
-        expect(apiResult.status.is_status).toBe(isStatus);
-        expect(regexPostedAt.test(apiResult.posted_at)).toBe(true);
+            const uploadFilesForTempPost: UploadFiles[] = [uploadFiles3];
 
-        // uploadFiles check
-        expect(apiResult.uploadFiles).toHaveLength(2);
-        expect(
-          apiResult.uploadFiles.find(
-            (item: UploadFiles) => item.id === uploadFiles1.id
-          ).file_link
-        ).toBe(uploadFiles1.file_link);
-        expect(
-          apiResult.uploadFiles.find(
-            (item: UploadFiles) => item.id === uploadFiles2.id
-          ).file_link
-        ).toBe(uploadFiles2.file_link);
+            postBody.fileLinks = uploadFilesForPost.map(
+              (file: UploadFiles) => file.file_link
+            );
+            tempPostBody.fileLinks = uploadFilesForTempPost.map(
+              (file: UploadFiles) => file.file_link
+            );
 
-        // DB check
-        expect(
-          dbResult.find(
-            (item: UploadFiles): boolean => item.id === uploadFiles1.id
-          )!.feed
-        ).toBe(apiResult.id);
-        expect(
-          dbResult.find(
-            (item: UploadFiles): boolean => item.id === uploadFiles2.id
-          )!.feed
-        ).toBe(apiResult.id);
+            const result: Response = await ApiRequestHelper.makeAuthPostRequest(
+              token,
+              endpoint,
+              body
+            );
+
+            const dbResult: UploadFiles[] = await dataSource.manager.find(
+              UploadFiles,
+              {
+                loadRelationIds: true,
+                where: { user: { id: existingUser.id } },
+              }
+            );
+
+            const apiResult = result.body.result;
+
+            validateApiResponse(result, body);
+
+            // uploadFiles check
+            expect(apiResult.uploadFiles).toHaveLength(body.fileLinks?.length!);
+
+            apiResult.uploadFiles.forEach((files: UploadFiles) => {
+              let uploadFile: UploadFiles | undefined = testUploadFiles.find(
+                (item: UploadFiles) => item.id === files.id
+              );
+              expect(files.file_link).toBe(uploadFile?.file_link);
+            });
+
+            // DB check
+            if ((body as ExtendedTestFeedDto).feedId) {
+              uploadFilesForTempPost.forEach((files: UploadFiles) => {
+                expect(
+                  dbResult.find(
+                    (item: UploadFiles): boolean => item.id === files.id
+                  )!.feed
+                ).toBe(apiResult.id);
+              });
+            } else {
+              uploadFilesForPost.forEach((files: UploadFiles) => {
+                expect(
+                  dbResult.find(
+                    (item: UploadFiles): boolean => item.id === files.id
+                  )!.feed
+                ).toBe(apiResult.id);
+              });
+            }
+          }
+        );
+      });
+
+      describe('Validating mandatory fields when saving a post', () => {
+        interface IncompleteFields {
+          body: Partial<FeedDto>;
+          describe: string;
+          expect: string;
+        }
+
+        const incompleteFields: IncompleteFields[] = [
+          {
+            body: {
+              estimation: 1,
+              category: 1,
+            },
+            describe: 'without title',
+            expect: 'title should not be empty',
+          },
+          {
+            body: {
+              title: 'test Feed Title',
+              content: 'this is content of Test Feed',
+              category: 1,
+            },
+            describe: 'without estimation',
+            expect: 'estimation should not be empty',
+          },
+          {
+            body: {
+              title: 'test Feed Title',
+              content: 'this is content of Test Feed',
+              estimation: 1,
+            },
+            describe: 'without category',
+            expect: 'category should not be empty',
+          },
+        ];
+
+        const expectedStatus: number = 500;
+
+        test.each(incompleteFields)(
+          'validate test : create a feed',
+          async (arr: IncompleteFields) => {
+            const response: Response =
+              await ApiRequestHelper.makeAuthPostRequest(
+                token,
+                endpoint,
+                arr.body
+              );
+
+            expect(response.status).toBe(expectedStatus);
+            expect(response.body.message.isNotEmpty).toContain(arr.expect);
+          }
+        );
       });
     });
 
@@ -669,26 +782,33 @@ describe('Feed CRUD API Test', () => {
       const isStatus: string = 'published';
       const updateStatusCode: number = 200;
 
-      const existingFeed: Feed = new MakeTestClass(1, existingUser.id).feedData(
+      const existingFeed: Feed = new MakeTestClass(existingUser.id).feedData(
+        1,
         'existing title',
         'existing content'
       );
 
       beforeEach(async () => {
+        await dataSource.manager.save(UploadFiles, testUploadFiles);
         await dataSource.manager.save(Feed, existingFeed);
       });
 
-      test('update the title of a feed without using fileLinks', async () => {
-        const patchBody = {
-          feedId: existingFeed.id,
-          title: 'update title',
-        };
-
-        const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
-          loadRelationIds: true,
-          where: { id: existingFeed.id },
+      afterEach(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+          await transactionalEntityManager.clear(UploadFiles);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
         });
+      });
 
+      async function performPatchAndUpdateValidation(
+        beforeDB: Feed | null,
+        patchBody: Partial<Feed>,
+        expectedContendUpdates: Partial<Feed>,
+        expectedEntityUpdates?: Record<any, number>
+      ) {
+        await new Promise(resolve => setTimeout(resolve, 100));
         const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
           token,
           endpoint,
@@ -699,15 +819,55 @@ describe('Feed CRUD API Test', () => {
         expect(result.status).toBe(updateStatusCode);
         expect(result.body.message).toBe(successMessage);
         expect(apiResult.status.is_status).toBe(isStatus);
-        expect(apiResult.title).toBe(patchBody.title);
+        for (const key in expectedContendUpdates) {
+          expect(apiResult[key]).toEqual(
+            expectedContendUpdates[key as keyof Feed]
+          );
+        }
+
+        for (const key in expectedEntityUpdates) {
+          expect(apiResult[key].id).toEqual(expectedEntityUpdates[key]);
+        }
+
         expect(beforeDB!.updated_at !== apiResult.updated_at).toBe(true);
+      }
+
+      test('update the title of a feed without using fileLinks', async () => {
+        const patchBody = {
+          feedId: existingFeed.id,
+        };
+        const patchContent = {
+          title: 'update title',
+        };
+        const updatedPatchBody = { ...patchBody, ...patchContent };
+
+        const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
+          loadRelationIds: true,
+          where: { id: existingFeed.id },
+        });
+
+        await performPatchAndUpdateValidation(
+          beforeDB,
+          updatedPatchBody,
+          patchContent
+        );
       });
 
       test('update the content and category of a feed without using fileLinks', async () => {
         const patchBody = {
           feedId: existingFeed.id,
+        };
+        const patchContent = {
           content: 'update content',
-          category: 2,
+        };
+        const patchEntity = {
+          category: 2 as unknown as Category,
+        };
+
+        const updatedPatchBody: Partial<Feed> = {
+          ...patchBody,
+          ...patchContent,
+          ...patchEntity,
         };
 
         const beforeDB: Feed | null = await dataSource.manager.findOne(Feed, {
@@ -715,23 +875,16 @@ describe('Feed CRUD API Test', () => {
           where: { id: existingFeed.id },
         });
 
-        const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
-          token,
-          endpoint,
-          patchBody
+        await performPatchAndUpdateValidation(
+          beforeDB,
+          updatedPatchBody,
+          patchContent
         );
-        const apiResult = result.body.result;
-
-        expect(result.status).toBe(updateStatusCode);
-        expect(result.body.message).toBe(successMessage);
-        expect(apiResult.status.is_status).toBe(isStatus);
-        expect(apiResult.content).toBe(patchBody.content);
-        expect(apiResult.category.id).toBe(patchBody.category);
-        expect(beforeDB!.updated_at !== apiResult.updated_at).toBe(true);
       });
 
       describe('update the feed with using fileLinks', () => {
         beforeEach(async () => {
+          await dataSource.manager.save(UploadFiles, testUploadFiles);
           await dataSource.manager.update(
             UploadFiles,
             { id: uploadFiles1.id },
@@ -739,11 +892,66 @@ describe('Feed CRUD API Test', () => {
           );
         });
 
+        afterEach(async () => {
+          await dataSource.transaction(async transactionalEntityManager => {
+            await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+            await transactionalEntityManager.clear(UploadFiles);
+            await transactionalEntityManager.clear(Feed);
+            await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
+          });
+        });
+
+        async function performPatchAndUpdateFileLinksValidation(
+          patchBody: Partial<Feed>,
+          expectedContendUpdates: Partial<Feed>,
+          expectedFileLength: { fileLinks: string[] }
+        ) {
+          const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
+            token,
+            endpoint,
+            patchBody
+          );
+          const apiResult = result.body.result;
+
+          const afterDB: UploadFiles[] = await dataSource.manager.find(
+            UploadFiles,
+            {
+              loadRelationIds: true,
+              withDeleted: true,
+              where: { user: { id: existingUser.id } },
+            }
+          );
+
+          expect(result.status).toBe(updateStatusCode);
+          expect(result.body.message).toBe(successMessage);
+          expect(apiResult.status.is_status).toBe(isStatus);
+          for (const key in expectedContendUpdates) {
+            expect(apiResult[key]).toEqual(
+              expectedContendUpdates[key as keyof Feed]
+            );
+          }
+          expect(apiResult.uploadFiles).toHaveLength(
+            expectedFileLength.fileLinks.length
+          );
+
+          return { apiResult, afterDB };
+        }
+
         test('update the title of a feed with using fileLinks', async () => {
           const patchBody = {
             feedId: existingFeed.id,
+          };
+          const patchContent = {
             title: 'update title',
+          };
+          const fileLinks = {
             fileLinks: [uploadFiles2.file_link, uploadFiles3.file_link],
+          };
+
+          const updatedPatchBody = {
+            ...patchBody,
+            ...patchContent,
+            ...fileLinks,
           };
 
           const beforeDB: UploadFiles[] = await dataSource.manager.find(
@@ -754,28 +962,10 @@ describe('Feed CRUD API Test', () => {
             }
           );
 
-          const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
-            token,
-            endpoint,
-            patchBody
-          );
-          const apiResult = result.body.result;
-
-          const afterDB: UploadFiles[] = await dataSource.manager.find(
-            UploadFiles,
-            {
-              loadRelationIds: true,
-              withDeleted: true,
-              where: { user: { id: existingUser.id } },
-            }
-          );
-
-          expect(result.status).toBe(updateStatusCode);
-          expect(result.body.message).toBe(successMessage);
-          expect(apiResult.status.is_status).toBe(isStatus);
-          expect(apiResult.title).toBe(patchBody.title);
-          expect(apiResult.uploadFiles).toHaveLength(
-            patchBody.fileLinks.length
+          const result = await performPatchAndUpdateFileLinksValidation(
+            updatedPatchBody,
+            patchContent,
+            fileLinks
           );
 
           expect(
@@ -783,55 +973,163 @@ describe('Feed CRUD API Test', () => {
               ?.deleted_at
           ).toBe(null);
           expect(
-            afterDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
-              ?.deleted_at
+            result.afterDB.find(
+              (item: UploadFiles) => item.id === uploadFiles1.id
+            )?.deleted_at
           ).not.toBe(null);
           expect(
-            afterDB.find((item: UploadFiles) => item.id === uploadFiles2.id)
-              ?.feed
+            result.afterDB.find(
+              (item: UploadFiles) => item.id === uploadFiles2.id
+            )?.feed
           ).toBe(existingFeed.id);
           expect(
-            afterDB.find((item: UploadFiles) => item.id === uploadFiles3.id)
-              ?.feed
+            result.afterDB.find(
+              (item: UploadFiles) => item.id === uploadFiles3.id
+            )?.feed
           ).toBe(existingFeed.id);
         });
 
         test('update the feed by removing fileLinks from it', async () => {
           const patchBody = {
             feedId: existingFeed.id,
+          };
+          const patchContent = {
             title: 'update title',
           };
+          const fileLinks = {
+            fileLinks: [],
+          };
 
-          const result: Response = await ApiRequestHelper.makeAuthPatchRequest(
-            token,
-            endpoint,
-            patchBody
+          const updatedPatchBody = {
+            ...patchBody,
+            ...patchContent,
+            ...fileLinks,
+          };
+
+          const result = await performPatchAndUpdateFileLinksValidation(
+            updatedPatchBody,
+            patchContent,
+            fileLinks
           );
-          const apiResult = result.body.result;
-
-          const afterDB: UploadFiles[] = await dataSource.manager.find(
-            UploadFiles,
-            {
-              loadRelationIds: true,
-              withDeleted: true,
-              where: { user: { id: existingUser.id } },
-            }
-          );
-
-          expect(result.status).toBe(updateStatusCode);
-          expect(result.body.message).toBe(successMessage);
-          expect(apiResult.status.is_status).toBe(isStatus);
-          expect(apiResult.title).toBe(patchBody.title);
-          expect(apiResult.uploadFiles).toHaveLength(0);
 
           expect(
-            afterDB.find((item: UploadFiles) => item.id === uploadFiles1.id)
-              ?.deleted_at
+            result.afterDB.find(
+              (item: UploadFiles) => item.id === uploadFiles1.id
+            )?.deleted_at
           ).not.toBe(null);
         });
       });
     });
 
-    describe('get a feed', () => {});
+    describe('get a feed: success', () => {
+      const endpoint: string = '/feeds/';
+      const successCode: number = 200;
+      const expectedMessage: string = 'check feed success';
+
+      const existingUsersFeed: Feed = new MakeTestClass(1).feedData(1);
+      const uploadFilesForFeed: UploadFiles[] = [uploadFiles1, uploadFiles2];
+
+      let result: Response;
+      let apiResult: Feed;
+
+      beforeAll(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.save(UploadFiles, testUploadFiles);
+          await transactionalEntityManager.save(Feed, existingUsersFeed);
+          await transactionalEntityManager.update(
+            UploadFiles,
+            { id: uploadFiles1.id },
+            { feed: existingUsersFeed }
+          );
+          await transactionalEntityManager.update(
+            UploadFiles,
+            { id: uploadFiles2.id },
+            { feed: existingUsersFeed }
+          );
+        });
+
+        result = await ApiRequestHelper.makeAuthGetRequest(
+          token,
+          endpoint + existingUsersFeed.id
+        );
+        apiResult = result.body.result;
+      });
+
+      afterAll(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+          await transactionalEntityManager.clear(UploadFiles);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
+        });
+      });
+
+      test('check status and message', async () => {
+        expect(result.status).toBe(successCode);
+        expect(result.body.message).toBe(expectedMessage);
+      });
+
+      test('check feeds title and content', async () => {
+        expect(apiResult.title).toBe(existingUsersFeed.title);
+        expect(apiResult.content).toBe(existingUsersFeed.content);
+        expect(apiResult.status.is_status).toBe('published');
+        expect(apiResult.category.id).toBe(existingUsersFeed.category);
+        expect(apiResult.estimation.id).toBe(existingUsersFeed.estimation);
+      });
+
+      test('check uploadFiles for feed', async () => {
+        expect(apiResult.uploadFiles).toHaveLength(uploadFilesForFeed.length);
+
+        const uploadFileIds: number[] = apiResult.uploadFiles!.map(
+          (file: UploadFiles) => file.id
+        );
+
+        expect(uploadFileIds).toContain(uploadFilesForFeed[0].id);
+        expect(uploadFileIds).toContain(uploadFilesForFeed[1].id);
+      });
+
+      test('check verify increment in view count after feed', async () => {
+        const secondGetFeed: Response =
+          await ApiRequestHelper.makeAuthGetRequest(
+            token,
+            endpoint + existingUsersFeed.id
+          );
+
+        const beforeViewCnt: number = apiResult.viewCnt;
+        const afterViewCnt: number = secondGetFeed.body.result.viewCnt;
+
+        expect(afterViewCnt).toBe(beforeViewCnt + 1);
+      });
+    });
+
+    describe('get a feed: not found feed', () => {
+      const endpoint: string = '/feeds/';
+      const wrongFeedId: number = 55;
+
+      let result: Response;
+      beforeAll(async () => {
+        result = await ApiRequestHelper.makeAuthGetRequest(
+          token,
+          endpoint + wrongFeedId
+        );
+      });
+
+      afterAll(async () => {
+        await dataSource.transaction(async transactionalEntityManager => {
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=0;`);
+          await transactionalEntityManager.clear(UploadFiles);
+          await transactionalEntityManager.clear(Feed);
+          await transactionalEntityManager.query(`SET FOREIGN_KEY_CHECKS=1;`);
+        });
+      });
+
+      test('check statusCode, errMessage', async () => {
+        const errCode: number = 404;
+        const errMessage: string = 'NOT_FOUND_FEED';
+
+        expect(result.status).toBe(errCode);
+        expect(result.body.message).toBe(errMessage);
+      });
+    });
   });
 });
